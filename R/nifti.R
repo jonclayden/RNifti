@@ -28,14 +28,14 @@ readNifti <- function (file, source = NULL, target = NULL, internal = FALSE)
     if (length(file) == 0)
         stop("File name vector is empty")
     else if (length(file) > 1)
-        lapply(file, function(f) .Call("readNifti", path.expand(f), internal, PACKAGE="RNiftyReg"))
+        lapply(file, function(f) .Call("readNifti", path.expand(f), internal, PACKAGE="RNifti"))
     else
     {
-        image <- .Call("readNifti", path.expand(file), internal, PACKAGE="RNiftyReg")
+        image <- .Call("readNifti", path.expand(file), internal, PACKAGE="RNifti")
         if (!is.null(source))
-            attr(image, "source") <- .Call("retrieveImage", source, PACKAGE="RNiftyReg")
+            attr(image, "source") <- .Call("retrieveImage", source, PACKAGE="RNifti")
         if (!is.null(target))
-            attr(image, "target") <- .Call("retrieveImage", target, PACKAGE="RNiftyReg")
+            attr(image, "target") <- .Call("retrieveImage", target, PACKAGE="RNifti")
         return (image)
     }
 }
@@ -65,7 +65,7 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
     if (is.array(image) && !is.null(template))
         image <- updateNifti(image, template)
     
-    invisible(.Call("writeNifti", image, file, tolower(datatype), PACKAGE="RNiftyReg"))
+    invisible(.Call("writeNifti", image, file, tolower(datatype), PACKAGE="RNifti"))
 }
 
 
@@ -87,7 +87,7 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
 #' @export
 updateNifti <- function (image, template = NULL)
 {
-    .Call("updateNifti", image, template, PACKAGE="RNiftyReg")
+    .Call("updateNifti", image, template, PACKAGE="RNifti")
 }
 
 
@@ -107,7 +107,7 @@ updateNifti <- function (image, template = NULL)
 #' @export
 dumpNifti <- function (image)
 {
-    .Call("dumpNifti", image, PACKAGE="RNiftyReg")
+    .Call("dumpNifti", image, PACKAGE="RNifti")
 }
 
 #' @rdname dumpNifti
