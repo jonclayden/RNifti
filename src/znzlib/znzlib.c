@@ -21,7 +21,7 @@ NB: seeks for writable files with compression are quite restricted
 
  */
 
-#include "znzlib.h"
+#include "znzlib/znzlib.h"
 #include "print.h"
 
 /*

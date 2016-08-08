@@ -1,7 +1,7 @@
 #ifndef _NIFTI_IMAGE_H_
 #define _NIFTI_IMAGE_H_
 
-#include "nifti1_io.h"
+#include "niftilib/nifti1_io.h"
 
 // Thin wrapper around a C-style nifti_image struct that allows C++-style destruction
 class NiftiImage

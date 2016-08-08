@@ -15,10 +15,10 @@
 #ifndef DONT_INCLUDE_ANALYZE_STRUCT
 #define DONT_INCLUDE_ANALYZE_STRUCT  /*** not needed herein ***/
 #endif
-#include "nifti1.h"                  /*** NIFTI-1 header specification ***/
+#include "niftilib/nifti1.h"                  /*** NIFTI-1 header specification ***/
 
 #include "print.h"
-#include <znzlib.h>
+#include <znzlib/znzlib.h>
 
 /*=================*/
 #ifdef  __cplusplus

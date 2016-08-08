@@ -59,7 +59,7 @@ extern "C" {
 #if defined(ITKZLIB) && !defined(ITK_USE_SYSTEM_ZLIB)
 #include "itk_zlib.h"
 #else
-#include "zlib.h"
+#include "zlib/zlib.h"
 #endif
 #endif
 

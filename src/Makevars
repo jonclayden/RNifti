@@ -1,4 +1,4 @@
-PKG_CPPFLAGS = -DNDEBUG -DHAVE_ZLIB -I. -Izlib -Iznzlib -Iniftilib
+PKG_CPPFLAGS = -DNDEBUG -DHAVE_ZLIB -I../inst/include -Izlib
 
 OBJECTS_ZLIB = zlib/adler32.o zlib/compress.o zlib/crc32.o zlib/deflate.o zlib/gzclose.o zlib/gzlib.o zlib/gzread.o zlib/gzwrite.o zlib/infback.o zlib/inffast.o zlib/inflate.o zlib/inftrees.o zlib/trees.o zlib/uncompr.o zlib/zutil.o
 

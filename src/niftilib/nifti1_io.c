@@ -1,6 +1,6 @@
 #define _NIFTI1_IO_C_
 
-#include "nifti1_io.h"   /* typedefs, prototypes, macros, etc. */
+#include "niftilib/nifti1_io.h"   /* typedefs, prototypes, macros, etc. */
 
 /*****===================================================================*****/
 /*****     Sample functions to deal with NIFTI-1 and ANALYZE files       *****/
