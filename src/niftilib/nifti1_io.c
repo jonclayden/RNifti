@@ -3527,14 +3527,8 @@ int disp_nifti_1_header( const char * info, const nifti_1_header * hp )
    Rc_fprintf_stdout(" nifti_1_header :\n"
            "    sizeof_hdr     = %d\n"
            "    data_type[10]  = ", hp->sizeof_hdr);
-#ifndef RNIFTYREG
-   print_hex_vals(hp->data_type, 10, stdout);
-#endif
    Rc_fprintf_stdout("\n"
            "    db_name[18]    = ");
-#ifndef RNIFTYREG
-   print_hex_vals(hp->db_name, 18, stdout);
-#endif
    Rc_fprintf_stdout("\n"
            "    extents        = %d\n"
            "    session_error  = %d\n"
@@ -3597,9 +3591,6 @@ int disp_nifti_1_header( const char * info, const nifti_1_header * hp )
            hp->srow_z[0], hp->srow_z[1], hp->srow_z[2], hp->srow_z[3],
            hp->intent_name, hp->magic);
    Rc_fprintf_stdout( "-------------------------------------------------------\n" );
-#ifndef RNIFTYREG
-   fflush(stdout);
-#endif
 
    return 0;
 }
