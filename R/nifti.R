@@ -133,3 +133,8 @@ print.niftiHeader <- function (x, ...)
     for (i in seq_along(widths))
         cat(paste0(paste(rep(" ",maxWidth-widths[i]),collapse=""), names(x)[i], ": ", paste(format(x[[i]],trim=TRUE),collapse="  "), "\n"))
 }
+
+rescaleNifti <- function (image, scales)
+{
+    .Call("rescaleImage", image, scales, PACKAGE="RNifti")
+}
