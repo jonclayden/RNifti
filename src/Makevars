@@ -4,4 +4,4 @@ OBJECTS_ZLIB = zlib/adler32.o zlib/compress.o zlib/crc32.o zlib/deflate.o zlib/g
 
 OBJECTS_NIFTI = znzlib/znzlib.o niftilib/nifti1_io.o
 
-OBJECTS = main.o NiftiImage.o $(OBJECTS_ZLIB) $(OBJECTS_NIFTI)
+OBJECTS = main.o $(OBJECTS_ZLIB) $(OBJECTS_NIFTI)
