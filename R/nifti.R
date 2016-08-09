@@ -40,13 +40,13 @@ readNifti <- function (file, source = NULL, target = NULL, internal = FALSE)
     }
 }
 
-
 #' Write a NIfTI-1 format file
 #' 
 #' This function writes an image to NIfTI-1 format, using the standard NIfTI-1
 #' C library.
 #' 
-#' @param image An image, in any acceptable form (see \code{\link{isImage}}).
+#' @param image An image, in any acceptable form (see
+#'   \code{\link{retrieveNifti}}).
 #' @param file A character string containing a file name.
 #' @param template An optional template object to derive NIfTI-1 properties
 #'   from. Passed to \code{\link{updateNifti}} if \code{image} is an array.
@@ -68,6 +68,29 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
     invisible(.Call("writeNifti", image, file, tolower(datatype), PACKAGE="RNifti"))
 }
 
+#' Obtain an internal NIfTI representation of an object
+#' 
+#' This function converts filenames, arrays and other image classes into an
+#' object of class \code{"internalImage"}.
+#' 
+#' If the \code{object} has an internal NIfTI pointer, that will be retrieved
+#' directly. Otherwise, if it is a string, it will be taken to be a filename.
+#' If it looks like a \code{"nifti"} object (from package \code{oro.nifti}),
+#' or an \code{"MriImage"} object (from package \code{tractor.base}), a
+#' conversion will be attempted. A list will be assumed to be of the form
+#' produced by \code{\link{dumpNifti}}. Finally, a numeric array or matrix
+#' will be converted using default image parameters.
+#'
+#' @param object Any suitable object (see Details).
+#' @return An internal image.
+#' 
+#' @author Jon Clayden <code@@clayden.org>
+#' @seealso \code{\link{readNifti}}, \code{\link{updateNifti}}
+#' @export
+retrieveNifti <- function (object)
+{
+    .Call("readNifti", object, TRUE, PACKAGE="RNifti")
+}
 
 #' Update an internal NIfTI-1 object using a template
 #' 
@@ -77,9 +100,9 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
 #' 
 #' @param image A numeric array.
 #' @param template An image, in any acceptable form (see
-#'   \code{\link{isImage}}), or a named list of NIfTI-1 properties like that
-#'   produced by \code{\link{dumpNifti}}. The default of \code{NULL} will have
-#'   no effect.
+#'   \code{\link{retrieveNifti}}), or a named list of NIfTI-1 properties like
+#'   that produced by \code{\link{dumpNifti}}. The default of \code{NULL} will
+#'   have no effect.
 #' @return A copy of the original \code{image}, with its internal image
 #'   attribute set or updated appropriately.
 #' 
@@ -90,13 +113,13 @@ updateNifti <- function (image, template = NULL)
     .Call("updateNifti", image, template, PACKAGE="RNifti")
 }
 
-
 #' Dump the contents of an internal NIfTI-1 object
 #' 
 #' This function extracts the contents of an internal NIfTI-1 object into an R
 #' list. No processing is done to the elements.
 #' 
-#' @param image An image, in any acceptable form (see \code{\link{isImage}}).
+#' @param image An image, in any acceptable form (see
+#'   \code{\link{retrieveNifti}}).
 #' @param x A \code{"niftiHeader"} object.
 #' @param ... Ignored.
 #' @return For \code{dumpNifti}, a list of class \code{"niftiHeader"}, with

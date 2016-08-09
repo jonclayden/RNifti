@@ -7,7 +7,8 @@
 writeNifti(image, file, template = NULL, datatype = "auto")
 }
 \arguments{
-\item{image}{An image, in any acceptable form (see \code{\link{isImage}}).}
+\item{image}{An image, in any acceptable form (see
+\code{\link{retrieveNifti}}).}
 
 \item{file}{A character string containing a file name.}
 

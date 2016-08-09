@@ -13,7 +13,8 @@ qform(x) <- value
 sform(x) <- value
 }
 \arguments{
-\item{image, x}{An image, in any acceptable form (see \code{\link{isImage}}).}
+\item{image, x}{An image, in any acceptable form (see
+\code{\link{retrieveNifti}}).}
 
 \item{useQuaternionFirst}{A single logical value. If \code{TRUE}, the
 ``qform'' matrix will be used first, if it is defined; otherwise the

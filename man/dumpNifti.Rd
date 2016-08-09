@@ -10,7 +10,8 @@ dumpNifti(image)
 \method{print}{niftiHeader}(x, ...)
 }
 \arguments{
-\item{image}{An image, in any acceptable form (see \code{\link{isImage}}).}
+\item{image}{An image, in any acceptable form (see
+\code{\link{retrieveNifti}}).}
 
 \item{x}{A \code{"niftiHeader"} object.}
 

@@ -8,18 +8,10 @@ typedef std::vector<float> float_vector;
 
 std::map<std::string,short> NiftiImage::DatatypeCodes = NiftiImage::buildDatatypeCodes();
 
-RcppExport SEXP retrieveImage (SEXP _image)
+RcppExport SEXP readNifti (SEXP _object, SEXP _internal)
 {
 BEGIN_RCPP
-    NiftiImage image(_image);
-    return image.toPointer("NIfTI image");
-END_RCPP
-}
-
-RcppExport SEXP readNifti (SEXP _file, SEXP _internal)
-{
-BEGIN_RCPP
-    NiftiImage image(_file);
+    NiftiImage image(_object);
     return image.toArrayOrPointer(as<bool>(_internal), "NIfTI image");
 END_RCPP
 }

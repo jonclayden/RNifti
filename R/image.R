@@ -20,7 +20,6 @@ dim.internalImage <- function (x)
     return (attr(x, "imagedim"))
 }
 
-
 #' @rdname internalImage
 #' @export
 "dim<-.internalImage" <- function (x, value)
@@ -28,14 +27,12 @@ dim.internalImage <- function (x)
     stop("Dimensions of an internal image cannot be changed")
 }
 
-
 #' @rdname internalImage
 #' @export
 as.array.internalImage <- function (x, ...)
 {
     return (.Call("pointerToArray", x, PACKAGE="RNifti"))
 }
-
 
 #' @export
 print.niftiImage <- function (x, ...)
@@ -73,7 +70,6 @@ print.niftiImage <- function (x, ...)
     }
 }
 
-
 #' Number of dimensions
 #' 
 #' This function is shorthand for \code{length(dim(object))}.
@@ -88,7 +84,6 @@ ndim <- function (object)
 {
     length(dim(object))
 }
-
 
 #' Pixel dimensions and units
 #' 
@@ -113,7 +108,6 @@ pixdim <- function (object)
     UseMethod("pixdim")
 }
 
-
 #' @rdname pixdim
 #' @export
 pixdim.default <- function (object)
@@ -126,14 +120,12 @@ pixdim.default <- function (object)
         return (1)
 }
 
-
 #' @rdname pixdim
 #' @export
 "pixdim<-" <- function (object, value)
 {
     UseMethod("pixdim<-")
 }
-
 
 #' @rdname pixdim
 #' @export
@@ -152,14 +144,12 @@ pixdim.default <- function (object)
     return (object)
 }
 
-
 #' @rdname pixdim
 #' @export
 pixunits <- function (object)
 {
     UseMethod("pixunits")
 }
-
 
 #' @rdname pixdim
 #' @export
@@ -171,14 +161,12 @@ pixunits.default <- function (object)
         return ("Unknown")
 }
 
-
 #' @rdname pixdim
 #' @export
 "pixunits<-" <- function (object, value)
 {
     UseMethod("pixunits<-")
 }
-
 
 #' @rdname pixdim
 #' @export

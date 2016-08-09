@@ -10,9 +10,9 @@ updateNifti(image, template = NULL)
 \item{image}{A numeric array.}
 
 \item{template}{An image, in any acceptable form (see
-\code{\link{isImage}}), or a named list of NIfTI-1 properties like that
-produced by \code{\link{dumpNifti}}. The default of \code{NULL} will have
-no effect.}
+\code{\link{retrieveNifti}}), or a named list of NIfTI-1 properties like
+that produced by \code{\link{dumpNifti}}. The default of \code{NULL} will
+have no effect.}
 }
 \value{
 A copy of the original \code{image}, with its internal image

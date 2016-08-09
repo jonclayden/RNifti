@@ -5,7 +5,8 @@
 #' mechanisms are defined by the NIfTI standard, and may both be in use in a
 #' particular image header.
 #' 
-#' @param image,x An image, in any acceptable form (see \code{\link{isImage}}).
+#' @param image,x An image, in any acceptable form (see
+#'   \code{\link{retrieveNifti}}).
 #' @param useQuaternionFirst A single logical value. If \code{TRUE}, the
 #'   ``qform'' matrix will be used first, if it is defined; otherwise the
 #'   ``sform'' matrix will take priority.
@@ -29,7 +30,6 @@ xform <- function (image, useQuaternionFirst = TRUE)
     return (.Call("getXform", image, isTRUE(useQuaternionFirst), PACKAGE="RNifti"))
 }
 
-
 #' @rdname xform
 #' @export
 "qform<-" <- function (x, value)
@@ -37,14 +37,12 @@ xform <- function (image, useQuaternionFirst = TRUE)
     return (.Call("setXform", x, value, TRUE, PACKAGE="RNifti"))
 }
 
-
 #' @rdname xform
 #' @export
 "sform<-" <- function (x, value)
 {
     return (.Call("setXform", x, value, FALSE, PACKAGE="RNifti"))
 }
-
 
 #' Transform points between voxel and ``world'' coordinates
 #' 
@@ -92,7 +90,6 @@ voxelToWorld <- function (points, image, simple = FALSE, ...)
         return (drop(t(newPoints[1:nDims,,drop=FALSE])))
     }
 }
-
 
 #' @rdname voxelToWorld
 #' @export
