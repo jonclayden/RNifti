@@ -4,15 +4,10 @@
 \alias{readNifti}
 \title{Read a NIfTI-1 format file}
 \usage{
-readNifti(file, source = NULL, target = NULL, internal = FALSE)
+readNifti(file, internal = FALSE)
 }
 \arguments{
 \item{file}{A character vector of file names.}
-
-\item{source, target}{If the specified \code{file} contains a transformation,
-these parameters can be used to specify the associated source and target
-images, which are stored in attributes of the same name. Only used if
-\code{file} is of unit length.}
 
 \item{internal}{Logical value. If \code{FALSE} (the default), an array
 of class \code{"niftiImage"}, containing the image pixel or voxel values,
