@@ -1,6 +1,6 @@
 #include <Rcpp.h>
 
-#include "NiftiImage.h"
+#include "lib/NiftiImage.h"
 
 using namespace Rcpp;
 

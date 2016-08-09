@@ -17,7 +17,7 @@
 #endif
 #include "niftilib/nifti1.h"                  /*** NIFTI-1 header specification ***/
 
-#include "print.h"
+#include "lib/print.h"
 #include <znzlib/znzlib.h>
 
 /*=================*/
