@@ -1,7 +1,7 @@
 context("Reading and writing NIfTI files")
 
 test_that("NIfTI files can be read and written", {
-    imagePath <- system.file("extdata", "maskedb0.nii.gz", package="RNifti")
+    imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
     tempPath <- tempfile()
     
     expect_that(dim(readNifti(imagePath,internal=FALSE)), equals(c(96L,96L,60L)))

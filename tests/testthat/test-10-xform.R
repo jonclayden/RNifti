@@ -1,7 +1,7 @@
 context("NIfTI sform/qform operations")
 
 test_that("NIfTI sform/qform operations work", {
-    image <- readNifti(system.file("extdata", "maskedb0.nii.gz", package="RNifti"))
+    image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
     
     expect_that(diag(xform(image)), equals(c(-2.5,2.5,2.5,1)))
     expect_that(diag(xform(image,useQuaternionFirst=FALSE)), equals(c(-2.5,2.5,2.5,1)))
