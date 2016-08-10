@@ -139,7 +139,7 @@ This arrangement is efficient and generally works well, but many R operations st
 It is also possible to use the package's NIfTI-handling code in other R packages' compiled code, thereby obviating the need to duplicate the reference implementation. Moreover, `RNifti` provides a C++ wrapper class, `NiftiImage`, which simplifies memory management, supports the package's internal image pointers and persistence, and provides syntactic sugar. A package can use this class by including
 
 ```
-LinkingTo: RNifti
+LinkingTo: Rcpp, RNifti
 ```
 
 in its `DESCRIPTION` file, and then including the `RNifti.h` header file. For example,
@@ -154,7 +154,7 @@ void myfunction ()
 }
 ```
 
-There are also constructors taking a `SEXP`, another `NiftiImage`, or a `nifti_image` structure from the reference implementation. `NiftiImage` objects can be implicitly cast to pointers to `nifti_image` structs, meaning that they can be directly used in calls to the reference implementation's own API. The latter is accessed through the separate `RNiftiAPI.h` header file.
+There are also constructors taking a `SEXP` (i.e., an R object), another `NiftiImage`, or a `nifti_image` structure from the reference implementation. `NiftiImage` objects can be implicitly cast to pointers to `nifti_image` structs, meaning that they can be directly used in calls to the reference implementation's own API. The latter is accessed through the separate `RNiftiAPI.h` header file.
 
 ```c++
 #include "RNifti.h"
@@ -167,4 +167,4 @@ void myfunction (SEXP image_)
 }
 ```
 
-(`RNifti` will also have to be added to the import list in the package's `DESCRIPTION` file, as well as `LinkingTo`.) The `RNiftiAPI.h` header should only be included once per package, since it contains function implementations. Multiple includes will lead to duplicate symbol warnings from your linker. Therefore, if multiple source files require access to the NIfTI-1 reference implementation, it is recommended that the API header be included alone in a separate ".c" or ".cpp" file, while others only include the main `RNifti.h`.
+(`RNifti` will also have to be added to the `Imports` list in the package's `DESCRIPTION` file, as well as `LinkingTo`.) The `RNiftiAPI.h` header should only be included once per package, since it contains function implementations. Multiple includes will lead to duplicate symbol warnings from your linker. Therefore, if multiple source files require access to the NIfTI-1 reference implementation, it is recommended that the API header be included alone in a separate ".c" or ".cpp" file, while others only include the main `RNifti.h`.
