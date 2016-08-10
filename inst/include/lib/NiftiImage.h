@@ -114,6 +114,16 @@ public:
 #endif
     }
     
+    NiftiImage (const std::string &path, const bool readData = true)
+    {
+        this->image = nifti_image_read(path.c_str(), readData);
+        if (this->image == NULL)
+            throw std::runtime_error("Failed to read image");
+#ifndef NDEBUG
+        Rprintf("Creating NiftiImage with pointer %p\n", this->image);
+#endif
+    }
+    
     NiftiImage (const SEXP object, const bool readData = true);
     
     ~NiftiImage ()
