@@ -8,7 +8,7 @@ There are several packages available for reading and writing NIfTI-1 files in R,
 - [C/C++ API](#api), allowing access to NIfTI images even in compiled code in other packages; and
 - modest dependencies, consisting of only R itself and the very widely-used [Rcpp](https://cran.r-project.org/package=Rcpp) C++ wrapper library.
 
-The latest development version of the package can always been installed from GitHub using the `devtools` package.
+The latest development version of the package can always be installed from GitHub using the `devtools` package.
 
 ```r
 ## install.packages("devtools")
@@ -128,15 +128,15 @@ microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
 
 With a median runtime of just over 4 ms, `RNifti` is typically ten times as fast as any of the alternatives to read an image into R.
 
-## API
-
-*This section will only be of interest to package developers who may want to work with NIfTI images in their compiled code. And perhaps the very curious!*
+## Implementation details
 
 The package does not fully duplicate the NIfTI-1 structure's contents in R-visible objects. Instead, it passes key metadata back to R, such as the image dimensions and pixel dimensions, and it also passes back the pixel values where they are needed. It also creates an [external pointer](http://r-manuals.flakery.org/R-exts.html#External-pointers-and-weak-references) to the native data structure, which is stored in an attribute. This pointer is dereferenced whenever the object is passed back to the C++ code, thereby avoiding unnecessary duplication and ensuring that all metadata remains intact. The full NIfTI-1 header can be obtained using the `dumpNifti` R function, if it is needed.
 
 This arrangement is efficient and generally works well, but many R operations strip attributes—in which case the external pointer will be removed. The internal structure will be built again when necessary, but using default metadata. In these cases, if it is important to keep the original metadata, the `updateNifti` function should be called explicitly, with a template object. This reconstructs the NIfTI-1 data structure, using the template as a starting point.
 
-It is also possible to use the package's NIfTI-handling code in other R packages' compiled code, thereby obviating the need to duplicate the reference implementation. Moreover, `RNifti` provides a C++ wrapper class, `NiftiImage`, which simplifies memory management, supports the package's internal image pointers and persistence, and provides syntactic sugar. A package can use this class by including
+## API
+
+It is possible to use the package's NIfTI-handling code in other R packages' compiled code, thereby obviating the need to duplicate the reference implementation. Moreover, `RNifti` provides a C++ wrapper class, `NiftiImage`, which simplifies memory management, supports the package's internal image pointers and persistence, and provides syntactic sugar. A package can use this class by including
 
 ```
 LinkingTo: Rcpp, RNifti
