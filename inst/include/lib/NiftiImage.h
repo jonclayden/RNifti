@@ -118,7 +118,7 @@ public:
     {
         this->image = nifti_image_read(path.c_str(), readData);
         if (this->image == NULL)
-            throw std::runtime_error("Failed to read image");
+            throw std::runtime_error("Failed to read image from path " + path);
 #ifndef NDEBUG
         Rprintf("Creating NiftiImage with pointer %p\n", this->image);
 #endif
@@ -583,10 +583,10 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
     }
     else if (Rf_isString(object))
     {
-        std::string path = Rcpp::as<std::string>(object);
+        const std::string path = Rcpp::as<std::string>(object);
         this->image = nifti_image_read(path.c_str(), readData);
         if (this->image == NULL)
-            throw std::runtime_error("Failed to read image");
+            throw std::runtime_error("Failed to read image from path " + path);
     }
     else if (imageObject.inherits("nifti"))
         initFromNiftiS4(imageObject, readData);
