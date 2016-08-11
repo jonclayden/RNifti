@@ -40,31 +40,6 @@ public:
         }
     };
     
-    static std::map<std::string,short> DatatypeCodes;
-    static std::map<std::string,short> buildDatatypeCodes ()
-    {
-        std::map<std::string,short> codes;
-        codes["auto"] = DT_NONE;
-        codes["none"] = DT_NONE;
-        codes["unknown"] = DT_NONE;
-        codes["uint8"] = DT_UINT8;
-        codes["char"] = DT_UINT8;
-        codes["int16"] = DT_INT16;
-        codes["short"] = DT_INT16;
-        codes["int32"] = DT_INT32;
-        codes["int"] = DT_INT32;
-        codes["float32"] = DT_FLOAT32;
-        codes["float"] = DT_FLOAT32;
-        codes["float64"] = DT_FLOAT64;
-        codes["double"] = DT_FLOAT64;
-        codes["int8"] = DT_INT8;
-        codes["uint16"] = DT_UINT16;
-        codes["uint32"] = DT_UINT32;
-        codes["int64"] = DT_INT64;
-        codes["uint64"] = DT_UINT64;
-        return codes;
-    }
-    
     static short sexpTypeToNiftiType (const int sexpType)
     {
         if (sexpType == INTSXP || sexpType == LGLSXP)
@@ -195,6 +170,7 @@ public:
     Block volume (const int i) { return Block(*this, 4, i); }
     
     void toFile (const std::string fileName, const short datatype) const;
+    void toFile (const std::string fileName, const std::string &datatype) const;
     
     Rcpp::RObject toArray () const;
     Rcpp::RObject toPointer (const std::string label) const;
@@ -920,6 +896,42 @@ inline void NiftiImage::toFile (const std::string fileName, const short datatype
     if (status != 0)
         throw std::runtime_error("Failed to set filenames for NIfTI object");
     nifti_image_write(imageToWrite);
+}
+
+inline void NiftiImage::toFile (const std::string fileName, const std::string &datatype) const
+{
+    static std::map<std::string,short> datatypeCodes;
+    if (datatypeCodes.empty())
+    {
+        datatypeCodes["auto"] = DT_NONE;
+        datatypeCodes["none"] = DT_NONE;
+        datatypeCodes["unknown"] = DT_NONE;
+        datatypeCodes["uint8"] = DT_UINT8;
+        datatypeCodes["char"] = DT_UINT8;
+        datatypeCodes["int16"] = DT_INT16;
+        datatypeCodes["short"] = DT_INT16;
+        datatypeCodes["int32"] = DT_INT32;
+        datatypeCodes["int"] = DT_INT32;
+        datatypeCodes["float32"] = DT_FLOAT32;
+        datatypeCodes["float"] = DT_FLOAT32;
+        datatypeCodes["float64"] = DT_FLOAT64;
+        datatypeCodes["double"] = DT_FLOAT64;
+        datatypeCodes["int8"] = DT_INT8;
+        datatypeCodes["uint16"] = DT_UINT16;
+        datatypeCodes["uint32"] = DT_UINT32;
+        datatypeCodes["int64"] = DT_INT64;
+        datatypeCodes["uint64"] = DT_UINT64;
+    }
+    
+    if (datatypeCodes.count(datatype) == 0)
+    {
+        std::ostringstream message;
+        message << "Datatype \"" << datatype << "\" is not valid";
+        Rf_warning(message.str().c_str());
+        toFile(fileName, DT_NONE);
+    }
+    else
+        toFile(fileName, datatypeCodes[datatype]);
 }
 
 template <typename SourceType, int SexpType>

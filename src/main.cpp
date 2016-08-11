@@ -6,8 +6,6 @@ using namespace Rcpp;
 
 typedef std::vector<float> float_vector;
 
-std::map<std::string,short> NiftiImage::DatatypeCodes = NiftiImage::buildDatatypeCodes();
-
 RcppExport SEXP readNifti (SEXP _object, SEXP _internal)
 {
 BEGIN_RCPP
@@ -20,16 +18,7 @@ RcppExport SEXP writeNifti (SEXP _image, SEXP _file, SEXP _datatype)
 {
 BEGIN_RCPP
     NiftiImage image(_image);
-    std::string datatypeString = as<std::string>(_datatype);
-    if (NiftiImage::DatatypeCodes.count(datatypeString) == 0)
-    {
-        std::ostringstream message;
-        message << "Datatype \"" << datatypeString << "\" is not valid";
-        Rf_warning(message.str().c_str());
-        
-        datatypeString = "auto";
-    }
-    image.toFile(as<std::string>(_file), NiftiImage::DatatypeCodes[datatypeString]);
+    image.toFile(as<std::string>(_file), as<std::string>(_datatype));
     return R_NilValue;
 END_RCPP
 }
