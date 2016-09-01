@@ -62,7 +62,7 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
     if (is.array(image) && !is.null(template))
         image <- updateNifti(image, template)
     
-    invisible(.Call("writeNifti", image, file, tolower(datatype), PACKAGE="RNifti"))
+    invisible(.Call("writeNifti", image, path.expand(file), tolower(datatype), PACKAGE="RNifti"))
 }
 
 #' Obtain an internal NIfTI representation of an object
