@@ -11,7 +11,6 @@ nii2oro = function(image) {
   arr = as(image, "array")
   hdr = dumpNifti(image)
   
-  hdr_names = sort(names(hdr))
   
   stopifnot( !("dim_" %in% names(hdr)))
   hdr$dim_ = hdr$dim
@@ -22,6 +21,7 @@ nii2oro = function(image) {
   #######################################
   # Get the names
   #######################################
+  hdr_names = sort(names(hdr))
   img_names = sort(slotNames(img))
   
   #######################################
