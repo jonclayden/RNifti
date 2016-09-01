@@ -96,37 +96,40 @@ writeNifti(image, "file.nii.gz")
 
 ## Performance
 
-The `RNifti` package uses the robust NIfTI-1 reference implementation, which is written in C, to read and write NIfTI files. It also uses the standard NIfTI-1 data structure as its canonical representation of a file in memory. Together, these make the package extremely fast, as the following benchmark against packages [`AnalyzeFMRI`](https://cran.r-project.org/package=AnalyzeFMRI), [`neuroim`](https://cran.r-project.org/package=neuroim), [`oro.nifti`](https://cran.r-project.org/package=oro.nifti) and [`tractor.base`](https://cran.r-project.org/package=tractor.base) shows.
+The `RNifti` package uses the robust NIfTI-1 reference implementation, which is written in C, to read and write NIfTI files. It also uses the standard NIfTI-1 data structure as its canonical representation of a file in memory. Together, these make the package extremely fast, as the following benchmark against packages [`AnalyzeFMRI`](https://cran.r-project.org/package=AnalyzeFMRI), [`ANTsR`](https://github.com/stnava/ANTsR),  [`neuroim`](https://cran.r-project.org/package=neuroim), [`oro.nifti`](https://cran.r-project.org/package=oro.nifti) and [`tractor.base`](https://cran.r-project.org/package=tractor.base) shows.
 
 ```r
-installed.packages()[c("AnalyzeFMRI","neuroim","oro.nifti","RNifti",
+installed.packages()[c("AnalyzeFMRI","ANTsR","neuroim","oro.nifti","RNifti",
                        "tractor.base"), "Version"]
-#  AnalyzeFMRI      neuroim    oro.nifti       RNifti tractor.base 
-#     "1.1-16"      "0.0.6"    "0.5.5.2"      "0.1.0"      "3.0.5" 
+#  AnalyzeFMRI        ANTsR      neuroim    oro.nifti       RNifti tractor.base
+#     "1.1-16"      "0.3.3"      "0.0.6"    "0.5.5.2"      "0.1.0"      "3.0.5"
 
 library(microbenchmark)
 microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
+               ANTsR::antsImageRead("example.nii"),
                neuroim::loadVolume("example.nii"),
                oro.nifti::readNIfTI("example.nii"),
                RNifti::readNifti("example.nii"),
                tractor.base::readImageFile("example.nii"))
 # Output level is not set; defaulting to "Info"
 # Unit: milliseconds
-#                                        expr       min        lq      mean
-#   AnalyzeFMRI::f.read.volume("example.nii") 35.257563 42.604118  66.32578
-#          neuroim::loadVolume("example.nii") 52.529019 61.301876 130.82085
-#         oro.nifti::readNIfTI("example.nii") 79.877138 92.201510 174.57330
-#            RNifti::readNifti("example.nii")  3.004172  3.702351  14.00659
-#  tractor.base::readImageFile("example.nii") 45.307781 51.006998  61.80458
-#      median         uq       max neval
-#   45.303426  50.106693  556.8474   100
-#   66.444186 192.282696 2580.7596   100
-#  215.847429 224.826626  712.8495   100
-#    4.472429   7.061472  168.5171   100
-#   54.334831  57.776505  216.4457   100
+#                                        expr       min        lq       mean
+#   AnalyzeFMRI::f.read.volume("example.nii") 25.532280 27.216641  46.646448
+#         ANTsR::antsImageRead("example.nii")  1.805555  2.282496   3.430417
+#          neuroim::loadVolume("example.nii") 33.639202 36.367228  87.101533
+#         oro.nifti::readNIfTI("example.nii") 45.836130 49.692145 126.697245
+#            RNifti::readNifti("example.nii")  1.312822  1.646371   7.239342
+#  tractor.base::readImageFile("example.nii") 38.091666 39.628323  48.573645
+#      median         uq        max neval
+#   28.486199  31.441231  535.60771   100
+#    2.434518   2.614578   96.20713   100
+#   38.556286  56.650639 2071.82043   100
+#  154.908146 162.407670  494.26035   100
+#    1.970080   3.104831  122.78295   100
+#   40.752468  42.635031  249.59664   100
 ```
 
-With a median runtime of just over 4 ms, `RNifti` is typically ten times as fast as any of the alternatives to read an image into R.
+With a median runtime of less than 2 ms, `RNifti` is typically at least ten times as fast as the alternatives to read this image into R. The exception is `ANTsR`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsR` has substantial dependencies, which may affect its suitability in some applications.
 
 ## Implementation details
 
