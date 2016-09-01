@@ -5,10 +5,12 @@ Title: Fast R and C++ Access to NIfTI Images
 Author: Jon Clayden
 Maintainer: Jon Clayden <code@clayden.org>
 Imports:
-    Rcpp (>= 0.11.0)
+    Rcpp (>= 0.11.0),
+    oro.nifti,
+    methods
 Suggests:
     testthat (>= 0.11.0)
-Enhances: oro.nifti, tractor.base
+Enhances: tractor.base
 LinkingTo: Rcpp
 Description: Provides very fast access to images stored in the NIfTI-1 file
     format <http://nifti.nimh.nih.gov/nifti-1>, with seamless synchronisation
@@ -18,4 +20,4 @@ License: GPL-2
 URL: https://github.com/jonclayden/RNifti
 BugReports: https://github.com/jonclayden/RNifti/issues
 Encoding: UTF-8
-RoxygenNote: 5.0.1
+RoxygenNote: 5.0.1.9000
