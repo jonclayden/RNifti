@@ -75,7 +75,7 @@ public:
     {
         this->copy(source);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p\n", this->image);
+        Rprintf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
 #endif
     }
     
@@ -85,7 +85,7 @@ public:
         if (copy)
             this->copy(image);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p\n", this->image);
+        Rprintf("Creating NiftiImage with pointer %p (from pointer)\n", this->image);
 #endif
     }
     
@@ -95,7 +95,7 @@ public:
         if (this->image == NULL)
             throw std::runtime_error("Failed to read image from path " + path);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p\n", this->image);
+        Rprintf("Creating NiftiImage with pointer %p (from string)\n", this->image);
 #endif
     }
     
@@ -119,12 +119,18 @@ public:
     NiftiImage & operator= (const NiftiImage &source)
     {
         copy(source);
+#ifndef NDEBUG
+        Rprintf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
+#endif
         return *this;
     }
     
     NiftiImage & operator= (const Block &source)
     {
         copy(source);
+#ifndef NDEBUG
+        Rprintf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
+#endif
         return *this;
     }
     
@@ -579,7 +585,7 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
         nifti_update_dims_from_array(this->image);
     
 #ifndef NDEBUG
-    Rprintf("Creating NiftiImage with pointer %p\n", this->image);
+    Rprintf("Creating NiftiImage with pointer %p (from SEXP)\n", this->image);
 #endif
 }
 
