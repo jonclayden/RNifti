@@ -124,7 +124,7 @@ public:
 #endif
         return *this;
     }
-    
+
     NiftiImage & operator= (const Block &source)
     {
         copy(source);
@@ -551,35 +551,48 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
     : persistent(false)
 {
     Rcpp::RObject imageObject(object);
+    bool resolved = false;
     
-    if (Rf_isNull(object))
-        this->image = NULL;
-    else if (imageObject.hasAttribute(".nifti_image_ptr"))
+    if (imageObject.hasAttribute(".nifti_image_ptr"))
     {
         Rcpp::XPtr<NiftiImage> imagePtr(SEXP(imageObject.attr(".nifti_image_ptr")));
-        this->image = *imagePtr;
-        this->persistent = true;
-        
-        if (imageObject.hasAttribute("dim"))
-            update(object);
+        if (imagePtr.get() != NULL)
+        {
+            this->image = *imagePtr;
+            this->persistent = true;
+            resolved = true;
+            
+            if (imageObject.hasAttribute("dim"))
+                update(object);
+        }
+        else if (Rf_isString(object))
+            throw std::runtime_error("Internal image is not valid");
+        else
+            Rf_warning("Ignoring invalid internal pointer");
     }
-    else if (Rf_isString(object))
+    
+    if (!resolved)
     {
-        const std::string path = Rcpp::as<std::string>(object);
-        this->image = nifti_image_read(path.c_str(), readData);
-        if (this->image == NULL)
-            throw std::runtime_error("Failed to read image from path " + path);
+        if (Rf_isNull(object))
+            this->image = NULL;
+        else if (Rf_isString(object))
+        {
+            const std::string path = Rcpp::as<std::string>(object);
+            this->image = nifti_image_read(path.c_str(), readData);
+            if (this->image == NULL)
+                throw std::runtime_error("Failed to read image from path " + path);
+        }
+        else if (imageObject.inherits("nifti"))
+            initFromNiftiS4(imageObject, readData);
+        else if (imageObject.inherits("MriImage"))
+            initFromMriImage(imageObject, readData);
+        else if (Rf_isVectorList(object))
+            initFromList(imageObject);
+        else if (imageObject.hasAttribute("dim"))
+            initFromArray(imageObject, readData);
+        else
+            throw std::runtime_error("Cannot convert object of class \"" + Rcpp::as<std::string>(imageObject.attr("class")) + "\" to a nifti_image");
     }
-    else if (imageObject.inherits("nifti"))
-        initFromNiftiS4(imageObject, readData);
-    else if (imageObject.inherits("MriImage"))
-        initFromMriImage(imageObject, readData);
-    else if (Rf_isVectorList(object))
-        initFromList(imageObject);
-    else if (imageObject.hasAttribute("dim"))
-        initFromArray(imageObject, readData);
-    else
-        throw std::runtime_error("Cannot convert object of class \"" + Rcpp::as<std::string>(imageObject.attr("class")) + "\" to a nifti_image");
     
     if (this->image != NULL)
         nifti_update_dims_from_array(this->image);
