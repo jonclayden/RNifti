@@ -71,7 +71,7 @@ public:
         : image(NULL), persistent(false) {}
     
     NiftiImage (const NiftiImage &source)
-        : persistent(false)
+        : image(NULL), persistent(false)
     {
         this->copy(source);
 #ifndef NDEBUG
@@ -80,16 +80,19 @@ public:
     }
     
     NiftiImage (nifti_image * const image, const bool copy = false)
-        : image(image), persistent(false)
+        : image(NULL), persistent(false)
     {
         if (copy)
             this->copy(image);
+        else
+            this->image = image;
 #ifndef NDEBUG
         Rprintf("Creating NiftiImage with pointer %p (from pointer)\n", this->image);
 #endif
     }
     
     NiftiImage (const std::string &path, const bool readData = true)
+        : persistent(false)
     {
         this->image = nifti_image_read(path.c_str(), readData);
         if (this->image == NULL)
@@ -186,7 +189,12 @@ public:
 
 inline void NiftiImage::copy (nifti_image * const source)
 {
-    if (source != NULL)
+    if (image != NULL)
+        nifti_image_free(image);
+        
+    if (source == NULL)
+        image = NULL;
+    else
     {
         image = nifti_copy_nim_info(source);
         if (source->data != NULL)
@@ -206,8 +214,13 @@ inline void NiftiImage::copy (const NiftiImage &source)
 
 inline void NiftiImage::copy (const Block &source)
 {
+    if (image != NULL)
+        nifti_image_free(image);
+    
     nifti_image *sourceStruct = source.image;
-    if (sourceStruct != NULL)
+    if (sourceStruct == NULL)
+        image = NULL;
+    else
     {
         image = nifti_copy_nim_info(sourceStruct);
         image->dim[0] = source.image->dim[0] - 1;
