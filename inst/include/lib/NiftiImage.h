@@ -348,7 +348,7 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
     Rcpp::RObject data = mriImage.field("data");
     if (data.inherits("SparseArray"))
     {
-        Rcpp::Language call("Rcpp::as.array", data);
+        Rcpp::Language call("as.array", data);
         data = call.eval();
     }
     
