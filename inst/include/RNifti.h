@@ -5,6 +5,14 @@
 
 #ifdef __cplusplus
 #include "lib/NiftiImage.h"
+
+extern "C" {
+#endif
+
+extern void niftilib_register_all ();
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
