@@ -1184,6 +1184,14 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
 {
     if (source == NULL)
         return Rcpp::RObject();
+    else if (source->data == NULL)
+    {
+        Rf_warning("Internal image contains no data - filling array with NAs");
+        Rcpp::Vector<SexpType> array(static_cast<int>(source->nvox));
+        // Rcpp's proxy infrastructure should handle converting NA_REAL to the appropriate NA
+        std::fill(array.begin(), array.end(), NA_REAL);
+        return array;
+    }
     else
     {
         SourceType *original = static_cast<SourceType *>(source->data);
