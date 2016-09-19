@@ -1,0 +1,33 @@
+Significant changes to the RNifti package are laid out below for each release.
+
+===============================================================================
+
+VERSION 0.2.0
+
+- The writeNifti() function now performs path expansion on its argument,
+  matching the behaviour of readNifti(). (Reported by John Muschelli.)
+- Calling as.array() on an internal image containing no data now returns an
+  array full of NAs (with a warning), rather than crashing R. (Reported by Tim
+  Tierney.)
+- The package should now work correctly with sparse MriImage objects, from
+  first-party package "tractor.base".
+- Images with invalid internal pointers are now handled (with a warning) by
+  attempting to reconstruct the missing data structure. This should not happen
+  in regular use, but can occur when external pointers are handed back to the
+  main thread by worker threads when working in parallel. (Reported by Takeo
+  Katsuki.)
+- Calling the RNifti API from within OpenMP threads could previously lead to a
+  stack imbalance. This is now guarded against, and a new C function,
+  niftilib_register_all(), has been added as the recommended way to preregister
+  all NIfTI-1 library functions wrapped by RNifti, particularly in threaded
+  applications.
+- Doxygen comments have been added to the C++ code to document the low-level
+  API. A Doxyfile has also been added to the package root directory.
+
+===============================================================================
+
+VERSION 0.1.0
+
+- First public release.
+
+===============================================================================
