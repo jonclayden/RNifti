@@ -2,6 +2,14 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.2.1
+
+- Examples have been added to the R-level documentation.
+- Image pixel dimensions are now used to return a more sensible xform matrix in
+  the case where the NIfTI-1 sform and qform are both marked unknown.
+
+===============================================================================
+
 VERSION 0.2.0
 
 - The writeNifti() function now performs path expansion on its argument,
