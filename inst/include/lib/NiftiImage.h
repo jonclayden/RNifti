@@ -996,12 +996,19 @@ inline mat44 NiftiImage::xform (const bool preferQuaternion) const
     }
     else if (image->qform_code <= 0 && image->sform_code <= 0)
     {
-        // No qform or sform so return RAS matrix (NB: other software may assume differently)
+        // No qform or sform so use pixdim (NB: other software may assume differently)
         mat44 matrix;
         for (int i=0; i<4; i++)
         {
             for (int j=0; j<4; j++)
-                matrix.m[i][j] = (i==j ? 1.0 : 0.0);
+            {
+                if (i != j)
+                    matrix.m[i][j] = 0.0;
+                else if (i == 3)
+                    matrix.m[3][3] = 1.0;
+                else
+                    matrix.m[i][j] = (image->pixdim[i+1]==0.0 ? 1.0 : image->pixdim[i+1]);
+            }
         }
         return matrix;
     }
