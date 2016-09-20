@@ -16,6 +16,10 @@ The dimensionality of the object. Objects without a \code{dim}
 \description{
 This function is shorthand for \code{length(dim(object))}.
 }
+\examples{
+ndim(array(0L, dim=c(10,10)))
+
+}
 \author{
 Jon Clayden <code@clayden.org>
 }

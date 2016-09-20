@@ -21,6 +21,16 @@
 #'   Modifying the transforms without knowing what you're doing is usually
 #'   unwise, as you can make the image object inconsistent.
 #' 
+#' @examples
+#' im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+#' xform(im)
+#' 
+#' # Remove the qform information
+#' qform(im) <- structure(diag(4), code=0L)
+#' 
+#' # The same as above, since the sform is unmodified
+#' xform(im)
+#' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @references The NIfTI-1 standard (\url{http://nifti.nimh.nih.gov/nifti-1})
 #'   is the definitive reference on ``xform'' conventions.
@@ -62,6 +72,12 @@ xform <- function (image, useQuaternionFirst = TRUE)
 #' 
 #' @note Voxel coordinates are assumed by these functions to use R's indexing
 #'   convention, beginning from 1.
+#' 
+#' @examples
+#' im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+#' 
+#' # Find the origin
+#' worldToVoxel(c(0,0,0), im)
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{xform}}, \code{\link{pixdim}}, \code{\link{pixunits}}

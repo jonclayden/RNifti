@@ -21,6 +21,11 @@
 #'   the storage type used in the file. See also the \code{datatype} argument
 #'   to \code{\link{writeNifti}}.
 #' 
+#' @examples
+#' path <- system.file("extdata", "example.nii.gz", package="RNifti")
+#' readNifti(path)
+#' readNifti(path, internal=TRUE)
+#' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{writeNifti}}
 #' @references The NIfTI-1 standard (\url{http://nifti.nimh.nih.gov/nifti-1}).
@@ -52,6 +57,9 @@ readNifti <- function (file, internal = FALSE)
 #'   original datatype. Other possibilities are \code{"float"}, \code{"int16"},
 #'   etc., which may be preferred to reduce file size. However, no checks are
 #'   done to ensure that the coercion maintains precision.
+#' 
+#' @examples
+#' \dontrun{writeNifti(im, "image.nii.gz", datatype="float")}
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{readNifti}}, \code{\link{updateNifti}}
@@ -121,6 +129,12 @@ updateNifti <- function (image, template = NULL)
 #' @param ... Ignored.
 #' @return For \code{dumpNifti}, a list of class \code{"niftiHeader"}, with
 #'   named components corresponding to the elements in a raw NIfTI-1 file.
+#' 
+#' @examples
+#' dumpNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+#' 
+#' # Default header for a standard R array
+#' dumpNifti(array(0L, dim=c(10,10)))
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @references The NIfTI-1 standard (\url{http://nifti.nimh.nih.gov/nifti-1}).

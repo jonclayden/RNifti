@@ -40,6 +40,17 @@ The qform and sform replacement functions are for advanced users only.
   Modifying the transforms without knowing what you're doing is usually
   unwise, as you can make the image object inconsistent.
 }
+\examples{
+im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+xform(im)
+
+# Remove the qform information
+qform(im) <- structure(diag(4), code=0L)
+
+# The same as above, since the sform is unmodified
+xform(im)
+
+}
 \author{
 Jon Clayden <code@clayden.org>
 }

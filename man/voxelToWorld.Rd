@@ -34,6 +34,13 @@ and back. Actual pixel units can be obtained using the
 Voxel coordinates are assumed by these functions to use R's indexing
   convention, beginning from 1.
 }
+\examples{
+im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+
+# Find the origin
+worldToVoxel(c(0,0,0), im)
+
+}
 \author{
 Jon Clayden <code@clayden.org>
 }

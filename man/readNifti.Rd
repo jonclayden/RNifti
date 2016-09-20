@@ -33,6 +33,12 @@ If the \code{internal} argument is \code{FALSE} (the default), the
   the storage type used in the file. See also the \code{datatype} argument
   to \code{\link{writeNifti}}.
 }
+\examples{
+path <- system.file("extdata", "example.nii.gz", package="RNifti")
+readNifti(path)
+readNifti(path, internal=TRUE)
+
+}
 \author{
 Jon Clayden <code@clayden.org>
 }

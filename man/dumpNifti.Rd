@@ -25,6 +25,13 @@ For \code{dumpNifti}, a list of class \code{"niftiHeader"}, with
 This function extracts the contents of an internal NIfTI-1 object into an R
 list. No processing is done to the elements.
 }
+\examples{
+dumpNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+
+# Default header for a standard R array
+dumpNifti(array(0L, dim=c(10,10)))
+
+}
 \author{
 Jon Clayden <code@clayden.org>
 }

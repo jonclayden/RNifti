@@ -25,6 +25,10 @@ done to ensure that the coercion maintains precision.}
 This function writes an image to NIfTI-1 format, using the standard NIfTI-1
 C library.
 }
+\examples{
+\dontrun{writeNifti(image, "image.nii.gz", datatype="float")}
+
+}
 \author{
 Jon Clayden <code@clayden.org>
 }

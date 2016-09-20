@@ -78,6 +78,9 @@ print.niftiImage <- function (x, ...)
 #' @return The dimensionality of the object. Objects without a \code{dim}
 #'   attribute will produce zero.
 #' 
+#' @examples
+#' ndim(array(0L, dim=c(10,10)))
+#' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @export
 ndim <- function (object)
@@ -100,6 +103,11 @@ ndim <- function (object)
 #' @return \code{pixdim} returns a numeric vector of pixel dimensions.
 #'   \code{pixunits} returns a character vector of length up to two, giving the
 #'   spatial and temporal unit names.
+#' 
+#' @examples
+#' im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+#' pixdim(im)
+#' pixunits(im)
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @export
