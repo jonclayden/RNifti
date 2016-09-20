@@ -139,7 +139,9 @@ This arrangement is efficient and generally works well, but many R operations st
 
 ## API
 
-It is possible to use the package's NIfTI-handling code in other R packages' compiled code, thereby obviating the need to duplicate the reference implementation. Moreover, `RNifti` provides a C++ wrapper class, `NiftiImage`, which simplifies memory management, supports the package's internal image pointers and persistence, and provides syntactic sugar. A package can use this class by including
+It is possible to use the package's NIfTI-handling code in other R packages' compiled code, thereby obviating the need to duplicate the reference implementation. Moreover, `RNifti` provides a C++ wrapper class, `NiftiImage`, which simplifies memory management, supports the package's internal image pointers and persistence, and provides syntactic sugar. Full doxygen documentation for this class is available at <http://doxygen.flakery.org/RNifti/>, and is also provided with package releases.
+
+A third-party package can use the `NiftiImage` class by including
 
 ```
 LinkingTo: Rcpp, RNifti
