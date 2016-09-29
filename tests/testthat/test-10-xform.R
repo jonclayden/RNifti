@@ -12,6 +12,9 @@ test_that("NIfTI sform/qform operations work", {
     expect_that(worldToVoxel(voxelToWorld(point,image),image), equals(point))
     expect_that(worldToVoxel(voxelToWorld(point,image,simple=TRUE),image,simple=TRUE), equals(point))
     
+    # NB: indexing into the image currently discards the metadata, including the xforms
+    expect_that(voxelToWorld(point[1:2],image[,,20L]), equals(c(39,39)))
+    
     xform <- structure(round(xform(image)), code=4)
     qform(image) <- xform
     sform(image) <- xform

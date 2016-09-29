@@ -98,8 +98,11 @@ voxelToWorld <- function (points, image, simple = FALSE, ...)
         affine <- xform(image, ...)
         
         nDims <- ncol(points)
-        if (nDims != 3)
-            stop("Points must be three-dimensional")
+        if (nDims != 2 && nDims != 3)
+            stop("Points must be two- or three-dimensional")
+        
+        if (nDims == 2)
+            affine <- matrix(affine[c(1,2,4,5,6,8,13,14,16)], ncol=3, nrow=3)
         
         points <- cbind(points-1, 1)
         newPoints <- affine %*% t(points)
@@ -125,8 +128,11 @@ worldToVoxel <- function (points, image, simple = FALSE, ...)
         affine <- solve(xform(image, ...))
         
         nDims <- ncol(points)
-        if (nDims != 3)
-            stop("Points must be three-dimensional")
+        if (nDims != 2 && nDims != 3)
+            stop("Points must be two- or three-dimensional")
+        
+        if (nDims == 2)
+            affine <- matrix(affine[c(1,2,4,5,6,8,13,14,16)], ncol=3, nrow=3)
         
         points <- cbind(points, 1)
         newPoints <- affine %*% t(points) + 1
