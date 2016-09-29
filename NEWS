@@ -2,6 +2,13 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.2.2
+
+- The voxelToWorld() and worldToVoxel() functions now handle 2D points, rather
+  than producing an error. (Reported by Takeo Katsuki.)
+
+===============================================================================
+
 VERSION 0.2.1
 
 - Examples have been added to the R-level documentation.
@@ -36,6 +43,6 @@ VERSION 0.2.0
 
 VERSION 0.1.0
 
-- First public release.
+- First public release. Package code has been split off from "RNiftyReg".
 
 ===============================================================================

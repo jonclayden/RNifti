@@ -1,6 +1,6 @@
 Package: RNifti
-Version: 0.2.1
-Date: 2016-09-20
+Version: 0.2.2
+Date: 2016-09-29
 Title: Fast R and C++ Access to NIfTI Images
 Author: Jon Clayden
 Maintainer: Jon Clayden <code@clayden.org>
