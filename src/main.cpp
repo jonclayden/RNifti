@@ -3,6 +3,7 @@
 #include "lib/NiftiImage.h"
 
 using namespace Rcpp;
+using namespace RNifti;
 
 typedef std::vector<float> float_vector;
 
