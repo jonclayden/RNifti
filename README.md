@@ -154,7 +154,7 @@ in its `DESCRIPTION` file, and then including the `RNifti.h` header file. For ex
 
 void myfunction ()
 {
-    NiftiImage image("example.nii.gz");
+    RNifti::NiftiImage image("example.nii.gz");
     // Do something with the image
 }
 ```
@@ -167,7 +167,7 @@ There are also constructors taking a `SEXP` (i.e., an R object), another `NiftiI
 
 void myfunction (SEXP image_)
 {
-    NiftiImage image(image_);
+    RNifti::NiftiImage image(image_);
     const size_t volsize = nifti_get_volsize(image);
 }
 ```
