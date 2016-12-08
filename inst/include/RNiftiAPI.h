@@ -27,6 +27,8 @@ static int(*_nifti_set_filenames)(nifti_image*, const char*, int, int) = NULL;
 static nifti_image *(*_nifti_image_read)(const char*, int) = NULL;
 static void(*_nifti_image_write)(nifti_image *) = NULL;
 
+static float(*_nifti_mat33_rownorm)(mat33) = NULL;
+static float(*_nifti_mat33_colnorm)(mat33) = NULL;
 static float(*_nifti_mat33_determ)(mat33) = NULL;
 static mat33(*_nifti_mat33_inverse)(mat33) = NULL;
 static mat33(*_nifti_mat33_mul)(mat33, mat33) = NULL;
@@ -34,6 +36,11 @@ static mat33(*_nifti_mat33_polar)(mat33) = NULL;
 static mat44(*_nifti_mat44_inverse)(mat44) = NULL;
 static void(*_nifti_mat44_to_quatern)(mat44, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *) = NULL;
 static mat44(*_nifti_quatern_to_mat44)(float, float, float, float, float, float, float, float, float, float) = NULL;
+
+static void(*_nifti_swap_2bytes)(size_t, void *) = NULL;
+static void(*_nifti_swap_4bytes)(size_t, void *) = NULL;
+static void(*_nifti_swap_8bytes)(size_t, void *) = NULL;
+static void(*_nifti_swap_16bytes)(size_t, void *) = NULL;
 
 void niftilib_register_all ()
 {
@@ -59,6 +66,8 @@ void niftilib_register_all ()
         _nifti_image_read = (nifti_image *(*)(const char*, int)) R_GetCCallable("RNifti","nii_image_read");
         _nifti_image_write = (void(*)(nifti_image *)) R_GetCCallable("RNifti","nii_image_write");
         
+        _nifti_mat33_rownorm = (float(*)(mat33)) R_GetCCallable("RNifti","nii_mat33_rownorm");
+        _nifti_mat33_colnorm = (float(*)(mat33)) R_GetCCallable("RNifti","nii_mat33_colnorm");
         _nifti_mat33_determ = (float(*)(mat33)) R_GetCCallable("RNifti","nii_mat33_determ");
         _nifti_mat33_inverse = (mat33(*)(mat33)) R_GetCCallable("RNifti","nii_mat33_inverse");
         _nifti_mat33_mul = (mat33(*)(mat33, mat33)) R_GetCCallable("RNifti","nii_mat33_mul");
@@ -66,6 +75,11 @@ void niftilib_register_all ()
         _nifti_mat44_inverse = (mat44(*)(mat44)) R_GetCCallable("RNifti","nii_mat44_inverse");
         _nifti_mat44_to_quatern = (void(*)(mat44, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *)) R_GetCCallable("RNifti","nii_mat44_to_quatern");
         _nifti_quatern_to_mat44 = (mat44(*)(float, float, float, float, float, float, float, float, float, float)) R_GetCCallable("RNifti","nii_quatern_to_mat44");
+        
+        _nifti_swap_2bytes = (void(*)(size_t, void *)) R_GetCCallable("RNifti","nii_swap_2bytes");
+        _nifti_swap_4bytes = (void(*)(size_t, void *)) R_GetCCallable("RNifti","nii_swap_4bytes");
+        _nifti_swap_8bytes = (void(*)(size_t, void *)) R_GetCCallable("RNifti","nii_swap_8bytes");
+        _nifti_swap_16bytes = (void(*)(size_t, void *)) R_GetCCallable("RNifti","nii_swap_16bytes");
     }
 }
 
@@ -174,6 +188,20 @@ void nifti_image_write (nifti_image *nim)
     _nifti_image_write(nim);
 }
 
+float nifti_mat33_rownorm (mat33 A)
+{
+    if (_nifti_mat33_rownorm == NULL)
+        niftilib_register_all();
+    return _nifti_mat33_rownorm(A);
+}
+
+float nifti_mat33_colnorm (mat33 A)
+{
+    if (_nifti_mat33_colnorm == NULL)
+        niftilib_register_all();
+    return _nifti_mat33_colnorm(A);
+}
+
 float nifti_mat33_determ (mat33 R)
 {
     if (_nifti_mat33_determ == NULL)
@@ -221,6 +249,34 @@ mat44 nifti_quatern_to_mat44 (float qb, float qc, float qd, float qx, float qy, 
     if (_nifti_quatern_to_mat44 == NULL)
         niftilib_register_all();
     return _nifti_quatern_to_mat44(qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac);
+}
+
+void nifti_swap_2bytes (size_t n, void *ar)
+{
+    if (_nifti_swap_2bytes == NULL)
+        niftilib_register_all();
+    _nifti_swap_2bytes(n, ar);
+}
+
+void nifti_swap_4bytes (size_t n, void *ar)
+{
+    if (_nifti_swap_4bytes == NULL)
+        niftilib_register_all();
+    _nifti_swap_4bytes(n, ar);
+}
+
+void nifti_swap_8bytes (size_t n, void *ar)
+{
+    if (_nifti_swap_8bytes == NULL)
+        niftilib_register_all();
+    _nifti_swap_8bytes(n, ar);
+}
+
+void nifti_swap_16bytes (size_t n, void *ar)
+{
+    if (_nifti_swap_16bytes == NULL)
+        niftilib_register_all();
+    _nifti_swap_16bytes(n, ar);
 }
 
 #ifdef __cplusplus
