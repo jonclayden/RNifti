@@ -2,6 +2,20 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.3.0
+
+- C++ API change: the NiftiImage class is now defined within an RNifti
+  namespace. This will break existing uses of the class, but compatibility with
+  older versions of the package can be preserved if desired, by checking for
+  the compile-time constant HAVE_RNIFTI_NAMESPACE, which will be defined from
+  now on.
+- Additional niftilib functions for calculating matrix norms and byte swapping
+  are now exposed through the RNifti API.
+- Calling the C/C++ function niftilib_register_all() more than once should no
+  longer result in repeated re-registration of functions.
+
+===============================================================================
+
 VERSION 0.2.2
 
 - The voxelToWorld() and worldToVoxel() functions now handle 2D points, rather
