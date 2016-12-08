@@ -47,6 +47,7 @@ void niftilib_register_all ()
 #ifdef _OPENMP
 #pragma omp critical
 #endif
+    if (_nifti_make_new_header == NULL)
     {
         _nifti_make_new_header = (nifti_1_header*(*)(const int*, int)) R_GetCCallable("RNifti","nii_make_new_header");
         _nifti_make_new_nim = (nifti_image*(*)(const int*, int, int)) R_GetCCallable("RNifti","nii_make_new_nim");
