@@ -812,6 +812,8 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
         }
         else if (imageObject.inherits("nifti"))
             initFromNiftiS4(imageObject, readData);
+        else if (imageObject.inherits("anlz"))
+            throw std::runtime_error("Cannot currently convert objects of class \"anlz\"");
         else if (imageObject.inherits("MriImage"))
             initFromMriImage(imageObject, readData);
         else if (Rf_isVectorList(object))
