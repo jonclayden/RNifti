@@ -96,7 +96,7 @@ protected:
      * Copy the contents of a \c nifti_image to create a new image
      * @param source A pointer to a \c nifti_image
     **/
-    void copy (nifti_image * const source);
+    void copy (const nifti_image *source);
     
     /**
      * Copy the contents of another \c NiftiImage to create a new image
@@ -226,14 +226,24 @@ public:
     }
     
     /**
-     * Allows a \c NiftiImage object to be treated as a pointer to a \c nifti_image
+     * Allows a \c NiftiImage object to be treated as a pointer to a \c const \c nifti_image
     **/
-    operator nifti_image* () const { return image; }
+    operator const nifti_image* () const { return image; }
     
     /**
      * Allows a \c NiftiImage object to be treated as a pointer to a \c nifti_image
     **/
-    nifti_image * operator-> () const { return image; }
+    operator nifti_image* () { return image; }
+   
+    /**
+     * Allows a \c NiftiImage object to be treated as a pointer to a \c const \c nifti_image
+    **/
+    const nifti_image * operator-> () const { return image; }
+    
+    /**
+     * Allows a \c NiftiImage object to be treated as a pointer to a \c nifti_image
+    **/
+    nifti_image * operator-> () { return image; }
     
     /**
      * Copy assignment operator, which copies from its argument
@@ -402,7 +412,7 @@ public:
     Rcpp::RObject headerToList () const;
 };
 
-inline void NiftiImage::copy (nifti_image * const source)
+inline void NiftiImage::copy (const nifti_image *source)
 {
     if (image != NULL)
         nifti_image_free(image);
@@ -423,7 +433,7 @@ inline void NiftiImage::copy (nifti_image * const source)
 
 inline void NiftiImage::copy (const NiftiImage &source)
 {
-    nifti_image *sourceStruct = source;
+    const nifti_image *sourceStruct = source;
     copy(sourceStruct);
 }
 
@@ -432,7 +442,7 @@ inline void NiftiImage::copy (const Block &source)
     if (image != NULL)
         nifti_image_free(image);
     
-    nifti_image *sourceStruct = source.image;
+    const nifti_image *sourceStruct = source.image;
     if (sourceStruct == NULL)
         image = NULL;
     else
