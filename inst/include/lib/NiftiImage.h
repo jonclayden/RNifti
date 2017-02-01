@@ -70,6 +70,9 @@ public:
             memcpy(static_cast<char*>(image->data) + blockSize*index, source->data, blockSize);
             return *this;
         }
+        
+        template <typename TargetType>
+        std::vector<TargetType> getData () const;
     };
     
     /**
@@ -307,6 +310,30 @@ public:
     }
     
     /**
+     * Returns the dimensions of the image
+     * @return A vector of integers giving the width in each dimension
+    **/
+    std::vector<int> dim () const
+    {
+        if (image == NULL)
+            return std::vector<int>();
+        else
+            return std::vector<int>(image->dim+1, image->dim+image->ndim+1);
+    }
+    
+    /**
+     * Returns the dimensions of the pixels or voxels in the image
+     * @return A vector of floating-point values giving the pixel width in each dimension
+    **/
+    std::vector<float> pixdim () const
+    {
+        if (image == NULL)
+            return std::vector<float>();
+        else
+            return std::vector<float>(image->pixdim+1, image->pixdim+image->ndim+1);
+    }
+    
+    /**
      * Drop unitary dimensions
      * @return Self, after possibly reducing the dimensionality of the image
      * @note This function differs from its R equivalent in only dropping unitary dimensions after
@@ -321,6 +348,9 @@ public:
         
         return *this;
     }
+    
+    template <typename TargetType>
+    std::vector<TargetType> getData () const;
     
     /**
      * Rescales the image, changing its image dimensions and pixel dimensions
@@ -1044,6 +1074,12 @@ inline void convertArray (const SourceType *source, const size_t length, TargetT
     std::transform(source, source + length, target, convertValue<SourceType,TargetType>);
 }
 
+template <typename SourceType, typename TargetType>
+inline void convertVector (const SourceType *source, const size_t length, std::vector<TargetType> &target)
+{
+    std::transform(source, source + length, target.begin(), convertValue<SourceType,TargetType>);
+}
+
 template <typename TargetType>
 inline void changeDatatype (nifti_image *image, const short datatype)
 {
@@ -1101,6 +1137,122 @@ inline void changeDatatype (nifti_image *image, const short datatype)
     image->data = data;
     image->datatype = datatype;
     nifti_datatype_sizes(datatype, &image->nbyper, &image->swapsize);
+}
+
+template <typename TargetType>
+std::vector<TargetType> NiftiImage::Block::getData () const
+{
+    if (image.isNull())
+        return std::vector<TargetType>();
+    
+    size_t blockSize = 1;
+    for (int i=1; i<dimension; i++)
+        blockSize *= image->dim[i];
+    std::vector<TargetType> data(blockSize);
+    
+    switch (image->datatype)
+    {
+        case DT_UINT8:
+        convertVector(static_cast<uint8_t *>(image->data) + blockSize*index, blockSize, data);
+        break;
+
+        case DT_INT16:
+        convertVector(static_cast<int16_t *>(image->data) + blockSize*index, blockSize, data);
+        break;
+
+        case DT_INT32:
+        convertVector(static_cast<int32_t *>(image->data) + blockSize*index, blockSize, data);
+        break;
+
+        case DT_FLOAT32:
+        convertVector(static_cast<float *>(image->data) + blockSize*index, blockSize, data);
+        break;
+
+        case DT_FLOAT64:
+        convertVector(static_cast<double *>(image->data) + blockSize*index, blockSize, data);
+        break;
+
+        case DT_INT8:
+        convertVector(static_cast<int8_t *>(image->data) + blockSize*index, blockSize, data);
+        break;
+
+        case DT_UINT16:
+        convertVector(static_cast<uint16_t *>(image->data) + blockSize*index, blockSize, data);
+        break;
+
+        case DT_UINT32:
+        convertVector(static_cast<uint32_t *>(image->data) + blockSize*index, blockSize, data);
+        break;
+
+        case DT_INT64:
+        convertVector(static_cast<int64_t *>(image->data) + blockSize*index, blockSize, data);
+        break;
+
+        case DT_UINT64:
+        convertVector(static_cast<uint64_t *>(image->data) + blockSize*index, blockSize, data);
+        break;
+
+        default:
+        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(image->datatype)) + ")");
+    }
+    
+    return data;
+}
+
+template <typename TargetType>
+std::vector<TargetType> NiftiImage::getData () const
+{
+    if (this->isNull())
+        return std::vector<TargetType>();
+    
+    std::vector<TargetType> data(image->nvox);
+    switch (image->datatype)
+    {
+        case DT_UINT8:
+        convertVector(static_cast<uint8_t *>(image->data), image->nvox, data);
+        break;
+
+        case DT_INT16:
+        convertVector(static_cast<int16_t *>(image->data), image->nvox, data);
+        break;
+
+        case DT_INT32:
+        convertVector(static_cast<int32_t *>(image->data), image->nvox, data);
+        break;
+
+        case DT_FLOAT32:
+        convertVector(static_cast<float *>(image->data), image->nvox, data);
+        break;
+
+        case DT_FLOAT64:
+        convertVector(static_cast<double *>(image->data), image->nvox, data);
+        break;
+
+        case DT_INT8:
+        convertVector(static_cast<int8_t *>(image->data), image->nvox, data);
+        break;
+
+        case DT_UINT16:
+        convertVector(static_cast<uint16_t *>(image->data), image->nvox, data);
+        break;
+
+        case DT_UINT32:
+        convertVector(static_cast<uint32_t *>(image->data), image->nvox, data);
+        break;
+
+        case DT_INT64:
+        convertVector(static_cast<int64_t *>(image->data), image->nvox, data);
+        break;
+
+        case DT_UINT64:
+        convertVector(static_cast<uint64_t *>(image->data), image->nvox, data);
+        break;
+
+        default:
+        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(image->datatype)) + ")");
+    }
+    
+    return data;
 }
 
 inline void NiftiImage::toFile (const std::string fileName, const short datatype) const
