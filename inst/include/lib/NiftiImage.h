@@ -214,7 +214,7 @@ public:
     /**
      * Destructor which frees the wrapped pointer, unless the object is marked as persistent
     **/
-    ~NiftiImage ()
+    virtual ~NiftiImage ()
     {
         if (!persistent)
         {
