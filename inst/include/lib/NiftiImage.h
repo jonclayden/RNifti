@@ -71,6 +71,9 @@ public:
             return *this;
         }
         
+        /**
+         * Extract a vector of data from a block, casting it to any required element type
+        **/
         template <typename TargetType>
         std::vector<TargetType> getData () const;
     };
@@ -276,7 +279,7 @@ public:
     }
     
     /**
-     * Allows the image to be marked as persistent, so that it can be passed back to R
+     * Marked the image as persistent, so that it can be passed back to R
      * @param persistent The new persistence state of the object
     **/
     void setPersistence (const bool persistent)
@@ -289,17 +292,17 @@ public:
     }
     
     /**
-     * Determines whether or not the internal pointer is \c NULL
+     * Determine whether or not the internal pointer is \c NULL
     **/
     bool isNull () const { return (image == NULL); }
     
     /**
-     * Determines whether or not the image is marked as persistent
+     * Determine whether or not the image is marked as persistent
     **/
     bool isPersistent () const { return persistent; }
     
     /**
-     * Returns the number of dimensions in the image
+     * Return the number of dimensions in the image
     **/
     int nDims () const
     {
@@ -310,7 +313,7 @@ public:
     }
     
     /**
-     * Returns the dimensions of the image
+     * Return the dimensions of the image
      * @return A vector of integers giving the width in each dimension
     **/
     std::vector<int> dim () const
@@ -322,7 +325,7 @@ public:
     }
     
     /**
-     * Returns the dimensions of the pixels or voxels in the image
+     * Return the dimensions of the pixels or voxels in the image
      * @return A vector of floating-point values giving the pixel width in each dimension
     **/
     std::vector<float> pixdim () const
@@ -349,11 +352,14 @@ public:
         return *this;
     }
     
+    /**
+     * Extract a vector of data from the image, casting it to any required element type
+    **/
     template <typename TargetType>
     std::vector<TargetType> getData () const;
     
     /**
-     * Rescales the image, changing its image dimensions and pixel dimensions
+     * Rescale the image, changing its image dimensions and pixel dimensions
      * @param scales Vector of scale factors along each dimension
      * @note No interpolation is performed on the pixel data, which is simply dropped
     **/
@@ -371,6 +377,35 @@ public:
      * @return A 4x4 matrix
     **/
     mat44 xform (const bool preferQuaternion = true) const;
+    
+    /**
+     * Return the number of blocks in the image
+    **/
+    int nBlocks () const
+    {
+        if (image == NULL)
+            return 0;
+        else
+            return image->dim[image->ndim];
+    }
+    
+    /**
+     * Extract a block from the image
+     * @param i The block number required
+     * @return A \ref Block object
+     * @note \ref slice and \ref volume are variants of this function specific to 3D and 4D images,
+     * respectively, which may be preferred in some cases for clarity
+    **/
+    const Block block (const int i) const { return Block(*this, nDims(), i); }
+    
+    /**
+     * Extract a block from the image
+     * @param i The block number required
+     * @return A \ref Block object
+     * @note \ref slice and \ref volume are variants of this function specific to 3D and 4D images,
+     * respectively, which may be preferred in some cases for clarity
+    **/
+    Block block (const int i) { return Block(*this, nDims(), i); }
     
     /**
      * Extract a slice block from a 3D image
@@ -1307,7 +1342,7 @@ inline Rcpp::RObject NiftiImage::toArray () const
     
     addAttributes(array, image);
     const Rcpp::IntegerVector dim = array.attr("dim");
-    array.attr("class") = Rcpp::CharacterVector::create("niftiImage");
+    array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "array");
     return array;
 }
 
