@@ -176,6 +176,19 @@ public:
     }
     
     /**
+     * Initialise from a block, copying in the data
+     * @param source A \c Block object, referring to part of another \c NiftiImage
+    **/
+    NiftiImage (const Block &source)
+        : image(NULL), persistent(false)
+    {
+        this->copy(source);
+#ifndef NDEBUG
+        Rprintf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
+#endif
+    }
+    
+    /**
      * Initialise using an existing \c nifti_image pointer
      * @param image An existing \c nifti_image pointer, possibly \c NULL
      * @param copy If \c true, the image data will be copied; otherwise this object just wraps
