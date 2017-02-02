@@ -59,7 +59,8 @@ xform <- function (image, useQuaternionFirst = TRUE)
 #' These functions are used to transform points from dimensionless pixel or
 #' voxel coordinates to ``real-world'' coordinates, typically in millimetres,
 #' and back. Actual pixel units can be obtained using the
-#' \code{\link{pixunits}} function.
+#' \code{\link{pixunits}} function. The \code{origin} function gives the voxel
+#' coordinates of the real-world origin.
 #' 
 #' @param points A vector giving the coordinates of a point, or a matrix with
 #'   one point per row.
@@ -77,7 +78,7 @@ xform <- function (image, useQuaternionFirst = TRUE)
 #' im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
 #' 
 #' # Find the origin
-#' worldToVoxel(c(0,0,0), im)
+#' origin(im)
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{xform}}, \code{\link{pixdim}}, \code{\link{pixunits}}
@@ -138,4 +139,11 @@ worldToVoxel <- function (points, image, simple = FALSE, ...)
         newPoints <- affine %*% t(points) + 1
         return (drop(t(newPoints[1:nDims,,drop=FALSE])))
     }
+}
+
+#' @rdname voxelToWorld
+#' @export
+origin <- function (image, ...)
+{
+    worldToVoxel(c(0,0,0), image, ...)
 }
