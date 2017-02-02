@@ -2,6 +2,18 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.4.0
+
+- Additional public methods have been added to the NiftiImage C++ class. Please
+  see the API documentation at <http://doxygen.flakery.org/RNifti/> for
+  details.
+- The new origin() R function is a convenience wrapper for worldToVoxel(),
+  which returns the voxel coordinates of the image origin.
+- The package now produces an error when passed an "anlz" class object (from
+  package "oro.nifti"), rather than mishandling it.
+
+===============================================================================
+
 VERSION 0.3.0
 
 - C++ API change: the NiftiImage class is now defined within an RNifti
