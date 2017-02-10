@@ -863,7 +863,7 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
         Rcpp::XPtr<NiftiImage> imagePtr(SEXP(imageObject.attr(".nifti_image_ptr")));
         if (imagePtr.get() != NULL)
         {
-            this->image = *imagePtr;
+            this->image = imagePtr->image;
             this->persistent = true;
             resolved = true;
             
