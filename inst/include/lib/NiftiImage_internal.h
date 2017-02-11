@@ -3,6 +3,73 @@
 
 namespace internal {
 
+struct DataHandler
+{
+    virtual short code () { return DT_NONE; }
+    
+    template <typename TargetType>
+    void convertArray (void *source, const size_t length, TargetType *target) {}
+    
+    template <typename TargetType>
+    void convertVector (void *source, const size_t length, std::vector<TargetType> &target) {}
+};
+
+template <typename Type>
+struct TypedDataHandler : public DataHandler
+{
+    template <typename TargetType>
+    static TargetType convertValue (Type value)
+    {
+        return static_cast<TargetType>(value);
+    }
+    
+    template <typename TargetType>
+    void convertArray (void *source, const size_t length, TargetType *target)
+    {
+        Type *castSource = static_cast<Type *>(source);
+        std::transform(castSource, castSource + length, target, convertValue<TargetType>);
+    }
+    
+    template <typename TargetType>
+    void convertVector (void *source, const size_t length, std::vector<TargetType> &target)
+    {
+        Type *castSource = static_cast<Type *>(source);
+        std::transform(castSource, castSource + length, target.begin(), convertValue<SourceType,TargetType>);
+    }
+};
+
+template <> struct TypedDataHandler<uint8_t> : public DataHandler  { short code () { return DT_UINT8; } };
+template <> struct TypedDataHandler<int16_t> : public DataHandler  { short code () { return DT_INT16; } };
+template <> struct TypedDataHandler<int32_t> : public DataHandler  { short code () { return DT_INT32; } };
+template <> struct TypedDataHandler<float> : public DataHandler    { short code () { return DT_FLOAT32; } };
+template <> struct TypedDataHandler<double> : public DataHandler   { short code () { return DT_FLOAT64; } };
+template <> struct TypedDataHandler<int8_t> : public DataHandler   { short code () { return DT_INT8; } };
+template <> struct TypedDataHandler<uint16_t> : public DataHandler { short code () { return DT_UINT16; } };
+template <> struct TypedDataHandler<uint32_t> : public DataHandler { short code () { return DT_UINT32; } };
+template <> struct TypedDataHandler<int64_t> : public DataHandler  { short code () { return DT_INT64; } };
+template <> struct TypedDataHandler<uint64_t> : public DataHandler { short code () { return DT_UINT64; } };
+
+inline DataHandler * getDataType (const short typeCode)
+{
+    typedef std::auto_ptr<DataHandler> pointer_type;
+    static std::map<short,pointer_type> typeMap;
+    if (typeMap.empty())
+    {
+        typeMap[DT_UINT8] = pointer_type(new TypedDataHandler<uint8_t>);
+        typeMap[DT_INT16] = pointer_type(new TypedDataHandler<int16_t>);
+        typeMap[DT_INT32] = pointer_type(new TypedDataHandler<uint32_t>);
+        typeMap[DT_FLOAT32] = pointer_type(new TypedDataHandler<float>);
+        typeMap[DT_FLOAT64] = pointer_type(new TypedDataHandler<double>);
+        typeMap[DT_INT8] = pointer_type(new TypedDataHandler<int8_t>);
+        typeMap[DT_UINT16] = pointer_type(new TypedDataHandler<uint16_t>);
+        typeMap[DT_UINT32] = pointer_type(new TypedDataHandler<uint32_t>);
+        typeMap[DT_INT64] = pointer_type(new TypedDataHandler<int64_t>);
+        typeMap[DT_UINT64] = pointer_type(new TypedDataHandler<uint64_t>);
+    }
+
+    return typeMap[typeCode].get();
+};
+
 template <typename TargetType>
 inline void copyIfPresent (const Rcpp::List &list, const std::set<std::string> names, const std::string &name, TargetType &target)
 {
