@@ -371,6 +371,11 @@ public:
     template <typename TargetType>
     std::vector<TargetType> getData () const;
     
+    template <typename SourceType>
+    void replaceData (std::vector<SourceType> &data);
+    
+    void dropData () { nifti_image_unload(image); }
+    
     /**
      * Rescale the image, changing its image dimensions and pixel dimensions
      * @param scales Vector of scale factors along each dimension
@@ -1115,6 +1120,21 @@ inline std::vector<TargetType> NiftiImage::getData () const
     handler->convertToVector(image->data, image->nvox, data);
     
     return data;
+}
+
+template <typename SourceType>
+inline void NiftiImage::replaceData (std::vector<SourceType> &data)
+{
+    if (this->isNull())
+        return;
+    
+    internal::DataHandler *handler = internal::getDataHandler(image->datatype);
+    handler->convertFromVector(data, image->data);
+    
+    image->scl_slope = 1.0;
+    image->scl_inter = 0.0;
+    image->cal_min = static_cast<float>(*std::min_element(data.begin(), data.end()));
+    image->cal_max = static_cast<float>(*std::max_element(data.begin(), data.end()));
 }
 
 inline void NiftiImage::toFile (const std::string fileName, const short datatype) const
