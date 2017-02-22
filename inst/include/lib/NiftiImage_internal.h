@@ -9,95 +9,141 @@ inline TargetType convertValue (SourceType value)
     return static_cast<TargetType>(value);
 }
 
-// Base class type responsible for handling image data buffers
-struct DataHandler
+template <typename TargetType, class OutputIterator>
+inline void convertData (void *source, const short datatype, const size_t length, OutputIterator target, const ptrdiff_t offset = 0)
 {
-    virtual short code () { return DT_NONE; }
+    if (source == NULL)
+        return;
     
-    template <typename TargetType>
-    void convertToArray (void *source, const size_t length, TargetType *target) {}
-    
-    template <typename TargetType>
-    void convertToVector (void *source, const size_t length, std::vector<TargetType> &target, const size_t offset = 0) {}
-    
-    template <typename SourceType>
-    void convertFromVector (const std::vector<SourceType> &source, void *target) {}
-    
-    template <int SexpType>
-    void convertToRcppVector (void *source, const size_t length, Rcpp::Vector<SexpType> &target) {}
-};
+    switch (datatype)
+    {
+        case DT_UINT8:
+        {
+            uint8_t *castSource = static_cast<uint8_t *>(source) + offset;
+            std::transform(castSource, castSource + length, target, convertValue<uint8_t,TargetType>);
+            break;
+        }
+        
+        case DT_INT16:
+        {
+            int16_t *castSource = static_cast<int16_t *>(source) + offset;
+            std::transform(castSource, castSource + length, target, convertValue<int16_t,TargetType>);
+            break;
+        }
+        
+        case DT_INT32:
+        {
+            int32_t *castSource = static_cast<int32_t *>(source) + offset;
+            std::transform(castSource, castSource + length, target, convertValue<int32_t,TargetType>);
+            break;
+        }
+        
+        case DT_FLOAT32:
+        {
+            float *castSource = static_cast<float *>(source) + offset;
+            std::transform(castSource, castSource + length, target, convertValue<float,TargetType>);
+            break;
+        }
+        
+        case DT_FLOAT64:
+        {
+            double *castSource = static_cast<double *>(source) + offset;
+            std::transform(castSource, castSource + length, target, convertValue<double,TargetType>);
+            break;
+        }
+        
+        case DT_INT8:
+        {
+            int8_t *castSource = static_cast<int8_t *>(source) + offset;
+            std::transform(castSource, castSource + length, target, convertValue<int8_t,TargetType>);
+            break;
+        }
+        
+        case DT_UINT16:
+        {
+            uint16_t *castSource = static_cast<uint16_t *>(source) + offset;
+            std::transform(castSource, castSource + length, target, convertValue<uint16_t,TargetType>);
+            break;
+        }
+        
+        case DT_UINT32:
+        {
+            uint32_t *castSource = static_cast<uint32_t *>(source) + offset;
+            std::transform(castSource, castSource + length, target, convertValue<uint32_t,TargetType>);
+            break;
+        }
+        
+        case DT_INT64:
+        {
+            int64_t *castSource = static_cast<int64_t *>(source) + offset;
+            std::transform(castSource, castSource + length, target, convertValue<int64_t,TargetType>);
+            break;
+        }
+        
+        case DT_UINT64:
+        {
+            uint64_t *castSource = static_cast<uint64_t *>(source) + offset;
+            std::transform(castSource, castSource + length, target, convertValue<uint64_t,TargetType>);
+            break;
+        }
+        
+        default:
+        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
+    }
+}
 
-template <typename Type>
-struct TypedDataHandler : public DataHandler
+template <typename SourceType, class InputIterator>
+inline void replaceData (InputIterator begin, InputIterator end, void *target, const short datatype)
 {
-    template <typename TargetType>
-    void convertToArray (void *source, const size_t length, TargetType *target)
-    {
-        Type *castSource = static_cast<Type *>(source);
-        std::transform(castSource, castSource + length, target, convertValue<Type,TargetType>);
-    }
+    if (target == NULL)
+        return;
     
-    template <typename TargetType>
-    void convertToVector (void *source, const size_t length, std::vector<TargetType> &target, const size_t offset = 0)
+    switch (datatype)
     {
-        Type *castSource = static_cast<Type *>(source) + offset;
-        std::transform(castSource, castSource + length, target.begin(), convertValue<Type,TargetType>);
+        case DT_UINT8:
+        std::transform(begin, end, static_cast<uint8_t *>(target), convertValue<SourceType,uint8_t>);
+        break;
+        
+        case DT_INT16:
+        std::transform(begin, end, static_cast<int16_t *>(target), convertValue<SourceType,int16_t>);
+        break;
+        
+        case DT_INT32:
+        std::transform(begin, end, static_cast<int32_t *>(target), convertValue<SourceType,int32_t>);
+        break;
+        
+        case DT_FLOAT32:
+        std::transform(begin, end, static_cast<float *>(target), convertValue<SourceType,float>);
+        break;
+        
+        case DT_FLOAT64:
+        std::transform(begin, end, static_cast<double *>(target), convertValue<SourceType,double>);
+        break;
+        
+        case DT_INT8:
+        std::transform(begin, end, static_cast<int8_t *>(target), convertValue<SourceType,int8_t>);
+        break;
+        
+        case DT_UINT16:
+        std::transform(begin, end, static_cast<uint16_t *>(target), convertValue<SourceType,uint16_t>);
+        break;
+        
+        case DT_UINT32:
+        std::transform(begin, end, static_cast<uint32_t *>(target), convertValue<SourceType,uint32_t>);
+        break;
+        
+        case DT_INT64:
+        std::transform(begin, end, static_cast<int64_t *>(target), convertValue<SourceType,int64_t>);
+        break;
+        
+        case DT_UINT64:
+        std::transform(begin, end, static_cast<uint64_t *>(target), convertValue<SourceType,uint64_t>);
+        break;
+        
+        default:
+        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
     }
-    
-    template <typename SourceType>
-    void convertFromVector (const std::vector<SourceType> &source, void *target)
-    {
-        Type *castTarget = static_cast<Type *>(target);
-        std::transform(source.begin(), source.end(), castTarget, convertValue<SourceType,Type>);
-    }
-    
-    template <int SexpType>
-    void convertToRcppVector (void *source, const size_t length, Rcpp::Vector<SexpType> &target)
-    {
-        Type *castSource = static_cast<Type *>(source);
-        if (SexpType == INTSXP || SexpType == LGLSXP)
-            std::transform(castSource, castSource + length, target.begin(), convertValue<Type,int>);
-        else if (SexpType == REALSXP)
-            std::transform(castSource, castSource + length, target.begin(), convertValue<Type,double>);
-        else
-            throw std::runtime_error("Only numeric arrays can be created");
-    }
-};
-
-template <> struct TypedDataHandler<uint8_t> : public DataHandler  { short code () { return DT_UINT8; } };
-template <> struct TypedDataHandler<int16_t> : public DataHandler  { short code () { return DT_INT16; } };
-template <> struct TypedDataHandler<int32_t> : public DataHandler  { short code () { return DT_INT32; } };
-template <> struct TypedDataHandler<float> : public DataHandler    { short code () { return DT_FLOAT32; } };
-template <> struct TypedDataHandler<double> : public DataHandler   { short code () { return DT_FLOAT64; } };
-template <> struct TypedDataHandler<int8_t> : public DataHandler   { short code () { return DT_INT8; } };
-template <> struct TypedDataHandler<uint16_t> : public DataHandler { short code () { return DT_UINT16; } };
-template <> struct TypedDataHandler<uint32_t> : public DataHandler { short code () { return DT_UINT32; } };
-template <> struct TypedDataHandler<int64_t> : public DataHandler  { short code () { return DT_INT64; } };
-template <> struct TypedDataHandler<uint64_t> : public DataHandler { short code () { return DT_UINT64; } };
-
-inline DataHandler * getDataHandler (const short typeCode)
-{
-    typedef std::auto_ptr<DataHandler> pointer_type;
-    static std::map<short,pointer_type> typeMap;
-    if (typeMap.empty())
-    {
-        typeMap[DT_UINT8] = pointer_type(new TypedDataHandler<uint8_t>);
-        typeMap[DT_INT16] = pointer_type(new TypedDataHandler<int16_t>);
-        typeMap[DT_INT32] = pointer_type(new TypedDataHandler<uint32_t>);
-        typeMap[DT_FLOAT32] = pointer_type(new TypedDataHandler<float>);
-        typeMap[DT_FLOAT64] = pointer_type(new TypedDataHandler<double>);
-        typeMap[DT_INT8] = pointer_type(new TypedDataHandler<int8_t>);
-        typeMap[DT_UINT16] = pointer_type(new TypedDataHandler<uint16_t>);
-        typeMap[DT_UINT32] = pointer_type(new TypedDataHandler<uint32_t>);
-        typeMap[DT_INT64] = pointer_type(new TypedDataHandler<int64_t>);
-        typeMap[DT_UINT64] = pointer_type(new TypedDataHandler<uint64_t>);
-    }
-    
-    if (typeMap.count(typeCode) == 0)
-        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(typeCode)) + ")");
-    else
-        return typeMap[typeCode].get();
-};
+}
 
 inline short stringToDatatype (const std::string &datatype)
 {
@@ -183,8 +229,12 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
     else
     {
         Rcpp::Vector<SexpType> array(static_cast<int>(source->nvox));
-        DataHandler *handler = getDataHandler(source->datatype);
-        handler->convertToRcppVector(source->data, source->nvox, array);
+        if (SexpType == INTSXP || SexpType == LGLSXP)
+            convertData<int>(source->data, source->datatype, source->nvox, array.begin());
+        else if (SexpType == REALSXP)
+            convertData<double>(source->data, source->datatype, source->nvox, array.begin());
+        else
+            throw std::runtime_error("Only numeric arrays can be created");
         return array;
     }
 }

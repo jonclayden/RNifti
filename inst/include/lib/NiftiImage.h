@@ -515,7 +515,7 @@ public:
     Rcpp::RObject headerToList () const;
 };
 
-// Include helper functions and data handler type
+// Include helper functions
 #include "lib/NiftiImage_internal.h"
 
 inline void NiftiImage::copy (const nifti_image *source)
@@ -1122,9 +1122,7 @@ inline std::vector<TargetType> NiftiImage::Block::getData () const
         blockSize *= image->dim[i];
 
     std::vector<TargetType> data(blockSize);
-    internal::DataHandler *handler = internal::getDataHandler(image->datatype);
-    handler->convertToVector(image->data, blockSize, data, blockSize*index);
-    
+    internal::convertData<TargetType>(image->data, image->datatype, blockSize, data.begin(), blockSize*index);
     return data;
 }
 
@@ -1135,9 +1133,7 @@ inline std::vector<TargetType> NiftiImage::getData () const
         return std::vector<TargetType>();
     
     std::vector<TargetType> data(image->nvox);
-    internal::DataHandler *handler = internal::getDataHandler(image->datatype);
-    handler->convertToVector(image->data, image->nvox, data);
-    
+    internal::convertData<TargetType>(image->data, image->datatype, image->nvox, data.begin());
     return data;
 }
 
@@ -1151,48 +1147,47 @@ inline void NiftiImage::changeDatatype (const short datatype)
         int bytesPerPixel;
         nifti_datatype_sizes(datatype, &bytesPerPixel, NULL);
         void *data = calloc(image->nvox, bytesPerPixel);
-        internal::DataHandler *handler = internal::getDataHandler(image->datatype);
     
         switch (datatype)
         {
             case DT_UINT8:
-            handler->convertToArray(image->data, image->nvox, static_cast<uint8_t *>(data));
+            internal::convertData<uint8_t>(image->data, image->datatype, image->nvox, static_cast<uint8_t *>(data));
             break;
         
             case DT_INT16:
-            handler->convertToArray(image->data, image->nvox, static_cast<int16_t *>(data));
+            internal::convertData<int16_t>(image->data, image->datatype, image->nvox, static_cast<int16_t *>(data));
             break;
         
             case DT_INT32:
-            handler->convertToArray(image->data, image->nvox, static_cast<int32_t *>(data));
+            internal::convertData<int32_t>(image->data, image->datatype, image->nvox, static_cast<int32_t *>(data));
             break;
         
             case DT_FLOAT32:
-            handler->convertToArray(image->data, image->nvox, static_cast<float *>(data));
+            internal::convertData<float>(image->data, image->datatype, image->nvox, static_cast<float *>(data));
             break;
         
             case DT_FLOAT64:
-            handler->convertToArray(image->data, image->nvox, static_cast<double *>(data));
+            internal::convertData<double>(image->data, image->datatype, image->nvox, static_cast<double *>(data));
             break;
         
             case DT_INT8:
-            handler->convertToArray(image->data, image->nvox, static_cast<int8_t *>(data));
+            internal::convertData<int8_t>(image->data, image->datatype, image->nvox, static_cast<int8_t *>(data));
             break;
         
             case DT_UINT16:
-            handler->convertToArray(image->data, image->nvox, static_cast<uint16_t *>(data));
+            internal::convertData<uint16_t>(image->data, image->datatype, image->nvox, static_cast<uint16_t *>(data));
             break;
         
             case DT_UINT32:
-            handler->convertToArray(image->data, image->nvox, static_cast<uint32_t *>(data));
+            internal::convertData<uint32_t>(image->data, image->datatype, image->nvox, static_cast<uint32_t *>(data));
             break;
         
             case DT_INT64:
-            handler->convertToArray(image->data, image->nvox, static_cast<int64_t *>(data));
+            internal::convertData<int64_t>(image->data, image->datatype, image->nvox, static_cast<int64_t *>(data));
             break;
         
             case DT_UINT64:
-            handler->convertToArray(image->data, image->nvox, static_cast<uint64_t *>(data));
+            internal::convertData<uint64_t>(image->data, image->datatype, image->nvox, static_cast<uint64_t *>(data));
             break;
         
             default:
@@ -1220,9 +1215,7 @@ inline void NiftiImage::replaceData (std::vector<SourceType> &data)
     else if (data.size() != image->nvox)
         throw std::runtime_error("New data (length " + data.size() + ") does not match the number of voxels in the image (" + image->nvox + ")");
     
-    internal::DataHandler *handler = internal::getDataHandler(image->datatype);
-    handler->convertFromVector(data, image->data);
-    
+    internal::replaceData<SourceType>(data.begin(), data.end(), image->data, image->datatype);
     image->scl_slope = 0.0;
     image->scl_inter = 0.0;
     image->cal_min = static_cast<float>(*std::min_element(data.begin(), data.end()));
