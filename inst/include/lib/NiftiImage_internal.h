@@ -131,53 +131,10 @@ inline void changeDatatype (nifti_image *image, const short datatype)
     TargetType *data;
     const size_t dataSize = image->nvox * sizeof(TargetType);
     data = static_cast<TargetType *>(calloc(1, dataSize));
-
-    switch (image->datatype)
-    {
-        case DT_UINT8:
-        convertArray(static_cast<uint8_t *>(image->data), image->nvox, data);
-        break;
-        
-        case DT_INT16:
-        convertArray(static_cast<int16_t *>(image->data), image->nvox, data);
-        break;
-        
-        case DT_INT32:
-        convertArray(static_cast<int32_t *>(image->data), image->nvox, data);
-        break;
-        
-        case DT_FLOAT32:
-        convertArray(static_cast<float *>(image->data), image->nvox, data);
-        break;
-        
-        case DT_FLOAT64:
-        convertArray(static_cast<double *>(image->data), image->nvox, data);
-        break;
-        
-        case DT_INT8:
-        convertArray(static_cast<int8_t *>(image->data), image->nvox, data);
-        break;
-        
-        case DT_UINT16:
-        convertArray(static_cast<uint16_t *>(image->data), image->nvox, data);
-        break;
-        
-        case DT_UINT32:
-        convertArray(static_cast<uint32_t *>(image->data), image->nvox, data);
-        break;
-        
-        case DT_INT64:
-        convertArray(static_cast<int64_t *>(image->data), image->nvox, data);
-        break;
-        
-        case DT_UINT64:
-        convertArray(static_cast<uint64_t *>(image->data), image->nvox, data);
-        break;
-        
-        default:
-        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(image->datatype)) + ")");
-    }
     
+    DataHandler *handler = getDataHandler(image->datatype);
+    handler->convertToArray(image->data, image->nvox, data);
+
     free(image->data);
     image->data = data;
     image->datatype = datatype;

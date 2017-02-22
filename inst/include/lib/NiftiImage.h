@@ -1088,7 +1088,7 @@ inline mat44 NiftiImage::xform (const bool preferQuaternion) const
 }
 
 template <typename TargetType>
-std::vector<TargetType> NiftiImage::Block::getData () const
+inline std::vector<TargetType> NiftiImage::Block::getData () const
 {
     if (image.isNull())
         return std::vector<TargetType>();
@@ -1096,109 +1096,23 @@ std::vector<TargetType> NiftiImage::Block::getData () const
     size_t blockSize = 1;
     for (int i=1; i<dimension; i++)
         blockSize *= image->dim[i];
+
     std::vector<TargetType> data(blockSize);
-    
-    switch (image->datatype)
-    {
-        case DT_UINT8:
-        convertVector(static_cast<uint8_t *>(image->data) + blockSize*index, blockSize, data);
-        break;
-
-        case DT_INT16:
-        convertVector(static_cast<int16_t *>(image->data) + blockSize*index, blockSize, data);
-        break;
-
-        case DT_INT32:
-        convertVector(static_cast<int32_t *>(image->data) + blockSize*index, blockSize, data);
-        break;
-
-        case DT_FLOAT32:
-        convertVector(static_cast<float *>(image->data) + blockSize*index, blockSize, data);
-        break;
-
-        case DT_FLOAT64:
-        convertVector(static_cast<double *>(image->data) + blockSize*index, blockSize, data);
-        break;
-
-        case DT_INT8:
-        convertVector(static_cast<int8_t *>(image->data) + blockSize*index, blockSize, data);
-        break;
-
-        case DT_UINT16:
-        convertVector(static_cast<uint16_t *>(image->data) + blockSize*index, blockSize, data);
-        break;
-
-        case DT_UINT32:
-        convertVector(static_cast<uint32_t *>(image->data) + blockSize*index, blockSize, data);
-        break;
-
-        case DT_INT64:
-        convertVector(static_cast<int64_t *>(image->data) + blockSize*index, blockSize, data);
-        break;
-
-        case DT_UINT64:
-        convertVector(static_cast<uint64_t *>(image->data) + blockSize*index, blockSize, data);
-        break;
-
-        default:
-        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(image->datatype)) + ")");
-    }
+    internal::DataHandler *handler = internal::getDataHandler(image->datatype);
+    handler->convertToVector(image->data, blockSize, data, blockSize*index);
     
     return data;
 }
 
 template <typename TargetType>
-std::vector<TargetType> NiftiImage::getData () const
+inline std::vector<TargetType> NiftiImage::getData () const
 {
     if (this->isNull())
         return std::vector<TargetType>();
     
     std::vector<TargetType> data(image->nvox);
-    switch (image->datatype)
-    {
-        case DT_UINT8:
-        convertVector(static_cast<uint8_t *>(image->data), image->nvox, data);
-        break;
-
-        case DT_INT16:
-        convertVector(static_cast<int16_t *>(image->data), image->nvox, data);
-        break;
-
-        case DT_INT32:
-        convertVector(static_cast<int32_t *>(image->data), image->nvox, data);
-        break;
-
-        case DT_FLOAT32:
-        convertVector(static_cast<float *>(image->data), image->nvox, data);
-        break;
-
-        case DT_FLOAT64:
-        convertVector(static_cast<double *>(image->data), image->nvox, data);
-        break;
-
-        case DT_INT8:
-        convertVector(static_cast<int8_t *>(image->data), image->nvox, data);
-        break;
-
-        case DT_UINT16:
-        convertVector(static_cast<uint16_t *>(image->data), image->nvox, data);
-        break;
-
-        case DT_UINT32:
-        convertVector(static_cast<uint32_t *>(image->data), image->nvox, data);
-        break;
-
-        case DT_INT64:
-        convertVector(static_cast<int64_t *>(image->data), image->nvox, data);
-        break;
-
-        case DT_UINT64:
-        convertVector(static_cast<uint64_t *>(image->data), image->nvox, data);
-        break;
-
-        default:
-        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(image->datatype)) + ")");
-    }
+    internal::DataHandler *handler = internal::getDataHandler(image->datatype);
+    handler->convertToVector(image->data, image->nvox, data);
     
     return data;
 }
