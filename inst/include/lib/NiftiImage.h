@@ -495,9 +495,8 @@ public:
     Rcpp::RObject headerToList () const;
 };
 
-// Include helper functions
+// Include helper functions and data handler type
 #include "lib/NiftiImage_internal.h"
-using namespace internal;
 
 inline void NiftiImage::copy (const nifti_image *source)
 {
@@ -739,9 +738,9 @@ inline void NiftiImage::initFromList (const Rcpp::RObject &object)
     for (Rcpp::CharacterVector::const_iterator it=_names.begin(); it!=_names.end(); it++)
         names.insert(Rcpp::as<std::string>(*it));
     
-    copyIfPresent(list, names, "sizeof_hdr", header->sizeof_hdr);
+    internal::copyIfPresent(list, names, "sizeof_hdr", header->sizeof_hdr);
     
-    copyIfPresent(list, names, "dim_info", header->dim_info);
+    internal::copyIfPresent(list, names, "dim_info", header->dim_info);
     if (names.count("dim") == 1)
     {
         std::vector<short> dim = list["dim"];
@@ -749,45 +748,45 @@ inline void NiftiImage::initFromList (const Rcpp::RObject &object)
             header->dim[i] = dim[i];
     }
     
-    copyIfPresent(list, names, "intent_p1", header->intent_p1);
-    copyIfPresent(list, names, "intent_p2", header->intent_p2);
-    copyIfPresent(list, names, "intent_p3", header->intent_p3);
-    copyIfPresent(list, names, "intent_code", header->intent_code);
+    internal::copyIfPresent(list, names, "intent_p1", header->intent_p1);
+    internal::copyIfPresent(list, names, "intent_p2", header->intent_p2);
+    internal::copyIfPresent(list, names, "intent_p3", header->intent_p3);
+    internal::copyIfPresent(list, names, "intent_code", header->intent_code);
     
-    copyIfPresent(list, names, "datatype", header->datatype);
-    copyIfPresent(list, names, "bitpix", header->bitpix);
+    internal::copyIfPresent(list, names, "datatype", header->datatype);
+    internal::copyIfPresent(list, names, "bitpix", header->bitpix);
     
-    copyIfPresent(list, names, "slice_start", header->slice_start);
+    internal::copyIfPresent(list, names, "slice_start", header->slice_start);
     if (names.count("pixdim") == 1)
     {
         std::vector<float> pixdim = list["pixdim"];
         for (int i=0; i<std::min(pixdim.size(),size_t(8)); i++)
             header->pixdim[i] = pixdim[i];
     }
-    copyIfPresent(list, names, "vox_offset", header->vox_offset);
-    copyIfPresent(list, names, "scl_slope", header->scl_slope);
-    copyIfPresent(list, names, "scl_inter", header->scl_inter);
-    copyIfPresent(list, names, "slice_end", header->slice_end);
-    copyIfPresent(list, names, "slice_code", header->slice_code);
-    copyIfPresent(list, names, "xyzt_units", header->xyzt_units);
-    copyIfPresent(list, names, "cal_max", header->cal_max);
-    copyIfPresent(list, names, "cal_min", header->cal_min);
-    copyIfPresent(list, names, "slice_duration", header->slice_duration);
-    copyIfPresent(list, names, "toffset", header->toffset);
+    internal::copyIfPresent(list, names, "vox_offset", header->vox_offset);
+    internal::copyIfPresent(list, names, "scl_slope", header->scl_slope);
+    internal::copyIfPresent(list, names, "scl_inter", header->scl_inter);
+    internal::copyIfPresent(list, names, "slice_end", header->slice_end);
+    internal::copyIfPresent(list, names, "slice_code", header->slice_code);
+    internal::copyIfPresent(list, names, "xyzt_units", header->xyzt_units);
+    internal::copyIfPresent(list, names, "cal_max", header->cal_max);
+    internal::copyIfPresent(list, names, "cal_min", header->cal_min);
+    internal::copyIfPresent(list, names, "slice_duration", header->slice_duration);
+    internal::copyIfPresent(list, names, "toffset", header->toffset);
     
     if (names.count("descrip") == 1)
         strcpy(header->descrip, Rcpp::as<std::string>(list["descrip"]).substr(0,79).c_str());
     if (names.count("aux_file") == 1)
         strcpy(header->aux_file, Rcpp::as<std::string>(list["aux_file"]).substr(0,23).c_str());
     
-    copyIfPresent(list, names, "qform_code", header->qform_code);
-    copyIfPresent(list, names, "sform_code", header->sform_code);
-    copyIfPresent(list, names, "quatern_b", header->quatern_b);
-    copyIfPresent(list, names, "quatern_c", header->quatern_c);
-    copyIfPresent(list, names, "quatern_d", header->quatern_d);
-    copyIfPresent(list, names, "qoffset_x", header->qoffset_x);
-    copyIfPresent(list, names, "qoffset_y", header->qoffset_y);
-    copyIfPresent(list, names, "qoffset_z", header->qoffset_z);
+    internal::copyIfPresent(list, names, "qform_code", header->qform_code);
+    internal::copyIfPresent(list, names, "sform_code", header->sform_code);
+    internal::copyIfPresent(list, names, "quatern_b", header->quatern_b);
+    internal::copyIfPresent(list, names, "quatern_c", header->quatern_c);
+    internal::copyIfPresent(list, names, "quatern_d", header->quatern_d);
+    internal::copyIfPresent(list, names, "qoffset_x", header->qoffset_x);
+    internal::copyIfPresent(list, names, "qoffset_y", header->qoffset_y);
+    internal::copyIfPresent(list, names, "qoffset_z", header->qoffset_z);
     
     if (names.count("srow_x") == 1)
     {
@@ -944,7 +943,7 @@ inline void NiftiImage::updatePixdim (const std::vector<float> &pixdim)
         
         if (image->qform_code > 0)
         {
-            mat33 prod = nifti_mat33_mul(scaleMatrix, topLeftCorner(image->qto_xyz));
+            mat33 prod = nifti_mat33_mul(scaleMatrix, internal::topLeftCorner(image->qto_xyz));
             for (int i=0; i<3; i++)
             {
                 for (int j=0; j<3; j++)
@@ -956,7 +955,7 @@ inline void NiftiImage::updatePixdim (const std::vector<float> &pixdim)
         
         if (image->sform_code > 0)
         {
-            mat33 prod = nifti_mat33_mul(scaleMatrix, topLeftCorner(image->sto_xyz));
+            mat33 prod = nifti_mat33_mul(scaleMatrix, internal::topLeftCorner(image->sto_xyz));
             for (int i=0; i<3; i++)
             {
                 for (int j=0; j<3; j++)
@@ -1149,43 +1148,43 @@ inline void NiftiImage::toFile (const std::string fileName, const short datatype
         break;
         
         case DT_UINT8:
-        changeDatatype<uint8_t>(imageToWrite, datatype);
+        internal::changeDatatype<uint8_t>(imageToWrite, datatype);
         break;
 
         case DT_INT16:
-        changeDatatype<int16_t>(imageToWrite, datatype);
+        internal::changeDatatype<int16_t>(imageToWrite, datatype);
         break;
 
         case DT_INT32:
-        changeDatatype<int32_t>(imageToWrite, datatype);
+        internal::changeDatatype<int32_t>(imageToWrite, datatype);
         break;
 
         case DT_FLOAT32:
-        changeDatatype<float>(imageToWrite, datatype);
+        internal::changeDatatype<float>(imageToWrite, datatype);
         break;
 
         case DT_FLOAT64:
-        changeDatatype<double>(imageToWrite, datatype);
+        internal::changeDatatype<double>(imageToWrite, datatype);
         break;
 
         case DT_INT8:
-        changeDatatype<int8_t>(imageToWrite, datatype);
+        internal::changeDatatype<int8_t>(imageToWrite, datatype);
         break;
 
         case DT_UINT16:
-        changeDatatype<uint16_t>(imageToWrite, datatype);
+        internal::changeDatatype<uint16_t>(imageToWrite, datatype);
         break;
 
         case DT_UINT32:
-        changeDatatype<uint32_t>(imageToWrite, datatype);
+        internal::changeDatatype<uint32_t>(imageToWrite, datatype);
         break;
 
         case DT_INT64:
-        changeDatatype<int64_t>(imageToWrite, datatype);
+        internal::changeDatatype<int64_t>(imageToWrite, datatype);
         break;
 
         case DT_UINT64:
-        changeDatatype<uint64_t>(imageToWrite, datatype);
+        internal::changeDatatype<uint64_t>(imageToWrite, datatype);
         break;
 
         default:
@@ -1244,50 +1243,50 @@ inline Rcpp::RObject NiftiImage::toArray () const
     switch (image->datatype)
     {
         case DT_UINT8:
-        array = imageDataToArray<uint8_t,INTSXP>(image);
+        array = internal::imageDataToArray<uint8_t,INTSXP>(image);
         break;
         
         case DT_INT16:
-        array = imageDataToArray<int16_t,INTSXP>(image);
+        array = internal::imageDataToArray<int16_t,INTSXP>(image);
         break;
         
         case DT_INT32:
-        array = imageDataToArray<int32_t,INTSXP>(image);
+        array = internal::imageDataToArray<int32_t,INTSXP>(image);
         break;
         
         case DT_FLOAT32:
-        array = imageDataToArray<float,REALSXP>(image);
+        array = internal::imageDataToArray<float,REALSXP>(image);
         break;
         
         case DT_FLOAT64:
-        array = imageDataToArray<double,REALSXP>(image);
+        array = internal::imageDataToArray<double,REALSXP>(image);
         break;
         
         case DT_INT8:
-        array = imageDataToArray<int8_t,INTSXP>(image);
+        array = internal::imageDataToArray<int8_t,INTSXP>(image);
         break;
         
         case DT_UINT16:
-        array = imageDataToArray<uint16_t,INTSXP>(image);
+        array = internal::imageDataToArray<uint16_t,INTSXP>(image);
         break;
         
         case DT_UINT32:
-        array = imageDataToArray<uint32_t,INTSXP>(image);
+        array = internal::imageDataToArray<uint32_t,INTSXP>(image);
         break;
         
         case DT_INT64:
-        array = imageDataToArray<int64_t,INTSXP>(image);
+        array = internal::imageDataToArray<int64_t,INTSXP>(image);
         break;
         
         case DT_UINT64:
-        array = imageDataToArray<uint64_t,INTSXP>(image);
+        array = internal::imageDataToArray<uint64_t,INTSXP>(image);
         break;
         
         default:
         throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(image->datatype)) + ")");
     }
     
-    addAttributes(array, image);
+    internal::addAttributes(array, image);
     const Rcpp::IntegerVector dim = array.attr("dim");
     array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "array");
     return array;
@@ -1300,7 +1299,7 @@ inline Rcpp::RObject NiftiImage::toPointer (const std::string label) const
     else
     {
         Rcpp::RObject string = Rcpp::wrap(label);
-        addAttributes(string, image, false);
+        internal::addAttributes(string, image, false);
         string.attr("class") = Rcpp::CharacterVector::create("internalImage", "niftiImage");
         return string;
     }
