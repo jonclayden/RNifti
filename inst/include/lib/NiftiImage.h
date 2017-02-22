@@ -1148,7 +1148,9 @@ inline void NiftiImage::changeDatatype (const short datatype)
     
     if (image->data != NULL)
     {
-        void *data;
+        int bytesPerPixel;
+        nifti_datatype_sizes(datatype, &bytesPerPixel, NULL);
+        void *data = calloc(image->nvox, bytesPerPixel);
         internal::DataHandler *handler = internal::getDataHandler(image->datatype);
     
         switch (datatype)
