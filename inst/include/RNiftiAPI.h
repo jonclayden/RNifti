@@ -15,6 +15,7 @@ static nifti_image*(*_nifti_convert_nhdr2nim)(struct nifti_1_header, const char 
 static struct nifti_1_header(*_nifti_convert_nim2nhdr)(const nifti_image *) = NULL;
 static nifti_image*(*_nifti_copy_nim_info)(const nifti_image*) = NULL;
 static int(*_nifti_copy_extensions)(nifti_image*, const nifti_image*) = NULL;
+static void(*_nifti_image_unload)(nifti_image*) = NULL;
 static void(*_nifti_image_free)(nifti_image*) = NULL;
 
 static void(*_nifti_datatype_sizes)(int, int*, int*) = NULL;
@@ -55,6 +56,7 @@ void niftilib_register_all ()
         _nifti_convert_nim2nhdr = (struct nifti_1_header(*)(const nifti_image *)) R_GetCCallable("RNifti","nii_convert_nim2nhdr");
         _nifti_copy_nim_info = (nifti_image*(*)(const nifti_image*)) R_GetCCallable("RNifti","nii_copy_nim_info");
         _nifti_copy_extensions = (int(*)(nifti_image*, const nifti_image*)) R_GetCCallable("RNifti","nii_copy_extensions");
+        _nifti_image_unload = (void(*)(nifti_image*)) R_GetCCallable("RNifti","nii_image_unload");
         _nifti_image_free = (void(*)(nifti_image*)) R_GetCCallable("RNifti","nii_image_free");
         
         _nifti_datatype_sizes = (void(*)(int, int*, int*)) R_GetCCallable("RNifti","nii_datatype_sizes");
@@ -124,6 +126,13 @@ int nifti_copy_extensions (nifti_image *nim_dest, const nifti_image *nim_src)
     if (_nifti_copy_extensions == NULL)
         niftilib_register_all();
     return _nifti_copy_extensions(nim_dest, nim_src);
+}
+
+void nifti_image_unload (nifti_image *nim)
+{
+    if (_nifti_image_unload == NULL)
+        niftilib_register_all();
+    _nifti_image_unload(nim);
 }
 
 void nifti_image_free (nifti_image *nim)
