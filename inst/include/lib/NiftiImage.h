@@ -1223,7 +1223,7 @@ inline void NiftiImage::replaceData (std::vector<SourceType> &data)
     internal::DataHandler *handler = internal::getDataHandler(image->datatype);
     handler->convertFromVector(data, image->data);
     
-    image->scl_slope = 1.0;
+    image->scl_slope = 0.0;
     image->scl_inter = 0.0;
     image->cal_min = static_cast<float>(*std::min_element(data.begin(), data.end()));
     image->cal_max = static_cast<float>(*std::max_element(data.begin(), data.end()));
