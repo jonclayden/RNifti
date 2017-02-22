@@ -371,9 +371,17 @@ public:
     template <typename TargetType>
     std::vector<TargetType> getData () const;
     
+    /**
+     * Replace the pixel data in the image with the contents of a vector
+     * @param A data vector, whose elements will be cast to match the datatype of the image. An
+     * exception will be raised if this does not have a length matching the image
+    **/
     template <typename SourceType>
     void replaceData (std::vector<SourceType> &data);
     
+    /**
+     * Drop the data from the image, retaining only the metadata
+    **/
     void dropData () { nifti_image_unload(image); }
     
     /**
@@ -1126,6 +1134,8 @@ inline void NiftiImage::replaceData (std::vector<SourceType> &data)
 {
     if (this->isNull())
         return;
+    else if (data.size() != image->nvox)
+        throw std::runtime_error("New data (length " + data.size() + ") does not match the number of voxels in the image (" + image->nvox + ")");
     
     internal::DataHandler *handler = internal::getDataHandler(image->datatype);
     handler->convertFromVector(data, image->data);
