@@ -1213,7 +1213,7 @@ inline void NiftiImage::replaceData (const std::vector<SourceType> &data)
     if (this->isNull())
         return;
     else if (data.size() != image->nvox)
-        throw std::runtime_error("New data (length " + data.size() + ") does not match the number of voxels in the image (" + image->nvox + ")");
+        throw std::runtime_error("New data length does not match the number of voxels in the image");
     
     internal::replaceData<SourceType>(data.begin(), data.end(), image->data, image->datatype);
     image->scl_slope = 0.0;
