@@ -372,6 +372,18 @@ public:
     std::vector<TargetType> getData () const;
     
     /**
+     * Change the datatype of the image, casting the pixel data if present
+     * @param A NIfTI datatype code
+    **/
+    void changeDatatype (const short datatype);
+    
+    /**
+     * Change the datatype of the image, casting the pixel data if present
+     * @param A string specifying the new datatype
+    **/
+    void changeDatatype (const std::string &datatype);
+    
+    /**
      * Replace the pixel data in the image with the contents of a vector
      * @param A data vector, whose elements will be cast to match the datatype of the image. An
      * exception will be raised if this does not have a length matching the image
@@ -1129,6 +1141,75 @@ inline std::vector<TargetType> NiftiImage::getData () const
     return data;
 }
 
+inline void NiftiImage::changeDatatype (const short datatype)
+{
+    if (this->isNull() || image->datatype == datatype)
+        return;
+    
+    if (image->data != NULL)
+    {
+        void *data;
+        internal::DataHandler *handler = internal::getDataHandler(image->datatype);
+    
+        switch (datatype)
+        {
+            case DT_UINT8:
+            handler->convertToArray(image->data, image->nvox, static_cast<uint8_t *>(data));
+            break;
+        
+            case DT_INT16:
+            handler->convertToArray(image->data, image->nvox, static_cast<int16_t *>(data));
+            break;
+        
+            case DT_INT32:
+            handler->convertToArray(image->data, image->nvox, static_cast<int32_t *>(data));
+            break;
+        
+            case DT_FLOAT32:
+            handler->convertToArray(image->data, image->nvox, static_cast<float *>(data));
+            break;
+        
+            case DT_FLOAT64:
+            handler->convertToArray(image->data, image->nvox, static_cast<double *>(data));
+            break;
+        
+            case DT_INT8:
+            handler->convertToArray(image->data, image->nvox, static_cast<int8_t *>(data));
+            break;
+        
+            case DT_UINT16:
+            handler->convertToArray(image->data, image->nvox, static_cast<uint16_t *>(data));
+            break;
+        
+            case DT_UINT32:
+            handler->convertToArray(image->data, image->nvox, static_cast<uint32_t *>(data));
+            break;
+        
+            case DT_INT64:
+            handler->convertToArray(image->data, image->nvox, static_cast<int64_t *>(data));
+            break;
+        
+            case DT_UINT64:
+            handler->convertToArray(image->data, image->nvox, static_cast<uint64_t *>(data));
+            break;
+        
+            default:
+            throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
+        }
+    
+        nifti_image_unload(image);
+        image->data = data;
+    }
+    
+    image->datatype = datatype;
+    nifti_datatype_sizes(datatype, &image->nbyper, &image->swapsize);
+}
+
+inline void NiftiImage::changeDatatype (const std::string &datatype)
+{
+    changeDatatype(internal::stringToDatatype(datatype));
+}
+
 template <typename SourceType>
 inline void NiftiImage::replaceData (std::vector<SourceType> &data)
 {
@@ -1151,55 +1232,10 @@ inline void NiftiImage::toFile (const std::string fileName, const short datatype
     // Copy the source image only if the datatype will be changed
     NiftiImage imageToWrite(image, datatype != DT_NONE);
     
-    switch (datatype)
-    {
-        case DT_NONE:
+    if (datatype == DT_NONE)
         imageToWrite.setPersistence(true);
-        break;
-        
-        case DT_UINT8:
-        internal::changeDatatype<uint8_t>(imageToWrite, datatype);
-        break;
-
-        case DT_INT16:
-        internal::changeDatatype<int16_t>(imageToWrite, datatype);
-        break;
-
-        case DT_INT32:
-        internal::changeDatatype<int32_t>(imageToWrite, datatype);
-        break;
-
-        case DT_FLOAT32:
-        internal::changeDatatype<float>(imageToWrite, datatype);
-        break;
-
-        case DT_FLOAT64:
-        internal::changeDatatype<double>(imageToWrite, datatype);
-        break;
-
-        case DT_INT8:
-        internal::changeDatatype<int8_t>(imageToWrite, datatype);
-        break;
-
-        case DT_UINT16:
-        internal::changeDatatype<uint16_t>(imageToWrite, datatype);
-        break;
-
-        case DT_UINT32:
-        internal::changeDatatype<uint32_t>(imageToWrite, datatype);
-        break;
-
-        case DT_INT64:
-        internal::changeDatatype<int64_t>(imageToWrite, datatype);
-        break;
-
-        case DT_UINT64:
-        internal::changeDatatype<uint64_t>(imageToWrite, datatype);
-        break;
-
-        default:
-        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
-    }
+    else
+        imageToWrite.changeDatatype(datatype);
     
     const int status = nifti_set_filenames(imageToWrite, fileName.c_str(), false, true);
     if (status != 0)
@@ -1209,38 +1245,7 @@ inline void NiftiImage::toFile (const std::string fileName, const short datatype
 
 inline void NiftiImage::toFile (const std::string fileName, const std::string &datatype) const
 {
-    static std::map<std::string,short> datatypeCodes;
-    if (datatypeCodes.empty())
-    {
-        datatypeCodes["auto"] = DT_NONE;
-        datatypeCodes["none"] = DT_NONE;
-        datatypeCodes["unknown"] = DT_NONE;
-        datatypeCodes["uint8"] = DT_UINT8;
-        datatypeCodes["char"] = DT_UINT8;
-        datatypeCodes["int16"] = DT_INT16;
-        datatypeCodes["short"] = DT_INT16;
-        datatypeCodes["int32"] = DT_INT32;
-        datatypeCodes["int"] = DT_INT32;
-        datatypeCodes["float32"] = DT_FLOAT32;
-        datatypeCodes["float"] = DT_FLOAT32;
-        datatypeCodes["float64"] = DT_FLOAT64;
-        datatypeCodes["double"] = DT_FLOAT64;
-        datatypeCodes["int8"] = DT_INT8;
-        datatypeCodes["uint16"] = DT_UINT16;
-        datatypeCodes["uint32"] = DT_UINT32;
-        datatypeCodes["int64"] = DT_INT64;
-        datatypeCodes["uint64"] = DT_UINT64;
-    }
-    
-    if (datatypeCodes.count(datatype) == 0)
-    {
-        std::ostringstream message;
-        message << "Datatype \"" << datatype << "\" is not valid";
-        Rf_warning(message.str().c_str());
-        toFile(fileName, DT_NONE);
-    }
-    else
-        toFile(fileName, datatypeCodes[datatype]);
+    toFile(fileName, internal::stringToDatatype(datatype));
 }
 
 inline Rcpp::RObject NiftiImage::toArray () const

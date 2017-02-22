@@ -99,6 +99,47 @@ inline DataHandler * getDataHandler (const short typeCode)
         return typeMap[typeCode].get();
 };
 
+inline short stringToDatatype (const std::string &datatype)
+{
+    static std::map<std::string,short> datatypeCodes;
+    if (datatypeCodes.empty())
+    {
+        datatypeCodes["auto"] = DT_NONE;
+        datatypeCodes["none"] = DT_NONE;
+        datatypeCodes["unknown"] = DT_NONE;
+        datatypeCodes["uint8"] = DT_UINT8;
+        datatypeCodes["char"] = DT_UINT8;
+        datatypeCodes["int16"] = DT_INT16;
+        datatypeCodes["short"] = DT_INT16;
+        datatypeCodes["int32"] = DT_INT32;
+        datatypeCodes["int"] = DT_INT32;
+        datatypeCodes["float32"] = DT_FLOAT32;
+        datatypeCodes["float"] = DT_FLOAT32;
+        datatypeCodes["float64"] = DT_FLOAT64;
+        datatypeCodes["double"] = DT_FLOAT64;
+        datatypeCodes["int8"] = DT_INT8;
+        datatypeCodes["uint16"] = DT_UINT16;
+        datatypeCodes["uint32"] = DT_UINT32;
+        datatypeCodes["int64"] = DT_INT64;
+        datatypeCodes["uint64"] = DT_UINT64;
+    }
+    
+    std::locale locale;
+    std::string lowerCaseDatatype = datatype;
+    for (std::string::size_type i=0; i<lowerCaseDatatype.length(); i++)
+        lowerCaseDatatype[i] = std::tolower(lowerCaseDatatype[i], locale);
+    
+    if (datatypeCodes.count(lowerCaseDatatype) == 0)
+    {
+        std::ostringstream message;
+        message << "Datatype \"" << datatype << "\" is not valid";
+        Rf_warning(message.str().c_str());
+        return DT_NONE;
+    }
+    else
+        return datatypeCodes[lowerCaseDatatype];
+}
+
 template <typename TargetType>
 inline void copyIfPresent (const Rcpp::List &list, const std::set<std::string> names, const std::string &name, TargetType &target)
 {
@@ -124,22 +165,6 @@ inline mat33 topLeftCorner (const mat44 &matrix)
     }
     
     return newMatrix;
-}
-
-template <typename TargetType>
-inline void changeDatatype (nifti_image *image, const short datatype)
-{
-    TargetType *data;
-    const size_t dataSize = image->nvox * sizeof(TargetType);
-    data = static_cast<TargetType *>(calloc(1, dataSize));
-    
-    DataHandler *handler = getDataHandler(image->datatype);
-    handler->convertToArray(image->data, image->nvox, data);
-
-    free(image->data);
-    image->data = data;
-    image->datatype = datatype;
-    nifti_datatype_sizes(datatype, &image->nbyper, &image->swapsize);
 }
 
 template <int SexpType>
