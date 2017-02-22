@@ -3,38 +3,63 @@
 
 namespace internal {
 
+template <typename SourceType, typename TargetType>
+inline TargetType convertValue (SourceType value)
+{
+    return static_cast<TargetType>(value);
+}
+
 struct DataHandler
 {
     virtual short code () { return DT_NONE; }
     
     template <typename TargetType>
-    void convertArray (void *source, const size_t length, TargetType *target) {}
+    void convertToArray (void *source, const size_t length, TargetType *target) {}
     
     template <typename TargetType>
-    void convertVector (void *source, const size_t length, std::vector<TargetType> &target) {}
+    void convertToVector (void *source, const size_t length, std::vector<TargetType> &target, const size_t offset = 0) {}
+    
+    template <typename SourceType>
+    void convertFromVector (const std::vector<SourceType> &source, void *target) {}
+    
+    template <int SexpType>
+    void convertToRcppVector (void *source, const size_t length, Rcpp::Vector<SexpType> &target) {}
 };
 
 template <typename Type>
 struct TypedDataHandler : public DataHandler
 {
     template <typename TargetType>
-    static TargetType convertValue (Type value)
+    void convertToArray (void *source, const size_t length, TargetType *target)
     {
-        return static_cast<TargetType>(value);
+        Type *castSource = static_cast<Type *>(source);
+        std::transform(castSource, castSource + length, target, convertValue<Type,TargetType>);
     }
     
     template <typename TargetType>
-    void convertArray (void *source, const size_t length, TargetType *target)
+    void convertToVector (void *source, const size_t length, std::vector<TargetType> &target, const size_t offset = 0)
     {
-        Type *castSource = static_cast<Type *>(source);
-        std::transform(castSource, castSource + length, target, convertValue<TargetType>);
+        Type *castSource = static_cast<Type *>(source) + offset;
+        std::transform(castSource, castSource + length, target.begin(), convertValue<Type,TargetType>);
     }
     
-    template <typename TargetType>
-    void convertVector (void *source, const size_t length, std::vector<TargetType> &target)
+    template <typename SourceType>
+    void convertFromVector (const std::vector<SourceType> &source, void *target)
+    {
+        Type *castTarget = static_cast<Type *>(target);
+        std::transform(source.begin(), source.end(), castTarget, convertValue<SourceType,Type>);
+    }
+    
+    template <int SexpType>
+    void convertToRcppVector (void *source, const size_t length, Rcpp::Vector<SexpType> &target)
     {
         Type *castSource = static_cast<Type *>(source);
-        std::transform(castSource, castSource + length, target.begin(), convertValue<SourceType,TargetType>);
+        if (SexpType == INTSXP || SexpType == LGLSXP)
+            std::transform(castSource, castSource + length, target.begin(), convertValue<Type,int>);
+        else if (SexpType == REALSXP)
+            std::transform(castSource, castSource + length, target.begin(), convertValue<Type,double>);
+        else
+            throw std::runtime_error("Only numeric arrays can be created");
     }
 };
 
@@ -49,7 +74,7 @@ template <> struct TypedDataHandler<uint32_t> : public DataHandler { short code 
 template <> struct TypedDataHandler<int64_t> : public DataHandler  { short code () { return DT_INT64; } };
 template <> struct TypedDataHandler<uint64_t> : public DataHandler { short code () { return DT_UINT64; } };
 
-inline DataHandler * getDataType (const short typeCode)
+inline DataHandler * getDataHandler (const short typeCode)
 {
     typedef std::auto_ptr<DataHandler> pointer_type;
     static std::map<short,pointer_type> typeMap;
@@ -66,8 +91,11 @@ inline DataHandler * getDataType (const short typeCode)
         typeMap[DT_INT64] = pointer_type(new TypedDataHandler<int64_t>);
         typeMap[DT_UINT64] = pointer_type(new TypedDataHandler<uint64_t>);
     }
-
-    return typeMap[typeCode].get();
+    
+    if (typeMap.count(typeCode) == 0)
+        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(typeCode)) + ")");
+    else
+        return typeMap[typeCode].get();
 };
 
 template <typename TargetType>
@@ -95,24 +123,6 @@ inline mat33 topLeftCorner (const mat44 &matrix)
     }
     
     return newMatrix;
-}
-
-template <typename SourceType, typename TargetType>
-inline TargetType convertValue (SourceType value)
-{
-    return static_cast<TargetType>(value);
-}
-
-template <typename SourceType, typename TargetType>
-inline void convertArray (const SourceType *source, const size_t length, TargetType *target)
-{
-    std::transform(source, source + length, target, convertValue<SourceType,TargetType>);
-}
-
-template <typename SourceType, typename TargetType>
-inline void convertVector (const SourceType *source, const size_t length, std::vector<TargetType> &target)
-{
-    std::transform(source, source + length, target.begin(), convertValue<SourceType,TargetType>);
 }
 
 template <typename TargetType>
