@@ -9,6 +9,7 @@ inline TargetType convertValue (SourceType value)
     return static_cast<TargetType>(value);
 }
 
+// Base class type responsible for handling image data buffers
 struct DataHandler
 {
     virtual short code () { return DT_NONE; }
@@ -141,7 +142,7 @@ inline void changeDatatype (nifti_image *image, const short datatype)
     nifti_datatype_sizes(datatype, &image->nbyper, &image->swapsize);
 }
 
-template <typename SourceType, int SexpType>
+template <int SexpType>
 inline Rcpp::RObject imageDataToArray (const nifti_image *source)
 {
     if (source == NULL)
@@ -156,16 +157,9 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
     }
     else
     {
-        SourceType *original = static_cast<SourceType *>(source->data);
         Rcpp::Vector<SexpType> array(static_cast<int>(source->nvox));
-        
-        if (SexpType == INTSXP || SexpType == LGLSXP)
-            std::transform(original, original + source->nvox, array.begin(), convertValue<SourceType,int>);
-        else if (SexpType == REALSXP)
-            std::transform(original, original + source->nvox, array.begin(), convertValue<SourceType,double>);
-        else
-            throw std::runtime_error("Only numeric arrays can be created");
-        
+        DataHandler *handler = getDataHandler(source->datatype);
+        handler->convertToRcppVector(source->data, source->nvox, array);
         return array;
     }
 }

@@ -1243,43 +1243,19 @@ inline Rcpp::RObject NiftiImage::toArray () const
     switch (image->datatype)
     {
         case DT_UINT8:
-        array = internal::imageDataToArray<uint8_t,INTSXP>(image);
-        break;
-        
         case DT_INT16:
-        array = internal::imageDataToArray<int16_t,INTSXP>(image);
-        break;
-        
         case DT_INT32:
-        array = internal::imageDataToArray<int32_t,INTSXP>(image);
+        case DT_INT8:
+        case DT_UINT16:
+        case DT_UINT32:
+        case DT_INT64:
+        case DT_UINT64:
+        array = internal::imageDataToArray<INTSXP>(image);
         break;
         
         case DT_FLOAT32:
-        array = internal::imageDataToArray<float,REALSXP>(image);
-        break;
-        
         case DT_FLOAT64:
-        array = internal::imageDataToArray<double,REALSXP>(image);
-        break;
-        
-        case DT_INT8:
-        array = internal::imageDataToArray<int8_t,INTSXP>(image);
-        break;
-        
-        case DT_UINT16:
-        array = internal::imageDataToArray<uint16_t,INTSXP>(image);
-        break;
-        
-        case DT_UINT32:
-        array = internal::imageDataToArray<uint32_t,INTSXP>(image);
-        break;
-        
-        case DT_INT64:
-        array = internal::imageDataToArray<int64_t,INTSXP>(image);
-        break;
-        
-        case DT_UINT64:
-        array = internal::imageDataToArray<uint64_t,INTSXP>(image);
+        array = internal::imageDataToArray<REALSXP>(image);
         break;
         
         default:
