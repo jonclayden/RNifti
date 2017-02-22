@@ -37,6 +37,7 @@ static mat33(*_nifti_mat33_polar)(mat33) = NULL;
 static mat44(*_nifti_mat44_inverse)(mat44) = NULL;
 static void(*_nifti_mat44_to_quatern)(mat44, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *) = NULL;
 static mat44(*_nifti_quatern_to_mat44)(float, float, float, float, float, float, float, float, float, float) = NULL;
+static void(*_nifti_mat44_to_orientation)(mat44, int *, int *, int *) = NULL;
 
 static void(*_nifti_swap_2bytes)(size_t, void *) = NULL;
 static void(*_nifti_swap_4bytes)(size_t, void *) = NULL;
@@ -78,6 +79,7 @@ void niftilib_register_all ()
         _nifti_mat44_inverse = (mat44(*)(mat44)) R_GetCCallable("RNifti","nii_mat44_inverse");
         _nifti_mat44_to_quatern = (void(*)(mat44, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *)) R_GetCCallable("RNifti","nii_mat44_to_quatern");
         _nifti_quatern_to_mat44 = (mat44(*)(float, float, float, float, float, float, float, float, float, float)) R_GetCCallable("RNifti","nii_quatern_to_mat44");
+        _nifti_mat44_to_orientation = (void(*)(mat44, int *, int *, int *)) R_GetCCallable("RNifti","nii_mat44_to_orientation");
         
         _nifti_swap_2bytes = (void(*)(size_t, void *)) R_GetCCallable("RNifti","nii_swap_2bytes");
         _nifti_swap_4bytes = (void(*)(size_t, void *)) R_GetCCallable("RNifti","nii_swap_4bytes");
@@ -259,6 +261,13 @@ mat44 nifti_quatern_to_mat44 (float qb, float qc, float qd, float qx, float qy, 
     if (_nifti_quatern_to_mat44 == NULL)
         niftilib_register_all();
     return _nifti_quatern_to_mat44(qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac);
+}
+
+void nifti_mat44_to_orientation(mat44 R, int *icod, int *jcod, int *kcod)
+{
+    if (_nifti_mat44_to_orientation == NULL)
+        niftilib_register_all();
+    return _nifti_mat44_to_orientation(R, icod, jcod, kcod);
 }
 
 void nifti_swap_2bytes (size_t n, void *ar)
