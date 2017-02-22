@@ -1280,7 +1280,6 @@ inline Rcpp::RObject NiftiImage::toArray () const
     }
     
     internal::addAttributes(array, image);
-    const Rcpp::IntegerVector dim = array.attr("dim");
     array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "array");
     return array;
 }
