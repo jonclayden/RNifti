@@ -389,7 +389,7 @@ public:
      * exception will be raised if this does not have a length matching the image
     **/
     template <typename SourceType>
-    void replaceData (std::vector<SourceType> &data);
+    void replaceData (const std::vector<SourceType> &data);
     
     /**
      * Drop the data from the image, retaining only the metadata
@@ -478,7 +478,7 @@ public:
      * @param fileName The file name to write to, with appropriate suffix (e.g. ".nii.gz")
      * @param datatype The datatype to use when writing the file
     **/
-    void toFile (const std::string fileName, const short datatype) const;
+    void toFile (const std::string fileName, const short datatype = DT_NONE) const;
     
     /**
      * Write the image to a NIfTI-1 file
@@ -1208,7 +1208,7 @@ inline void NiftiImage::changeDatatype (const std::string &datatype)
 }
 
 template <typename SourceType>
-inline void NiftiImage::replaceData (std::vector<SourceType> &data)
+inline void NiftiImage::replaceData (const std::vector<SourceType> &data)
 {
     if (this->isNull())
         return;
