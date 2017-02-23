@@ -159,7 +159,15 @@ void myfunction ()
 }
 ```
 
-There are also constructors taking a `SEXP` (i.e., an R object), another `NiftiImage`, or a `nifti_image` structure from the reference implementation. `NiftiImage` objects can be implicitly cast to pointers to `nifti_image` structs, meaning that they can be directly used in calls to the reference implementation's own API. The latter is accessed through the separate `RNiftiAPI.h` header file.
+If you're using the `sourceCpp` function from `Rcpp`, you may also need to add the attribute line
+
+```c++
+// [[Rcpp::depends(RNifti)]]
+```
+
+to the top of your C++ source file.
+
+In addition to the one taking a file path, there are also constructors taking a `SEXP` (i.e., an R object), another `NiftiImage`, or a `nifti_image` structure from the reference implementation. `NiftiImage` objects can be implicitly cast to pointers to `nifti_image` structs, meaning that they can be directly used in calls to the reference implementation's own API. The latter is accessed through the separate `RNiftiAPI.h` header file.
 
 ```c++
 #include "RNifti.h"
