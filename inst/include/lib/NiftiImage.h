@@ -389,7 +389,7 @@ public:
      * exception will be raised if this does not have a length matching the image
     **/
     template <typename SourceType>
-    void replaceData (const std::vector<SourceType> &data);
+    void replaceData (const std::vector<SourceType> &data, const short datatype = DT_NONE);
     
     /**
      * Drop the data from the image, retaining only the metadata
@@ -1208,12 +1208,19 @@ inline void NiftiImage::changeDatatype (const std::string &datatype)
 }
 
 template <typename SourceType>
-inline void NiftiImage::replaceData (const std::vector<SourceType> &data)
+inline void NiftiImage::replaceData (const std::vector<SourceType> &data, const short datatype)
 {
     if (this->isNull())
         return;
     else if (data.size() != image->nvox)
         throw std::runtime_error("New data length does not match the number of voxels in the image");
+    
+    if (datatype != DT_NONE)
+    {
+        nifti_image_unload(image);
+        image->datatype = datatype;
+        nifti_datatype_sizes(datatype, &image->nbyper, &image->swapsize);
+    }
     
     if (image->data == NULL)
         image->data = calloc(image->nvox, image->nbyper);
