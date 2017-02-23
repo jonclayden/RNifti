@@ -373,20 +373,22 @@ public:
     
     /**
      * Change the datatype of the image, casting the pixel data if present
-     * @param A NIfTI datatype code
+     * @param datatype A NIfTI datatype code
     **/
     void changeDatatype (const short datatype);
     
     /**
      * Change the datatype of the image, casting the pixel data if present
-     * @param A string specifying the new datatype
+     * @param datatype A string specifying the new datatype
     **/
     void changeDatatype (const std::string &datatype);
     
     /**
      * Replace the pixel data in the image with the contents of a vector
-     * @param A data vector, whose elements will be cast to match the datatype of the image. An
-     * exception will be raised if this does not have a length matching the image
+     * @param data A data vector, whose elements will be cast to match the datatype of the image.
+     * An exception will be raised if this does not have a length matching the image
+     * @param datatype The final datatype required. By default the existing datatype of the image
+     * is used
     **/
     template <typename SourceType>
     void replaceData (const std::vector<SourceType> &data, const short datatype = DT_NONE);
