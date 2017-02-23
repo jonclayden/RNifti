@@ -1215,7 +1215,10 @@ inline void NiftiImage::replaceData (const std::vector<SourceType> &data)
     else if (data.size() != image->nvox)
         throw std::runtime_error("New data length does not match the number of voxels in the image");
     
+    if (image->data == NULL)
+        image->data = calloc(image->nvox, image->nbyper);
     internal::replaceData<SourceType>(data.begin(), data.end(), image->data, image->datatype);
+    
     image->scl_slope = 0.0;
     image->scl_inter = 0.0;
     image->cal_min = static_cast<float>(*std::min_element(data.begin(), data.end()));
