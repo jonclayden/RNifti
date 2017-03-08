@@ -2,6 +2,19 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.5.0
+
+- The NiftiImage class gains methods to drop or replace the image data, and to
+  mutate its datatype in-place. A datatype no longer needs to be specified when
+  writing an image to file using the toFile() C++ method.
+- The niftilib functions nifti_image_unload() and nifti_mat44_to_orientation()
+  are now exposed through the RNifti API.
+- Some minor compiler warnings that would affect packages linking to RNifti
+  have been resolved.
+- Additional tests have been added, to exercise the package more thoroughly.
+
+===============================================================================
+
 VERSION 0.4.0
 
 - Additional public methods have been added to the NiftiImage C++ class. Please
