@@ -766,7 +766,7 @@ inline void NiftiImage::initFromList (const Rcpp::RObject &object)
     if (names.count("dim") == 1)
     {
         std::vector<short> dim = list["dim"];
-        for (int i=0; i<std::min(dim.size(),size_t(8)); i++)
+        for (size_t i=0; i<std::min(dim.size(),size_t(8)); i++)
             header->dim[i] = dim[i];
     }
     
@@ -782,7 +782,7 @@ inline void NiftiImage::initFromList (const Rcpp::RObject &object)
     if (names.count("pixdim") == 1)
     {
         std::vector<float> pixdim = list["pixdim"];
-        for (int i=0; i<std::min(pixdim.size(),size_t(8)); i++)
+        for (size_t i=0; i<std::min(pixdim.size(),size_t(8)); i++)
             header->pixdim[i] = pixdim[i];
     }
     internal::copyIfPresent(list, names, "vox_offset", header->vox_offset);
@@ -813,19 +813,19 @@ inline void NiftiImage::initFromList (const Rcpp::RObject &object)
     if (names.count("srow_x") == 1)
     {
         std::vector<float> srow_x = list["srow_x"];
-        for (int i=0; i<std::min(srow_x.size(),size_t(4)); i++)
+        for (size_t i=0; i<std::min(srow_x.size(),size_t(4)); i++)
             header->srow_x[i] = srow_x[i];
     }
     if (names.count("srow_y") == 1)
     {
         std::vector<float> srow_y = list["srow_y"];
-        for (int i=0; i<std::min(srow_y.size(),size_t(4)); i++)
+        for (size_t i=0; i<std::min(srow_y.size(),size_t(4)); i++)
             header->srow_y[i] = srow_y[i];
     }
     if (names.count("srow_z") == 1)
     {
         std::vector<float> srow_z = list["srow_z"];
-        for (int i=0; i<std::min(srow_z.size(),size_t(4)); i++)
+        for (size_t i=0; i<std::min(srow_z.size(),size_t(4)); i++)
             header->srow_z[i] = srow_z[i];
     }
     
@@ -990,7 +990,7 @@ inline void NiftiImage::updatePixdim (const std::vector<float> &pixdim)
 
 inline void NiftiImage::setPixunits (const std::vector<std::string> &pixunits)
 {
-    for (int i=0; i<pixunits.size(); i++)
+    for (size_t i=0; i<pixunits.size(); i++)
     {
         if (pixunits[i] == "m")
             image->xyz_units = NIFTI_UNITS_METER;
