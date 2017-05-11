@@ -2,6 +2,13 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.5.1
+
+- A potential crash and/or memory leak in the C++ NiftiImage copy assignment
+  methods has been fixed.
+
+===============================================================================
+
 VERSION 0.5.0
 
 - The NiftiImage class gains methods to drop or replace the image data, and to
