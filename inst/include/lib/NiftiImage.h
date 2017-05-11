@@ -522,7 +522,7 @@ public:
 
 inline void NiftiImage::copy (const nifti_image *source)
 {
-    if (image != NULL)
+    if (image != NULL && !persistent)
         nifti_image_free(image);
         
     if (source == NULL)
@@ -537,6 +537,8 @@ inline void NiftiImage::copy (const nifti_image *source)
             memcpy(image->data, source->data, dataSize);
         }
     }
+    
+    persistent = false;
 }
 
 inline void NiftiImage::copy (const NiftiImage &source)
@@ -547,7 +549,7 @@ inline void NiftiImage::copy (const NiftiImage &source)
 
 inline void NiftiImage::copy (const Block &source)
 {
-    if (image != NULL)
+    if (image != NULL && !persistent)
         nifti_image_free(image);
     
     const nifti_image *sourceStruct = source.image;
@@ -568,6 +570,8 @@ inline void NiftiImage::copy (const Block &source)
             memcpy(image->data, static_cast<char*>(source.image->data) + blockSize*source.index, blockSize);
         }
     }
+    
+    persistent = false;
 }
 
 // Convert an S4 "nifti" object, as defined in the oro.nifti package, to a "nifti_image" struct
