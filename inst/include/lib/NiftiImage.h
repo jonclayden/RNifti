@@ -315,6 +315,11 @@ public:
     bool isPersistent () const { return persistent; }
     
     /**
+     * Determine whether nontrivial scale and slope parameters are set
+    **/
+    bool isDataScaled () const { return (image != NULL && image->scl_slope != 0.0 && (image->scl_slope != 1.0 || image->scl_inter != 0.0)); }
+    
+    /**
      * Return the number of dimensions in the image
     **/
     int nDims () const
@@ -1145,6 +1150,10 @@ inline std::vector<TargetType> NiftiImage::Block::getData () const
 
     std::vector<TargetType> data(blockSize);
     internal::convertData<TargetType>(image->data, image->datatype, blockSize, data.begin(), blockSize*index);
+    
+    if (image.isDataScaled())
+        std::transform(data.begin(), data.end(), data.begin(), internal::DataRescaler<TargetType>(image->scl_slope,image->scl_inter));
+    
     return data;
 }
 
@@ -1156,6 +1165,10 @@ inline std::vector<TargetType> NiftiImage::getData () const
     
     std::vector<TargetType> data(image->nvox);
     internal::convertData<TargetType>(image->data, image->datatype, image->nvox, data.begin());
+    
+    if (this->isDataScaled())
+        std::transform(data.begin(), data.end(), data.begin(), internal::DataRescaler<TargetType>(image->scl_slope,image->scl_inter));
+    
     return data;
 }
 
@@ -1281,27 +1294,34 @@ inline Rcpp::RObject NiftiImage::toArray () const
     
     if (this->isNull())
         return array;
-    
-    switch (image->datatype)
+    else if (this->isDataScaled())
     {
-        case DT_UINT8:
-        case DT_INT16:
-        case DT_INT32:
-        case DT_INT8:
-        case DT_UINT16:
-        case DT_UINT32:
-        case DT_INT64:
-        case DT_UINT64:
-        array = internal::imageDataToArray<INTSXP>(image);
-        break;
-        
-        case DT_FLOAT32:
-        case DT_FLOAT64:
         array = internal::imageDataToArray<REALSXP>(image);
-        break;
+        std::transform(REAL(array), REAL(array)+Rf_length(array), REAL(array), internal::DataRescaler<double>(image->scl_slope,image->scl_inter));
+    }
+    else
+    {
+        switch (image->datatype)
+        {
+            case DT_UINT8:
+            case DT_INT16:
+            case DT_INT32:
+            case DT_INT8:
+            case DT_UINT16:
+            case DT_UINT32:
+            case DT_INT64:
+            case DT_UINT64:
+            array = internal::imageDataToArray<INTSXP>(image);
+            break;
         
-        default:
-        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(image->datatype)) + ")");
+            case DT_FLOAT32:
+            case DT_FLOAT64:
+            array = internal::imageDataToArray<REALSXP>(image);
+            break;
+        
+            default:
+            throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(image->datatype)) + ")");
+        }
     }
     
     internal::addAttributes(array, image);

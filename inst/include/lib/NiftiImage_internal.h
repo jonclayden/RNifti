@@ -3,6 +3,20 @@
 
 namespace internal {
 
+template <typename ElementType>
+struct DataRescaler
+{
+    float slope, intercept;
+    
+    DataRescaler (const float slope, const float intercept)
+        : slope(slope), intercept(intercept) {}
+    
+    inline ElementType operator() (const ElementType value)
+    {
+        return static_cast<ElementType>(value * slope + intercept);
+    }
+};
+
 template <typename SourceType, typename TargetType>
 inline TargetType convertValue (SourceType value)
 {
