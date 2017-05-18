@@ -1036,6 +1036,9 @@ inline void NiftiImage::rescale (const std::vector<float> &scales)
     // Data vector is now the wrong size, so drop it
     if (!persistent)
         free(image->data);
+    
+    image->scl_slope = 0.0;
+    image->scl_inter = 0.0;
 }
 
 inline void NiftiImage::update (const SEXP array)
@@ -1078,9 +1081,20 @@ inline void NiftiImage::update (const SEXP array)
     const size_t dataSize = nifti_get_volsize(image);
     image->data = calloc(1, dataSize);
     if (image->datatype == DT_INT32)
+    {
         memcpy(image->data, INTEGER(object), dataSize);
+        image->cal_min = static_cast<float>(*std::min_element(INTEGER(object), INTEGER(object)+image->nvox));
+        image->cal_max = static_cast<float>(*std::max_element(INTEGER(object), INTEGER(object)+image->nvox));
+    }
     else
+    {
         memcpy(image->data, REAL(object), dataSize);
+        image->cal_min = static_cast<float>(*std::min_element(REAL(object), REAL(object)+image->nvox));
+        image->cal_max = static_cast<float>(*std::max_element(REAL(object), REAL(object)+image->nvox));
+    }
+    
+    image->scl_slope = 0.0;
+    image->scl_inter = 0.0;
 }
 
 inline mat44 NiftiImage::xform (const bool preferQuaternion) const
