@@ -1042,7 +1042,7 @@ inline void NiftiImage::rescale (const std::vector<float> &scales)
     
     // Data vector is now the wrong size, so drop it
     if (!persistent)
-        free(image->data);
+        nifti_image_unload(image);
     
     image->scl_slope = 0.0;
     image->scl_inter = 0.0;
@@ -1083,7 +1083,7 @@ inline void NiftiImage::update (const SEXP array)
     nifti_datatype_sizes(image->datatype, &image->nbyper, NULL);
     
     if (!persistent)
-        free(image->data);
+        nifti_image_unload(image);
     
     const size_t dataSize = nifti_get_volsize(image);
     image->data = calloc(1, dataSize);
