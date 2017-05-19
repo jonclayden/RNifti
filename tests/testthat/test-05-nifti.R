@@ -2,6 +2,7 @@ context("Reading and writing NIfTI files")
 
 test_that("NIfTI files can be read and written", {
     imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
+    compressedImagePath <- system.file("extdata", "example_compressed.nii.gz", package="RNifti")
     tempPath <- paste(tempfile(), "nii.gz", sep=".")
     
     expect_that(dim(readNifti(imagePath,internal=FALSE)), equals(c(96L,96L,60L)))
@@ -34,4 +35,9 @@ test_that("NIfTI files can be read and written", {
     image <- RNifti:::rescaleNifti(image, c(0.5,0.5,0.5))
     expect_that(pixdim(image), equals(c(5,5,5)))
     expect_that(as.array(image), gives_warning("no data"))
+    
+    expect_that(dumpNifti(compressedImagePath)$datatype, equals(2L))
+    compressedImage <- readNifti(compressedImagePath)
+    expect_that(dumpNifti(compressedImage)$datatype, equals(64L))
+    expect_that(round(compressedImage[40,40,30]), equals(363))
 })
