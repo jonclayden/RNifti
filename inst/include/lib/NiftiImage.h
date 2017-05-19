@@ -58,6 +58,8 @@ public:
         {
             if (source->datatype != image->datatype)
                 throw std::runtime_error("New data does not have the same datatype as the target block");
+            if (source->scl_slope != image->scl_slope || source->scl_inter != image->scl_inter)
+                throw std::runtime_error("New data does not have the same scale parameters as the target block");
             
             size_t blockSize = 1;
             for (int i=1; i<dimension; i++)
