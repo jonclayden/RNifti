@@ -2,6 +2,16 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.6.0
+
+- Slope and intercept values in a NIfTI-1 header are now applied to the image
+  data when converting it to an R array (which will in this case always be of
+  mode double), or a C++ vector.
+- The slope and intercept will be reset to zero when updating the data in an
+  internal image object.
+
+===============================================================================
+
 VERSION 0.5.1
 
 - A potential crash and/or memory leak in the C++ NiftiImage copy assignment
