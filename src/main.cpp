@@ -116,6 +116,37 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP reorientImage (SEXP _image, SEXP _axes)
+{
+BEGIN_RCPP
+    const NiftiImage image(_image);
+    const std::string axes = as<std::string>(_axes);
+    
+    int codes[3];
+    if (axes.length() != 3)
+        throw std::runtime_error("Orientation string should have exactly three characters");
+    for (int i=0; i<3; i++)
+    {
+        switch(axes[i])
+        {
+            case 'r': case 'R': codes[i] = NIFTI_L2R; break;
+            case 'l': case 'L': codes[i] = NIFTI_R2L; break;
+            case 'a': case 'A': codes[i] = NIFTI_P2A; break;
+            case 'p': case 'P': codes[i] = NIFTI_A2P; break;
+            case 's': case 'S': codes[i] = NIFTI_I2S; break;
+            case 'i': case 'I': codes[i] = NIFTI_S2I; break;
+            
+            default:
+            throw std::runtime_error("Orientation string is invalid");
+        }
+    }
+    
+    NiftiImage newImage(image);
+    newImage.reorient(codes[0], codes[1], codes[2]);
+    return newImage.toPointer("NIfTI image");
+END_RCPP
+}
+
 RcppExport SEXP rescaleImage (SEXP _image, SEXP _scales)
 {
 BEGIN_RCPP
@@ -145,6 +176,7 @@ static R_CallMethodDef callMethods[] = {
     { "dumpNifti",      (DL_FUNC) &dumpNifti,       1 },
     { "getXform",       (DL_FUNC) &getXform,        2 },
     { "setXform",       (DL_FUNC) &setXform,        3 },
+    { "reorientImage",  (DL_FUNC) &reorientImage,   2 },
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },
     { NULL, NULL, 0 }
