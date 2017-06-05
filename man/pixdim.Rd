@@ -55,4 +55,3 @@ pixunits(im)
 \author{
 Jon Clayden <code@clayden.org>
 }
-

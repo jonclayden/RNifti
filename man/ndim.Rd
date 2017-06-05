@@ -23,4 +23,3 @@ ndim(array(0L, dim=c(10,10)))
 \author{
 Jon Clayden <code@clayden.org>
 }
-

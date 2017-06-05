@@ -29,13 +29,12 @@ C library.
 \dontrun{writeNifti(im, "image.nii.gz", datatype="float")}
 
 }
-\author{
-Jon Clayden <code@clayden.org>
-}
 \references{
 The NIfTI-1 standard (\url{http://nifti.nimh.nih.gov/nifti-1}).
 }
 \seealso{
 \code{\link{readNifti}}, \code{\link{updateNifti}}
 }
-
+\author{
+Jon Clayden <code@clayden.org>
+}
