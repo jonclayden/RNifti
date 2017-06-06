@@ -1123,6 +1123,10 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         }
     }
     
+    // Check for no-op case
+    if (icode == nicode && jcode == njcode && kcode == nkcode)
+        return *this;
+    
     // The transform is t(approx_old_xform) %*% target_xform
     // The new xform is old_xform %*% transform
     // NB: "transform" is really 4x4, but the last row and column are filled implicitly during the multiplication loop
