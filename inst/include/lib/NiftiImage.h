@@ -1067,6 +1067,13 @@ inline void NiftiImage::reorient (const int icode, const int jcode, const int kc
         return;
     }
     
+    int used[6] = { 0, 0, 0, 0, 0, 0 };
+    used[icode-1] = 1;
+    used[jcode-1] = 1;
+    used[kcode-1] = 1;
+    if (used[0]+used[1] != 1 || used[2]+used[3] != 1 || used[4]+used[5] != 1)
+        throw std::runtime_error("Each canonical axis should be used exactly once");
+    
     const int codes[3] = { icode, jcode, kcode };
     const mat44 native = this->xform();
     
