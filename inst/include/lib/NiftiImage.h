@@ -96,6 +96,33 @@ public:
             throw std::runtime_error("Array elements must be numeric");
     }
     
+    /**
+     * Convert a 4x4 xform matrix to a string describing its canonical axes
+     * @param matrix An xform matrix
+     * @return A string containing three characters
+    **/
+    static std::string xformToString (const mat44 matrix)
+    {
+        int icode, jcode, kcode;
+        nifti_mat44_to_orientation(matrix, &icode, &jcode, &kcode);
+        
+        int codes[3] = { icode, jcode, kcode };
+        std::string result("---");
+        for (int i=0; i<3; i++)
+        {
+            switch (codes[i])
+            {
+                case NIFTI_L2R: result[i] = 'R'; break;
+                case NIFTI_R2L: result[i] = 'L'; break;
+                case NIFTI_P2A: result[i] = 'A'; break;
+                case NIFTI_A2P: result[i] = 'P'; break;
+                case NIFTI_I2S: result[i] = 'S'; break;
+                case NIFTI_S2I: result[i] = 'I'; break;
+            }
+        }
+        return result;
+    }
+    
 protected:
     nifti_image *image;         /**< The wrapped \c nifti_image pointer */
     bool persistent;            /**< Marker of persistence, which determines whether the nifti_image should be freed on destruction */
@@ -425,6 +452,15 @@ public:
      * adjusted in line with the transformation
     **/
     NiftiImage & reorient (const int i, const int j, const int k);
+    
+    /**
+     * Reorient the image by permuting dimensions and potentially reversing some
+     * @param orientation A string containing some permutation of the letters \c L or \c R,
+     * \c P or \c A, \c I or \c S, giving the canonical axes to reorient to
+     * @note The pixel data is reordered, but not resampled. The xform matrices will also be
+     * adjusted in line with the transformation
+    **/
+    NiftiImage & reorient (const std::string &orientation);
     
     /**
      * Update the image from an R array
@@ -1228,6 +1264,31 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
     nifti_update_dims_from_array(image);
     
     return *this;
+}
+
+inline NiftiImage & NiftiImage::reorient (const std::string &orientation)
+{
+    if (orientation.length() != 3)
+        throw std::runtime_error("Orientation string should have exactly three characters");
+    
+    int codes[3];
+    for (int i=0; i<3; i++)
+    {
+        switch(orientation[i])
+        {
+            case 'r': case 'R': codes[i] = NIFTI_L2R; break;
+            case 'l': case 'L': codes[i] = NIFTI_R2L; break;
+            case 'a': case 'A': codes[i] = NIFTI_P2A; break;
+            case 'p': case 'P': codes[i] = NIFTI_A2P; break;
+            case 's': case 'S': codes[i] = NIFTI_I2S; break;
+            case 'i': case 'I': codes[i] = NIFTI_S2I; break;
+            
+            default:
+            throw std::runtime_error("Orientation string is invalid");
+        }
+    }
+    
+    return reorient(codes[0], codes[1], codes[2]);
 }
 
 inline NiftiImage & NiftiImage::update (const SEXP array)
