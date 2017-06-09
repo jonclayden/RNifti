@@ -183,3 +183,19 @@ void myfunction (SEXP image_)
 (`RNifti` will also have to be added to the `Imports` list in the package's `DESCRIPTION` file, as well as `LinkingTo`.) The `RNiftiAPI.h` header should only be included once per package, since it contains function implementations. Multiple includes will lead to duplicate symbol warnings from your linker. Therefore, if multiple source files require access to the NIfTI-1 reference implementation, it is recommended that the API header be included alone in a separate ".c" or ".cpp" file, while others only include the main `RNifti.h`.
 
 `RNifti` is not specifically designed to be thread-safe, and R itself is expressly single-threaded. However, some effort has been made to try to minimise problems associated with parallelisation, such as putting R API calls within a critical region if OpenMP is being used. If you are using the API in a package that does use OpenMP or another form of threads, it is wise to preregister the functions exported by `RNifti` before use, by calling `niftilib_register_all()`. In single-threaded contexts this is optional, and will be performed when required.
+
+## Use in pure C++ projects
+
+Thanks to contributions from @soolijoo, it is possible (as of package version 0.7.0) to use the `NiftiImage` C++ class in standalone C++ projects. You will need the following files:
+
+| Path                            | Purpose                                                                                             |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `inst/include/lib/*.h`          | Headers defining the `NiftiImage` class itself, related functions and macros                        |
+| `inst/include/niftilib/*.h`     | Headers for the NIfTI-1 reference implementation                                                    |
+| `inst/include/znzlib/znzlib.h`  | Header for I/O functions from the NIfTI-1 reference implementation                                  |
+| `inst/include/zlib/*.h`         | `zlib` headers for reading and writing gzipped files (optional; system `zlib` can be used instead)  |
+| `src/niftilib/nifti1_io.c`      | Source file for the NIfTI-1 reference implementation                                                |
+| `src/znzlib/znzlib.c`           | Source for I/O functions from the NIfTI-1 reference implementation                                  |
+| `src/zlib/*`                    | `zlib` source files for reading and writing gzipped files (optional, as above)                      |
+
+Note that the `NiftiImage` class is header-only, but C code from the NIfTI-1 reference implementation will need to be compiled and linked into the project. The constant `_NO_R__` should be defined, and `print.h` included, before including `NiftiImage.h`, so that the R API is not used.
