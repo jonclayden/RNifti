@@ -101,7 +101,6 @@ public:
         std::vector<TargetType> getData () const;
     };
     
-
 #ifndef _NO_R__ 
     /**
      * Convert between R \c SEXP object type and \c nifti_image datatype codes
@@ -118,10 +117,7 @@ public:
         else
             throw std::runtime_error("Array elements must be numeric");
     }
-
 #endif
-
-
     
     /**
      * Convert a 4x4 xform matrix to a string describing its canonical axes
@@ -285,7 +281,6 @@ public:
 #endif
     }
     
-
 #ifndef _NO_R__ 
     /**
      * Initialise from an R object
@@ -294,7 +289,7 @@ public:
     **/
     NiftiImage (const SEXP object, const bool readData = true);
 #endif
-
+    
     /**
      * Destructor which frees the wrapped pointer, unless the object is marked as persistent
     **/
@@ -585,9 +580,9 @@ public:
      * @param datatype The datatype to use when writing the file, or "auto"
     **/
     void toFile (const std::string fileName, const std::string &datatype) const;
-   
-
+    
 #ifndef _NO_R__
+    
     /**
      * Create an R array from the image
      * @return A numeric array object with an external pointer attribute
@@ -614,6 +609,7 @@ public:
      * @return An R list
     **/
     Rcpp::RObject headerToList () const;
+    
 #endif
 
 };
@@ -675,9 +671,8 @@ inline void NiftiImage::copy (const Block &source)
     persistent = false;
 }
 
-
-
 #ifndef _NO_R__
+
 // Convert an S4 "nifti" object, as defined in the oro.nifti package, to a "nifti_image" struct
 inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool copyData)
 {
@@ -1042,8 +1037,8 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
     Rprintf("Creating NiftiImage with pointer %p (from SEXP)\n", this->image);
 #endif
 }
-#endif // _NO_R__
 
+#endif // _NO_R__
 
 inline void NiftiImage::updatePixdim (const std::vector<float> &pixdim)
 {
@@ -1315,11 +1310,6 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
     return *this;
 }
 
-
-
-
-
-
 inline NiftiImage & NiftiImage::reorient (const std::string &orientation)
 {
     if (orientation.length() != 3)
@@ -1345,9 +1335,7 @@ inline NiftiImage & NiftiImage::reorient (const std::string &orientation)
     return reorient(codes[0], codes[1], codes[2]);
 }
 
-
 #ifndef _NO_R__
-
 
 inline NiftiImage & NiftiImage::update (const SEXP array)
 {
@@ -1406,8 +1394,8 @@ inline NiftiImage & NiftiImage::update (const SEXP array)
     
     return *this;
 }
-#endif// _NO_R__
 
+#endif// _NO_R__
 
 inline mat44 NiftiImage::xform (const bool preferQuaternion) const
 {
@@ -1599,8 +1587,8 @@ inline void NiftiImage::toFile (const std::string fileName, const std::string &d
     toFile(fileName, internal::stringToDatatype(datatype));
 }
 
-
 #ifndef _NO_R__
+
 inline Rcpp::RObject NiftiImage::toArray () const
 {
     Rcpp::RObject array;
@@ -1715,6 +1703,7 @@ inline Rcpp::RObject NiftiImage::headerToList () const
     
     return result;
 }
+
 #endif // _NO_R__
 
 } // namespace

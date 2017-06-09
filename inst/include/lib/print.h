@@ -1,7 +1,6 @@
 #ifndef _PRINT_H_
 #define _PRINT_H_
 
-
 #ifndef _NO_R__
 
 #define R_USE_C99_IN_CXX
