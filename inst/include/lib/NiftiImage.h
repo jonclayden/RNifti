@@ -490,7 +490,7 @@ public:
     NiftiImage & reorient (const int i, const int j, const int k);
     
 
-#ifndef _NO_R__
+
     /**
      * Reorient the image by permuting dimensions and potentially reversing some
      * @param orientation A string containing some permutation of the letters \c L or \c R,
@@ -500,6 +500,7 @@ public:
     **/
     NiftiImage & reorient (const std::string &orientation);
     
+#ifndef _NO_R__
     /**
      * Update the image from an R array
      * @param array An R array object
@@ -1318,7 +1319,7 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
 
 
 
-/*
+
 inline NiftiImage & NiftiImage::reorient (const std::string &orientation)
 {
     if (orientation.length() != 3)
@@ -1343,7 +1344,7 @@ inline NiftiImage & NiftiImage::reorient (const std::string &orientation)
     
     return reorient(codes[0], codes[1], codes[2]);
 }
-*/
+
 
 #ifndef _NO_R__
 
