@@ -40,8 +40,4 @@ test_that("NIfTI files can be read and written", {
     compressedImage <- readNifti(compressedImagePath)
     expect_that(dumpNifti(compressedImage)$datatype, equals(64L))
     expect_that(round(compressedImage[40,40,30]), equals(363))
-    
-    image <- readNifti(imagePath, internal=FALSE)
-    reorientedImage <- as.array(RNifti:::reorientNifti(image, "PIR"))
-    expect_that(image[40,40,30], equals(reorientedImage[57,31,57]))
 })
