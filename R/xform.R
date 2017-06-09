@@ -3,19 +3,24 @@
 #' These functions convert the ``qform'' or ``sform'' information in a NIfTI
 #' header to or from a corresponding affine matrix. These two ``xform''
 #' mechanisms are defined by the NIfTI standard, and may both be in use in a
-#' particular image header.
+#' particular image header. They define the relationship between the storage
+#' order of the image and real space.
 #' 
 #' @param image,x An image, in any acceptable form (see
 #'   \code{\link{retrieveNifti}}).
 #' @param useQuaternionFirst A single logical value. If \code{TRUE}, the
 #'   ``qform'' matrix will be used first, if it is defined; otherwise the
 #'   ``sform'' matrix will take priority.
-#' @param value A new 4x4 qform or sform matrix. If the matrix has a
-#'   \code{"code"} attribute, the appropriate qform or sform code is also set.
-#' @return A affine matrix corresponding to the ``qform'' or ``sform''
-#'   information in the image header. This is a plain matrix, which does not
-#'   have the \code{"affine"} class or \code{source} and \code{target}
-#'   attributes.
+#' @param value A new 4x4 qform or sform matrix, or orientation string. If a
+#'   matrix has a \code{"code"} attribute, the appropriate qform or sform code
+#'   is also set.
+#' @return For \code{xform}, an affine matrix corresponding to the ``qform''
+#'   or ``sform'' information in the image header. For \code{orientation}, a
+#'   string with three characters indicating the (approximate) orientation of
+#'   the image. Each character may be `R' for left-to-right, `L' for
+#'   right-to-left, `A' for posterior-to-anterior, `P' for
+#'   anterior-to-posterior, `S' for inferior-to-superior, or `I' for
+#'   superior-to-inferior. The replacement forms return the modified object.
 #' 
 #' @note The qform and sform replacement functions are for advanced users only.
 #'   Modifying the transforms without knowing what you're doing is usually
@@ -52,6 +57,20 @@ xform <- function (image, useQuaternionFirst = TRUE)
 "sform<-" <- function (x, value)
 {
     return (.Call("setXform", x, value, FALSE, PACKAGE="RNifti"))
+}
+
+#' @rdname xform
+#' @export
+orientation <- function (x, useQuaternionFirst = TRUE)
+{
+    return (.Call("getOrientation", x, isTRUE(useQuaternionFirst), PACKAGE="RNifti"))
+}
+
+#' @rdname xform
+#' @export
+"orientation<-" <- function (x, value)
+{
+    return (.Call("setOrientation", x, as.character(value), PACKAGE="RNifti"))
 }
 
 #' Transform points between voxel and ``world'' coordinates

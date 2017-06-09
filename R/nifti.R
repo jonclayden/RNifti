@@ -156,11 +156,6 @@ print.niftiHeader <- function (x, ...)
         cat(paste0(paste(rep(" ",maxWidth-widths[i]),collapse=""), names(x)[i], ": ", paste(format(x[[i]],trim=TRUE),collapse="  "), "\n"))
 }
 
-reorientNifti <- function (image, orientation)
-{
-    .Call("reorientImage", image, orientation, PACKAGE="RNifti")
-}
-
 rescaleNifti <- function (image, scales)
 {
     .Call("rescaleImage", image, scales, PACKAGE="RNifti")

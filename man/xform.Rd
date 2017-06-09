@@ -4,6 +4,8 @@
 \alias{xform}
 \alias{qform<-}
 \alias{sform<-}
+\alias{orientation}
+\alias{orientation<-}
 \title{Obtain or replace the ``xform'' transforms for an image}
 \usage{
 xform(image, useQuaternionFirst = TRUE)
@@ -11,6 +13,10 @@ xform(image, useQuaternionFirst = TRUE)
 qform(x) <- value
 
 sform(x) <- value
+
+orientation(x, useQuaternionFirst = TRUE)
+
+orientation(x) <- value
 }
 \arguments{
 \item{image, x}{An image, in any acceptable form (see
@@ -20,20 +26,25 @@ sform(x) <- value
 ``qform'' matrix will be used first, if it is defined; otherwise the
 ``sform'' matrix will take priority.}
 
-\item{value}{A new 4x4 qform or sform matrix. If the matrix has a
-\code{"code"} attribute, the appropriate qform or sform code is also set.}
+\item{value}{A new 4x4 qform or sform matrix, or orientation string. If a
+matrix has a \code{"code"} attribute, the appropriate qform or sform code
+is also set.}
 }
 \value{
-A affine matrix corresponding to the ``qform'' or ``sform''
-  information in the image header. This is a plain matrix, which does not
-  have the \code{"affine"} class or \code{source} and \code{target}
-  attributes.
+For \code{xform}, an affine matrix corresponding to the ``qform''
+  or ``sform'' information in the image header. For \code{orientation}, a
+  string with three characters indicating the (approximate) orientation of
+  the image. Each character may be `R' for left-to-right, `L' for
+  right-to-left, `A' for posterior-to-anterior, `P' for
+  anterior-to-posterior, `S' for inferior-to-superior, or `I' for
+  superior-to-inferior. The replacement forms return the modified object.
 }
 \description{
 These functions convert the ``qform'' or ``sform'' information in a NIfTI
 header to or from a corresponding affine matrix. These two ``xform''
 mechanisms are defined by the NIfTI standard, and may both be in use in a
-particular image header.
+particular image header. They define the relationship between the storage
+order of the image and real space.
 }
 \note{
 The qform and sform replacement functions are for advanced users only.
