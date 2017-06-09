@@ -484,8 +484,6 @@ public:
     **/
     NiftiImage & reorient (const int i, const int j, const int k);
     
-
-
     /**
      * Reorient the image by permuting dimensions and potentially reversing some
      * @param orientation A string containing some permutation of the letters \c L or \c R,
