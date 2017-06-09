@@ -120,29 +120,8 @@ RcppExport SEXP reorientImage (SEXP _image, SEXP _axes)
 {
 BEGIN_RCPP
     const NiftiImage image(_image);
-    const std::string axes = as<std::string>(_axes);
-    
-    int codes[3];
-    if (axes.length() != 3)
-        throw std::runtime_error("Orientation string should have exactly three characters");
-    for (int i=0; i<3; i++)
-    {
-        switch(axes[i])
-        {
-            case 'r': case 'R': codes[i] = NIFTI_L2R; break;
-            case 'l': case 'L': codes[i] = NIFTI_R2L; break;
-            case 'a': case 'A': codes[i] = NIFTI_P2A; break;
-            case 'p': case 'P': codes[i] = NIFTI_A2P; break;
-            case 's': case 'S': codes[i] = NIFTI_I2S; break;
-            case 'i': case 'I': codes[i] = NIFTI_S2I; break;
-            
-            default:
-            throw std::runtime_error("Orientation string is invalid");
-        }
-    }
-    
     NiftiImage newImage(image);
-    newImage.reorient(codes[0], codes[1], codes[2]);
+    newImage.reorient(as<std::string>(_axes));
     return newImage.toPointer("NIfTI image");
 END_RCPP
 }
@@ -150,11 +129,9 @@ END_RCPP
 RcppExport SEXP rescaleImage (SEXP _image, SEXP _scales)
 {
 BEGIN_RCPP
-    const float_vector scales = as<float_vector>(_scales);
     const NiftiImage image(_image);
-    
-    NiftiImage newImage(nifti_copy_nim_info(image));
-    newImage.rescale(scales);
+    NiftiImage newImage(image);
+    newImage.rescale(as<float_vector>(_scales));
     return newImage.toPointer("NIfTI image");
 END_RCPP
 }
