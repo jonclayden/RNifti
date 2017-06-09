@@ -5,6 +5,7 @@ Title: Fast R and C++ Access to NIfTI Images
 Authors@R: c(person("Jon","Clayden",role=c("cre","aut"),email="code@clayden.org"),
              person("Bob","Cox",role="aut"),
              person("Mark","Jenkinson",role="aut"),
+             person("Matt","Hall",role="ctb"),
              person("Rick","Reynolds",role="ctb"),
              person("Kate","Fissell",role="ctb"),
              person("Jean-loup","Gailly",role="cph"),
