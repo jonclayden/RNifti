@@ -37,7 +37,7 @@
 #' xform(im)
 #' 
 #' @author Jon Clayden <code@@clayden.org>
-#' @references The NIfTI-1 standard (\url{http://nifti.nimh.nih.gov/nifti-1})
+#' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h})
 #'   is the definitive reference on ``xform'' conventions.
 #' @export
 xform <- function (image, useQuaternionFirst = TRUE)
