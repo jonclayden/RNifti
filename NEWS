@@ -2,6 +2,20 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.7.0
+
+- The new orientation() function can be used to identify the approximate
+  storage orientation of an image. A replacement version allows the image
+  data and metadata dimensions to be permuted and/or reversed.
+- Image reorientation is similarly available through the C++ API.
+- The sform and qform replacement methods should now follow R's usual
+  semantics, and no longer modify the object in place if it is referred to by
+  more than one name.
+- The NiftiImage class is now suitable for use in standalone C++ projects.
+  (Thanks to Matt Hall.)
+
+===============================================================================
+
 VERSION 0.6.0
 
 - Slope and intercept values in a NIfTI-1 header are now applied to the image
