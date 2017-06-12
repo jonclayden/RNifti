@@ -25,10 +25,9 @@ conversion will be attempted. A list will be assumed to be of the form
 produced by \code{\link{dumpNifti}}. Finally, a numeric array or matrix
 will be converted using default image parameters.
 }
-\author{
-Jon Clayden <code@clayden.org>
-}
 \seealso{
 \code{\link{readNifti}}, \code{\link{updateNifti}}
 }
-
+\author{
+Jon Clayden <code@clayden.org>
+}

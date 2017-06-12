@@ -3,11 +3,14 @@
 \name{voxelToWorld}
 \alias{voxelToWorld}
 \alias{worldToVoxel}
+\alias{origin}
 \title{Transform points between voxel and ``world'' coordinates}
 \usage{
 voxelToWorld(points, image, simple = FALSE, ...)
 
 worldToVoxel(points, image, simple = FALSE, ...)
+
+origin(image, ...)
 }
 \arguments{
 \item{points}{A vector giving the coordinates of a point, or a matrix with
@@ -28,16 +31,23 @@ A vector or matrix of transformed points.
 These functions are used to transform points from dimensionless pixel or
 voxel coordinates to ``real-world'' coordinates, typically in millimetres,
 and back. Actual pixel units can be obtained using the
-\code{\link{pixunits}} function.
+\code{\link{pixunits}} function. The \code{origin} function gives the voxel
+coordinates of the real-world origin.
 }
 \note{
 Voxel coordinates are assumed by these functions to use R's indexing
   convention, beginning from 1.
 }
-\author{
-Jon Clayden <code@clayden.org>
+\examples{
+im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+
+# Find the origin
+origin(im)
+
 }
 \seealso{
 \code{\link{xform}}, \code{\link{pixdim}}, \code{\link{pixunits}}
 }
-
+\author{
+Jon Clayden <code@clayden.org>
+}

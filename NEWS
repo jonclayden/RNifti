@@ -1,0 +1,118 @@
+Significant changes to the RNifti package are laid out below for each release.
+
+===============================================================================
+
+VERSION 0.7.0
+
+- The new orientation() function can be used to identify the approximate
+  storage orientation of an image. A replacement version allows the image
+  data and metadata dimensions to be permuted and/or reversed.
+- Image reorientation is similarly available through the C++ API.
+- The sform and qform replacement methods should now follow R's usual
+  semantics, and no longer modify the object in place if it is referred to by
+  more than one name.
+- The NiftiImage class is now suitable for use in standalone C++ projects.
+  (Thanks to Matt Hall.)
+
+===============================================================================
+
+VERSION 0.6.0
+
+- Slope and intercept values in a NIfTI-1 header are now applied to the image
+  data when converting it to an R array (which will in this case always be of
+  mode double), or a C++ vector.
+- The slope and intercept will be reset to zero when updating the data in an
+  internal image object.
+
+===============================================================================
+
+VERSION 0.5.1
+
+- A potential crash and/or memory leak in the C++ NiftiImage copy assignment
+  methods has been fixed.
+
+===============================================================================
+
+VERSION 0.5.0
+
+- The NiftiImage class gains methods to drop or replace the image data, and to
+  mutate its datatype in-place. A datatype no longer needs to be specified when
+  writing an image to file using the toFile() C++ method.
+- The niftilib functions nifti_image_unload() and nifti_mat44_to_orientation()
+  are now exposed through the RNifti API.
+- Some minor compiler warnings that would affect packages linking to RNifti
+  have been resolved.
+- Additional tests have been added, to exercise the package more thoroughly.
+
+===============================================================================
+
+VERSION 0.4.0
+
+- Additional public methods have been added to the NiftiImage C++ class. Please
+  see the API documentation at <http://doxygen.flakery.org/RNifti/> for
+  details.
+- The new origin() R function is a convenience wrapper for worldToVoxel(),
+  which returns the voxel coordinates of the image origin.
+- The package now produces an error when passed an "anlz" class object (from
+  package "oro.nifti"), rather than mishandling it.
+
+===============================================================================
+
+VERSION 0.3.0
+
+- C++ API change: the NiftiImage class is now defined within an RNifti
+  namespace. This will break existing uses of the class, but compatibility with
+  older versions of the package can be preserved if desired, by checking for
+  the compile-time constant HAVE_RNIFTI_NAMESPACE, which will be defined from
+  now on.
+- Additional niftilib functions for calculating matrix norms and byte swapping
+  are now exposed through the RNifti API.
+- Calling the C/C++ function niftilib_register_all() more than once should no
+  longer result in repeated re-registration of functions.
+
+===============================================================================
+
+VERSION 0.2.2
+
+- The voxelToWorld() and worldToVoxel() functions now handle 2D points, rather
+  than producing an error. (Reported by Takeo Katsuki.)
+
+===============================================================================
+
+VERSION 0.2.1
+
+- Examples have been added to the R-level documentation.
+- Image pixel dimensions are now used to return a more sensible xform matrix in
+  the case where the NIfTI-1 sform and qform are both marked unknown.
+
+===============================================================================
+
+VERSION 0.2.0
+
+- The writeNifti() function now performs path expansion on its argument,
+  matching the behaviour of readNifti(). (Reported by John Muschelli.)
+- Calling as.array() on an internal image containing no data now returns an
+  array full of NAs (with a warning), rather than crashing R. (Reported by Tim
+  Tierney.)
+- The package should now work correctly with sparse MriImage objects, from
+  first-party package "tractor.base".
+- Images with invalid internal pointers are now handled (with a warning) by
+  attempting to reconstruct the missing data structure. This should not happen
+  in regular use, but can occur when external pointers are handed back to the
+  main thread by worker threads when working in parallel. (Reported by Takeo
+  Katsuki.)
+- Calling the RNifti API from within OpenMP threads could previously lead to a
+  stack imbalance. This is now guarded against, and a new C function,
+  niftilib_register_all(), has been added as the recommended way to preregister
+  all NIfTI-1 library functions wrapped by RNifti, particularly in threaded
+  applications.
+- Doxygen comments have been added to the C++ code to document the low-level
+  API. A Doxyfile has also been added to the package root directory.
+
+===============================================================================
+
+VERSION 0.1.0
+
+- First public release. Package code has been split off from "RNiftyReg".
+
+===============================================================================

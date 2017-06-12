@@ -1,0 +1,8 @@
+PROJECT_NAME        = "RNifti"
+PROJECT_BRIEF       = "Fast R and C++ Access to NIfTI Images"
+OUTPUT_DIRECTORY    = "inst/doxygen"
+INPUT               = "inst/include/lib"
+FILE_PATTERNS       = "NiftiImage.h"
+RECURSIVE           = NO
+GENERATE_LATEX      = NO
+JAVADOC_AUTOBRIEF   = YES

@@ -13,9 +13,22 @@
 #' @return An array or internal image, with class \code{"niftiImage"}, and
 #'   possibly also \code{"internalImage"}.
 #' 
+#' @note If the \code{internal} argument is \code{FALSE} (the default), the
+#'   data type of the image pointer will be set to match one of R's native
+#'   numeric data types, i.e., 32-bit signed integer or 64-bit double-precision
+#'   floating-point. In these circumstances the data type reported by the
+#'   \code{\link{dumpNifti}} function will therefore not, in general, match
+#'   the storage type used in the file. See also the \code{datatype} argument
+#'   to \code{\link{writeNifti}}.
+#' 
+#' @examples
+#' path <- system.file("extdata", "example.nii.gz", package="RNifti")
+#' readNifti(path)
+#' readNifti(path, internal=TRUE)
+#' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{writeNifti}}
-#' @references The NIfTI-1 standard (\url{http://nifti.nimh.nih.gov/nifti-1}).
+#' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @export
 readNifti <- function (file, internal = FALSE)
 {
@@ -45,16 +58,19 @@ readNifti <- function (file, internal = FALSE)
 #'   etc., which may be preferred to reduce file size. However, no checks are
 #'   done to ensure that the coercion maintains precision.
 #' 
+#' @examples
+#' \dontrun{writeNifti(im, "image.nii.gz", datatype="float")}
+#' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{readNifti}}, \code{\link{updateNifti}}
-#' @references The NIfTI-1 standard (\url{http://nifti.nimh.nih.gov/nifti-1}).
+#' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @export
 writeNifti <- function (image, file, template = NULL, datatype = "auto")
 {
     if (is.array(image) && !is.null(template))
         image <- updateNifti(image, template)
     
-    invisible(.Call("writeNifti", image, file, tolower(datatype), PACKAGE="RNifti"))
+    invisible(.Call("writeNifti", image, path.expand(file), tolower(datatype), PACKAGE="RNifti"))
 }
 
 #' Obtain an internal NIfTI representation of an object
@@ -114,8 +130,14 @@ updateNifti <- function (image, template = NULL)
 #' @return For \code{dumpNifti}, a list of class \code{"niftiHeader"}, with
 #'   named components corresponding to the elements in a raw NIfTI-1 file.
 #' 
+#' @examples
+#' dumpNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+#' 
+#' # Default header for a standard R array
+#' dumpNifti(array(0L, dim=c(10,10)))
+#' 
 #' @author Jon Clayden <code@@clayden.org>
-#' @references The NIfTI-1 standard (\url{http://nifti.nimh.nih.gov/nifti-1}).
+#' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @export
 dumpNifti <- function (image)
 {

@@ -26,4 +26,3 @@ dimensions, from the \code{image} will replace those from the template.
 \author{
 Jon Clayden <code@clayden.org>
 }
-

@@ -1,8 +1,8 @@
 # RNifti: Fast R and C++ Access to NIfTI Images
 
-The [NIfTI-1 format](http://nifti.nimh.nih.gov/nifti-1) is a popular file format for storing medical imaging data, widely used in medical research and related fields. Conceptually, a NIfTI-1 file incorporates multidimensional numeric data, like an R `array`, but with additional metadata describing the real-space resolution of the image, the physical orientation of the image, and how the image should be interpreted.
+The [NIfTI-1 format](http://www.nitrc.org/docman/view.php/26/64/nifti1.h) is a popular file format for storing medical imaging data, widely used in medical research and related fields. Conceptually, a NIfTI-1 file incorporates multidimensional numeric data, like an R `array`, but with additional metadata describing the real-space resolution of the image, the physical orientation of the image, and how the image should be interpreted.
 
-There are several packages available for reading and writing NIfTI-1 files in R, and these are summarised in the [Medical Imaging task view](https://cran.r-project.org/web/views/MedicalImaging.html). However, `RNifti` is distinguished by its
+There are several packages available for reading and writing NIfTI-1 files in R, and these are summarised in the [Medical Imaging task view](https://cran.r-project.org/view=MedicalImaging). However, `RNifti` is distinguished by its
 
 - [extremely strong performance](#performance), in terms of speed;
 - [C/C++ API](#api), allowing access to NIfTI images even in compiled code in other packages; and
@@ -96,37 +96,40 @@ writeNifti(image, "file.nii.gz")
 
 ## Performance
 
-The `RNifti` package uses the robust NIfTI-1 reference implementation, which is written in C, to read and write NIfTI files. It also uses the standard NIfTI-1 data structure as its canonical representation of a file in memory. Together, these make the package extremely fast, as the following benchmark against packages [`AnalyzeFMRI`](https://cran.r-project.org/package=AnalyzeFMRI), [`neuroim`](https://cran.r-project.org/package=neuroim), [`oro.nifti`](https://cran.r-project.org/package=oro.nifti) and [`tractor.base`](https://cran.r-project.org/package=tractor.base) shows.
+The `RNifti` package uses the robust NIfTI-1 reference implementation, which is written in C, to read and write NIfTI files. It also uses the standard NIfTI-1 data structure as its canonical representation of a file in memory. Together, these make the package extremely fast, as the following benchmark against packages [`AnalyzeFMRI`](https://cran.r-project.org/package=AnalyzeFMRI), [`ANTsR`](https://github.com/stnava/ANTsR),  [`neuroim`](https://cran.r-project.org/package=neuroim), [`oro.nifti`](https://cran.r-project.org/package=oro.nifti) and [`tractor.base`](https://cran.r-project.org/package=tractor.base) shows.
 
 ```r
-installed.packages()[c("AnalyzeFMRI","neuroim","oro.nifti","RNifti",
+installed.packages()[c("AnalyzeFMRI","ANTsR","neuroim","oro.nifti","RNifti",
                        "tractor.base"), "Version"]
-#  AnalyzeFMRI      neuroim    oro.nifti       RNifti tractor.base 
-#     "1.1-16"      "0.0.6"    "0.5.5.2"      "0.1.0"      "3.0.5" 
+#  AnalyzeFMRI        ANTsR      neuroim    oro.nifti       RNifti tractor.base
+#     "1.1-16"      "0.3.3"      "0.0.6"    "0.5.5.2"      "0.1.0"      "3.0.5"
 
 library(microbenchmark)
 microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
+               ANTsR::antsImageRead("example.nii"),
                neuroim::loadVolume("example.nii"),
                oro.nifti::readNIfTI("example.nii"),
                RNifti::readNifti("example.nii"),
                tractor.base::readImageFile("example.nii"))
 # Output level is not set; defaulting to "Info"
 # Unit: milliseconds
-#                                        expr       min        lq      mean
-#   AnalyzeFMRI::f.read.volume("example.nii") 35.257563 42.604118  66.32578
-#          neuroim::loadVolume("example.nii") 52.529019 61.301876 130.82085
-#         oro.nifti::readNIfTI("example.nii") 79.877138 92.201510 174.57330
-#            RNifti::readNifti("example.nii")  3.004172  3.702351  14.00659
-#  tractor.base::readImageFile("example.nii") 45.307781 51.006998  61.80458
-#      median         uq       max neval
-#   45.303426  50.106693  556.8474   100
-#   66.444186 192.282696 2580.7596   100
-#  215.847429 224.826626  712.8495   100
-#    4.472429   7.061472  168.5171   100
-#   54.334831  57.776505  216.4457   100
+#                                        expr       min        lq       mean
+#   AnalyzeFMRI::f.read.volume("example.nii") 25.532280 27.216641  46.646448
+#         ANTsR::antsImageRead("example.nii")  1.805555  2.282496   3.430417
+#          neuroim::loadVolume("example.nii") 33.639202 36.367228  87.101533
+#         oro.nifti::readNIfTI("example.nii") 45.836130 49.692145 126.697245
+#            RNifti::readNifti("example.nii")  1.312822  1.646371   7.239342
+#  tractor.base::readImageFile("example.nii") 38.091666 39.628323  48.573645
+#      median         uq        max neval
+#   28.486199  31.441231  535.60771   100
+#    2.434518   2.614578   96.20713   100
+#   38.556286  56.650639 2071.82043   100
+#  154.908146 162.407670  494.26035   100
+#    1.970080   3.104831  122.78295   100
+#   40.752468  42.635031  249.59664   100
 ```
 
-With a median runtime of just over 4 ms, `RNifti` is typically ten times as fast as any of the alternatives to read an image into R.
+With a median runtime of less than 2 ms, `RNifti` is typically at least ten times as fast as the alternatives to read this image into R. The exception is `ANTsR`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsR` has substantial dependencies, which may affect its suitability in some applications.
 
 ## Implementation details
 
@@ -136,7 +139,9 @@ This arrangement is efficient and generally works well, but many R operations st
 
 ## API
 
-It is possible to use the package's NIfTI-handling code in other R packages' compiled code, thereby obviating the need to duplicate the reference implementation. Moreover, `RNifti` provides a C++ wrapper class, `NiftiImage`, which simplifies memory management, supports the package's internal image pointers and persistence, and provides syntactic sugar. A package can use this class by including
+It is possible to use the package's NIfTI-handling code in other R packages' compiled code, thereby obviating the need to duplicate the reference implementation. Moreover, `RNifti` provides a C++ wrapper class, `NiftiImage`, which simplifies memory management, supports the package's internal image pointers and persistence, and provides syntactic sugar. Full doxygen documentation for this class is available at <http://doxygen.flakery.org/RNifti/>, and is also provided with package releases.
+
+A third-party package can use the `NiftiImage` class by including
 
 ```
 LinkingTo: Rcpp, RNifti
@@ -149,12 +154,20 @@ in its `DESCRIPTION` file, and then including the `RNifti.h` header file. For ex
 
 void myfunction ()
 {
-    NiftiImage image("example.nii.gz");
+    RNifti::NiftiImage image("example.nii.gz");
     // Do something with the image
 }
 ```
 
-There are also constructors taking a `SEXP` (i.e., an R object), another `NiftiImage`, or a `nifti_image` structure from the reference implementation. `NiftiImage` objects can be implicitly cast to pointers to `nifti_image` structs, meaning that they can be directly used in calls to the reference implementation's own API. The latter is accessed through the separate `RNiftiAPI.h` header file.
+If you're using the `sourceCpp` function from `Rcpp`, you may also need to add the attribute line
+
+```c++
+// [[Rcpp::depends(RNifti)]]
+```
+
+to the top of your C++ source file.
+
+In addition to the one taking a file path, there are also constructors taking a `SEXP` (i.e., an R object), another `NiftiImage`, or a `nifti_image` structure from the reference implementation. `NiftiImage` objects can be implicitly cast to pointers to `nifti_image` structs, meaning that they can be directly used in calls to the reference implementation's own API. The latter is accessed through the separate `RNiftiAPI.h` header file.
 
 ```c++
 #include "RNifti.h"
@@ -162,9 +175,27 @@ There are also constructors taking a `SEXP` (i.e., an R object), another `NiftiI
 
 void myfunction (SEXP image_)
 {
-    NiftiImage image(image_);
+    RNifti::NiftiImage image(image_);
     const size_t volsize = nifti_get_volsize(image);
 }
 ```
 
 (`RNifti` will also have to be added to the `Imports` list in the package's `DESCRIPTION` file, as well as `LinkingTo`.) The `RNiftiAPI.h` header should only be included once per package, since it contains function implementations. Multiple includes will lead to duplicate symbol warnings from your linker. Therefore, if multiple source files require access to the NIfTI-1 reference implementation, it is recommended that the API header be included alone in a separate ".c" or ".cpp" file, while others only include the main `RNifti.h`.
+
+`RNifti` is not specifically designed to be thread-safe, and R itself is expressly single-threaded. However, some effort has been made to try to minimise problems associated with parallelisation, such as putting R API calls within a critical region if OpenMP is being used. If you are using the API in a package that does use OpenMP or another form of threads, it is wise to preregister the functions exported by `RNifti` before use, by calling `niftilib_register_all()`. In single-threaded contexts this is optional, and will be performed when required.
+
+## Use in pure C++ projects
+
+Thanks to contributions from @soolijoo, it is possible (as of package version 0.7.0) to use the `NiftiImage` C++ class in standalone C++ projects. You will need the following files:
+
+| Path                            | Purpose                                                                                             |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `inst/include/lib/*.h`          | Headers defining the `NiftiImage` class itself, related functions and macros                        |
+| `inst/include/niftilib/*.h`     | Headers for the NIfTI-1 reference implementation                                                    |
+| `inst/include/znzlib/znzlib.h`  | Header for I/O functions from the NIfTI-1 reference implementation                                  |
+| `inst/include/zlib/*.h`         | `zlib` headers for reading and writing gzipped files (optional; system `zlib` can be used instead)  |
+| `src/niftilib/nifti1_io.c`      | Source file for the NIfTI-1 reference implementation                                                |
+| `src/znzlib/znzlib.c`           | Source for I/O functions from the NIfTI-1 reference implementation                                  |
+| `src/zlib/*`                    | `zlib` source files for reading and writing gzipped files (optional, as above)                      |
+
+Note that the `NiftiImage` class is header-only, but C code from the NIfTI-1 reference implementation will need to be compiled and linked into the project. The constant `_NO_R__` should be defined, and `print.h` included, before including `NiftiImage.h`, so that the R API is not used.

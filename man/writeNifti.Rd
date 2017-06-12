@@ -25,13 +25,16 @@ done to ensure that the coercion maintains precision.}
 This function writes an image to NIfTI-1 format, using the standard NIfTI-1
 C library.
 }
-\author{
-Jon Clayden <code@clayden.org>
+\examples{
+\dontrun{writeNifti(im, "image.nii.gz", datatype="float")}
+
 }
 \references{
-The NIfTI-1 standard (\url{http://nifti.nimh.nih.gov/nifti-1}).
+The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 }
 \seealso{
 \code{\link{readNifti}}, \code{\link{updateNifti}}
 }
-
+\author{
+Jon Clayden <code@clayden.org>
+}

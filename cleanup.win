@@ -1,0 +1,1 @@
+rm -f src/*.o src/niftilib/*.o src/zlib/*.o src/znzlib/*.o

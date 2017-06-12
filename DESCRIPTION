@@ -1,23 +1,27 @@
 Package: RNifti
-Version: 0.1.0
-Date: 2016-08-08
+Version: 0.7.0
+Date: 2017-06-11
 Title: Fast R and C++ Access to NIfTI Images
-Author: Jon Clayden
-Maintainer: Jon Clayden <code@clayden.org>
+Authors@R: c(person("Jon","Clayden",role=c("cre","aut"),email="code@clayden.org"),
+             person("Bob","Cox",role="aut"),
+             person("Mark","Jenkinson",role="aut"),
+             person("Matt","Hall",role="ctb"),
+             person("Rick","Reynolds",role="ctb"),
+             person("Kate","Fissell",role="ctb"),
+             person("Jean-loup","Gailly",role="cph"),
+             person("Mark","Adler",role="cph"))
 Imports:
-    Rcpp (>= 0.11.0),
-    oro.nifti,
-    methods
+    Rcpp (>= 0.11.0)
 Suggests:
     testthat (>= 0.11.0)
-Enhances: tractor.base
+Enhances: oro.nifti, tractor.base
 LinkingTo: Rcpp
 Description: Provides very fast access to images stored in the NIfTI-1 file
-    format <http://nifti.nimh.nih.gov/nifti-1>, with seamless synchronisation
-    between compiled C and interpreted R code. Not to be confused with RNiftyReg,
-    which provides tools for image registration.
+    format <http://www.nitrc.org/docman/view.php/26/64/nifti1.h>, with seamless
+    synchronisation between compiled C and interpreted R code. Not to be
+    confused with 'RNiftyReg', which provides tools for image registration.
 License: GPL-2
 URL: https://github.com/jonclayden/RNifti
 BugReports: https://github.com/jonclayden/RNifti/issues
 Encoding: UTF-8
-RoxygenNote: 5.0.1.9000
+RoxygenNote: 6.0.1

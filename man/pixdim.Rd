@@ -46,7 +46,12 @@ physical step size between pixel or voxel centre points, and the spatial and
 temporal units that they are given in. The former defaults to 1 in each
 dimension, if there is no attribute.
 }
+\examples{
+im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+pixdim(im)
+pixunits(im)
+
+}
 \author{
 Jon Clayden <code@clayden.org>
 }
-
