@@ -1,2 +1,4 @@
 ^Doxyfile$
 ^\.travis\.yml$
+^.*\.Rproj$
+^\.Rproj\.user$

@@ -1,1 +1,5 @@
 /inst/doxygen/
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
