@@ -20,7 +20,10 @@ struct DataRescaler
 template <typename SourceType, typename TargetType>
 inline TargetType convertValue (SourceType value)
 {
-    return static_cast<TargetType>(value);
+    if (std::numeric_limits<SourceType>::has_quiet_NaN && !std::numeric_limits<TargetType>::has_quiet_NaN && ISNAN(value))
+        return TargetType(0);
+    else
+        return static_cast<TargetType>(value);
 }
 
 template <typename TargetType, class OutputIterator>
