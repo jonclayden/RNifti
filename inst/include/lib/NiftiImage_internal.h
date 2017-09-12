@@ -245,8 +245,12 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
     {
         Rf_warning("Internal image contains no data - filling array with NAs");
         Rcpp::Vector<SexpType> array(static_cast<int>(source->nvox));
-        // Rcpp's proxy infrastructure should handle converting NA_REAL to the appropriate NA
-        std::fill(array.begin(), array.end(), NA_REAL);
+        if (SexpType == INTSXP || SexpType == LGLSXP)
+            std::fill(array.begin(), array.end(), NA_INTEGER);
+        else if (SexpType == REALSXP)
+            std::fill(array.begin(), array.end(), NA_REAL);
+        else
+            throw std::runtime_error("Only numeric arrays can be created");
         return array;
     }
     else
