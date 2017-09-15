@@ -2,6 +2,14 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.7.1
+
+- The package is now more careful about handling NaNs when converting to
+  integer types.
+- Usage of the R API has been updated for forwards compatibility.
+
+===============================================================================
+
 VERSION 0.7.0
 
 - The new orientation() function can be used to identify the approximate
