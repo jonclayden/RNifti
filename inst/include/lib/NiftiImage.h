@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <map>
 #include <locale>
+#include <limits>
 
 #endif
 
