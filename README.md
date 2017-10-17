@@ -5,7 +5,7 @@ The [NIfTI-1 format](http://www.nitrc.org/docman/view.php/26/64/nifti1.h) is a p
 There are several packages available for reading and writing NIfTI-1 files in R, and these are summarised in the [Medical Imaging task view](https://cran.r-project.org/view=MedicalImaging). However, `RNifti` is distinguished by its
 
 - [extremely strong performance](#performance), in terms of speed;
-- [C/C++ API](#api), allowing access to NIfTI images even in compiled code in other packages; and
+- [C/C++ API](#api), allowing access to NIfTI images in compiled code in other R packages, or even in [standalone C++ code](#use-in-pure-c-projects); and
 - modest dependencies, consisting of only R itself and the very widely-used [Rcpp](https://cran.r-project.org/package=Rcpp) C++ wrapper library.
 
 The latest development version of the package can always be installed from GitHub using the `devtools` package.
