@@ -186,7 +186,7 @@ void myfunction (SEXP image_)
 
 ## Use in pure C++ projects
 
-Thanks to contributions from @soolijoo, it is possible (as of package version 0.7.0) to use the `NiftiImage` C++ class in standalone C++ projects. You will need the following files:
+Thanks to contributions from [@soolijoo](https://github.com/soolijoo), it is possible (as of package version 0.7.0) to use the `NiftiImage` C++ class in standalone C++ projects. You will need the following files:
 
 | Path                            | Purpose                                                                                             |
 | ------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -198,4 +198,4 @@ Thanks to contributions from @soolijoo, it is possible (as of package version 0.
 | `src/znzlib/znzlib.c`           | Source for I/O functions from the NIfTI-1 reference implementation                                  |
 | `src/zlib/*`                    | `zlib` source files for reading and writing gzipped files (optional, as above)                      |
 
-Note that the `NiftiImage` class is header-only, but C code from the NIfTI-1 reference implementation will need to be compiled and linked into the project. The constant `_NO_R__` should be defined, and `print.h` included, before including `NiftiImage.h`, so that the R API is not used.
+Note that the `NiftiImage` class is header-only, but C code from the NIfTI-1 reference implementation will need to be compiled and linked into the project. The constant `_NO_R__` should be defined, and `print.h` included, before including `NiftiImage.h`, so that the R API is not used. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example.
