@@ -3,8 +3,7 @@ sudo: false
 cache: packages
 
 install:
-- Rscript -e 'install.packages("devtools")'
-- Rscript -e 'devtools::install_deps(dependencies=TRUE)'
+- Rscript -e 'install.packages(c("Rcpp","testthat","tractor.base","oro.nifti"))'
 
 script:
 - R CMD build .
