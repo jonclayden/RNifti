@@ -499,8 +499,9 @@ public:
     /**
      * Update the image from an R array
      * @param array An R array object
+     * @param datatype A string specifying a new NIfTI datatype, or \c "auto"
     **/
-    NiftiImage & update (const SEXP array);
+    NiftiImage & update (const SEXP array, const std::string &datatype = "auto");
 #endif
 
     /**
@@ -1338,7 +1339,7 @@ inline NiftiImage & NiftiImage::reorient (const std::string &orientation)
 
 #ifndef _NO_R__
 
-inline NiftiImage & NiftiImage::update (const SEXP array)
+inline NiftiImage & NiftiImage::update (const SEXP array, const std::string &datatype)
 {
     Rcpp::RObject object(array);
     if (!object.hasAttribute("dim"))
@@ -1392,6 +1393,9 @@ inline NiftiImage & NiftiImage::update (const SEXP array)
     
     image->scl_slope = 0.0;
     image->scl_inter = 0.0;
+    
+    if (datatype != "auto")
+        changeDatatype(datatype);
     
     return *this;
 }

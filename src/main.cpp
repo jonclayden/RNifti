@@ -42,7 +42,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP updateNifti (SEXP _image, SEXP _reference)
+RcppExport SEXP updateNifti (SEXP _image, SEXP _reference, SEXP _datatype)
 {
 BEGIN_RCPP
     const NiftiImage reference(_reference);
@@ -51,7 +51,7 @@ BEGIN_RCPP
     if (!reference.isNull())
     {
         NiftiImage updatedImage = reference;
-        updatedImage.update(image);
+        updatedImage.update(image, as<std::string>(_datatype));
         return updatedImage.toArray();
     }
     else
@@ -181,7 +181,7 @@ extern "C" {
 static R_CallMethodDef callMethods[] = {
     { "readNifti",      (DL_FUNC) &readNifti,       2 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      3 },
-    { "updateNifti",    (DL_FUNC) &updateNifti,     2 },
+    { "updateNifti",    (DL_FUNC) &updateNifti,     3 },
     { "dumpNifti",      (DL_FUNC) &dumpNifti,       1 },
     { "getXform",       (DL_FUNC) &getXform,        2 },
     { "setXform",       (DL_FUNC) &setXform,        3 },

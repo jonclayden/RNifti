@@ -16,6 +16,7 @@ test_that("NIfTI files can be read and written", {
     expect_that(pixdim(readNifti(tempPath)), equals(c(2.5,2.5,2.5)))
     unlink(tempPath)
     
+    expect_that(dumpNifti(image)$bitpix, equals(32L))
     writeNifti(image, tempPath, datatype="short")
     expect_that(dumpNifti(tempPath)$bitpix, equals(16L))
     unlink(tempPath)
@@ -26,8 +27,9 @@ test_that("NIfTI files can be read and written", {
     pixunits(image) <- c("m","ms")
     expect_that(dumpNifti(image)$xyzt_units, equals(17L))
     
-    image <- updateNifti(image, list(intent_code=1000L))
+    image <- updateNifti(image, list(intent_code=1000L), datatype="float")
     expect_that(dumpNifti(image)$intent_code, equals(1000L))
+    expect_that(dumpNifti(image)$datatype, equals(16L))
     
     expect_that(image[40,40,30], equals(368))
     image <- readNifti(imagePath, internal=TRUE)

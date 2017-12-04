@@ -108,14 +108,19 @@ retrieveNifti <- function (object)
 #'   \code{\link{retrieveNifti}}), or a named list of NIfTI-1 properties like
 #'   that produced by \code{\link{dumpNifti}}. The default of \code{NULL} will
 #'   have no effect.
+#' @param datatype The NIfTI datatype to use within the internal image. The
+#'   default, \code{"auto"} uses the R type. Other possibilities are
+#'   \code{"float"}, \code{"int16"}, etc., which may be preferred to reduce
+#'   object size. However, no checks are done to ensure that the coercion
+#'   maintains precision, and this option is for advanced usage only.
 #' @return A copy of the original \code{image}, with its internal image
 #'   attribute set or updated appropriately.
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @export
-updateNifti <- function (image, template = NULL)
+updateNifti <- function (image, template = NULL, datatype = "auto")
 {
-    .Call("updateNifti", image, template, PACKAGE="RNifti")
+    .Call("updateNifti", image, template, datatype, PACKAGE="RNifti")
 }
 
 #' Dump the contents of an internal NIfTI-1 object
