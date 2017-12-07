@@ -1,4 +1,4 @@
-context("Reading and writing NIfTI files")
+context("Reading, writing and manipulating NIfTI objects")
 
 test_that("NIfTI files can be read and written", {
     imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
@@ -10,6 +10,7 @@ test_that("NIfTI files can be read and written", {
     expect_that(print(readNifti(imagePath,internal=TRUE)), prints_text("2.5 mm per voxel",fixed=TRUE))
     
     image <- readNifti(imagePath)
+    expect_that(image[40,40,30], equals(368))
     expect_that(pixunits(image), equals(c("mm","s")))
     
     writeNifti(image, tempPath)
@@ -21,6 +22,19 @@ test_that("NIfTI files can be read and written", {
     expect_that(dumpNifti(tempPath)$bitpix, equals(16L))
     unlink(tempPath)
     
+    expect_that(dumpNifti(compressedImagePath)$datatype, equals(2L))
+    compressedImage <- readNifti(compressedImagePath)
+    expect_that(dumpNifti(compressedImage)$datatype, equals(64L))
+    expect_that(round(compressedImage[40,40,30]), equals(363))
+    
+    image <- readNifti(imagePath, internal=TRUE)
+    expect_that(as.array(image)[40,40,30], equals(368))
+})
+
+test_that("image objects can be manipulated", {
+    imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
+    image <- readNifti(imagePath)
+    
     expect_that(dumpNifti(image)$dim, equals(c(3L,96L,96L,60L,1L,1L,1L,1L)))
     pixdim(image) <- c(5,5,5)
     expect_that(dumpNifti(image)$pixdim, equals(c(-1,5,5,5,0,0,0,0)))
@@ -31,15 +45,8 @@ test_that("NIfTI files can be read and written", {
     expect_that(dumpNifti(image)$intent_code, equals(1000L))
     expect_that(dumpNifti(image)$datatype, equals(16L))
     
-    expect_that(image[40,40,30], equals(368))
     image <- readNifti(imagePath, internal=TRUE)
-    expect_that(as.array(image)[40,40,30], equals(368))
     image <- RNifti:::rescaleNifti(image, c(0.5,0.5,0.5))
     expect_that(pixdim(image), equals(c(5,5,5)))
     expect_that(as.array(image), gives_warning("no data"))
-    
-    expect_that(dumpNifti(compressedImagePath)$datatype, equals(2L))
-    compressedImage <- readNifti(compressedImagePath)
-    expect_that(dumpNifti(compressedImage)$datatype, equals(64L))
-    expect_that(round(compressedImage[40,40,30]), equals(363))
 })
