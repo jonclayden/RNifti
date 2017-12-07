@@ -4,7 +4,7 @@
 \alias{updateNifti}
 \title{Update an internal NIfTI-1 object using a template}
 \usage{
-updateNifti(image, template = NULL)
+updateNifti(image, template = NULL, datatype = "auto")
 }
 \arguments{
 \item{image}{A numeric array.}
@@ -13,15 +13,38 @@ updateNifti(image, template = NULL)
 \code{\link{retrieveNifti}}), or a named list of NIfTI-1 properties like
 that produced by \code{\link{dumpNifti}}. The default of \code{NULL} will
 have no effect.}
+
+\item{datatype}{The NIfTI datatype to use within the internal image. The
+default, \code{"auto"} uses the R type. Other possibilities are
+\code{"float"}, \code{"int16"}, etc., which may be preferred to reduce
+object size. However, no checks are done to ensure that the coercion
+maintains precision, and this option is for advanced usage only.}
 }
 \value{
 A copy of the original \code{image}, with its internal image
-  attribute set or updated appropriately.
+  attribute set or updated appropriately. If \code{datatype} is not
+  \code{"auto"} then the result is an internal image.
 }
 \description{
 This function adds or updates the internal NIfTI-1 object for an array,
 using metadata from the template. The dimensions and, if available, pixel
 dimensions, from the \code{image} will replace those from the template.
+}
+\details{
+If \code{template} is a complete list of NIfTI-1 header fields, like that
+produced by \code{\link{dumpNifti}}, or an image, then it will be used to
+create the internal object, and then the data and metadata associated with
+the \code{image} will overwrite the appropriate parts. If \code{template}
+is an incomplete list, the \code{image} will be used to create the internal
+object, and then the specified will be overwritten from the list. This
+allows users to selectively update certain fields while leaving others
+alone.
+
+Datatype information in a list \code{template} is ignored. The datatype can
+only be changed using the \code{datatype} argument, but in this case the
+internal object gets out of sync with the R array, so an internal image is
+returned to avoid the mismatch. Changing the internal datatype in this way
+is for advanced usage only.
 }
 \author{
 Jon Clayden <code@clayden.org>

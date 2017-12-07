@@ -4,6 +4,11 @@
 #include "niftilib/nifti1_io.h"
 #include "lib/NiftiImage.h"
 
+// Defined since R 3.1.0, according to Tomas Kalibera, but there's no reason to break compatibility with 3.0.x
+#ifndef MAYBE_SHARED
+#define MAYBE_SHARED(x) (NAMED(x) > 1)
+#endif
+
 using namespace Rcpp;
 using namespace RNifti;
 
@@ -37,20 +42,40 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP updateNifti (SEXP _image, SEXP _reference)
+RcppExport SEXP updateNifti (SEXP _image, SEXP _reference, SEXP _datatype)
 {
 BEGIN_RCPP
-    const NiftiImage reference(_reference);
-    RObject image(_image);
+    const std::string datatype = as<std::string>(_datatype);
+    const bool willChangeDatatype = (datatype != "auto");
     
-    if (!reference.isNull())
+    if (Rf_isVectorList(_reference) && Rf_length(_reference) < 36)
     {
-        NiftiImage updatedImage = reference;
-        updatedImage.update(image);
-        return updatedImage.toArray();
+        NiftiImage image(_image);
+        image.update(_reference);
+        if (willChangeDatatype)
+            image.changeDatatype(datatype);
+        return image.toArrayOrPointer(willChangeDatatype, "NIfTI image");
     }
     else
-        return image;
+    {
+        const NiftiImage reference(_reference);
+        if (reference.isNull() && willChangeDatatype)
+        {
+            NiftiImage image(_image);
+            image.changeDatatype(datatype);
+            return image.toPointer("NIfTI image");
+        }
+        else if (reference.isNull() && !willChangeDatatype)
+            return _image;
+        else
+        {
+            NiftiImage image = reference;
+            image.update(_image);
+            if (willChangeDatatype)
+                image.changeDatatype(datatype);
+            return image.toArrayOrPointer(willChangeDatatype, "NIfTI image");
+        }
+    }
 END_RCPP
 }
 
@@ -87,7 +112,7 @@ BEGIN_RCPP
     NumericMatrix matrix(_matrix);
     
     // Duplicate the image object if necessary
-    if (NAMED(_image) == 2)
+    if (MAYBE_SHARED(_image))
         image = image;
     
     if (matrix.cols() != 4 || matrix.rows() != 4)
@@ -146,7 +171,7 @@ RcppExport SEXP setOrientation (SEXP _image, SEXP _axes)
 {
 BEGIN_RCPP
     NiftiImage image(_image);
-    if (NAMED(_image) == 2)
+    if (MAYBE_SHARED(_image))
         image = image;
     image.reorient(as<std::string>(_axes));
     return image.toArrayOrPointer(isInternal(_image), "NIfTI image");
@@ -176,7 +201,7 @@ extern "C" {
 static R_CallMethodDef callMethods[] = {
     { "readNifti",      (DL_FUNC) &readNifti,       2 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      3 },
-    { "updateNifti",    (DL_FUNC) &updateNifti,     2 },
+    { "updateNifti",    (DL_FUNC) &updateNifti,     3 },
     { "dumpNifti",      (DL_FUNC) &dumpNifti,       1 },
     { "getXform",       (DL_FUNC) &getXform,        2 },
     { "setXform",       (DL_FUNC) &setXform,        3 },
