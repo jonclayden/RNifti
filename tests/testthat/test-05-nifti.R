@@ -41,8 +41,9 @@ test_that("image objects can be manipulated", {
     pixunits(image) <- c("m","ms")
     expect_that(dumpNifti(image)$xyzt_units, equals(17L))
     
-    image <- updateNifti(image, list(intent_code=1000L), datatype="float")
+    image <- updateNifti(image, list(intent_code=1000L))
     expect_that(dumpNifti(image)$intent_code, equals(1000L))
+    image <- updateNifti(image, datatype="float")
     expect_that(dumpNifti(image)$datatype, equals(16L))
     
     image <- readNifti(imagePath, internal=TRUE)
