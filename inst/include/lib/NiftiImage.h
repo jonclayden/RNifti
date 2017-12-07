@@ -856,7 +856,7 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
 inline void NiftiImage::initFromList (const Rcpp::RObject &object)
 {
     Rcpp::List list(object);
-    nifti_1_header *header = NULL;
+    nifti_1_header *header = nifti_make_new_header(NULL, DT_FLOAT64);
     
     internal::updateHeader(header, list);
     
@@ -1268,7 +1268,10 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
         Rcpp::List list(object);
         nifti_1_header *header = NULL;
         if (this->isNull())
+        {
+            header = nifti_make_new_header(NULL, DT_FLOAT64);
             internal::updateHeader(header, list, true);
+        }
         else
         {
             header = (nifti_1_header *) calloc(1, sizeof(nifti_1_header));
