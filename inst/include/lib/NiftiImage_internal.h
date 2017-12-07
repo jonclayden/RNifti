@@ -220,7 +220,7 @@ inline void copyIfPresent (const Rcpp::List &list, const std::set<std::string> n
         target = static_cast<char>(Rcpp::as<int>(list[name]));
 }
 
-inline void updateHeader (nifti_1_header *header, const Rcpp::List &list)
+inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const bool ignoreDatatype = false)
 {
     if (header == NULL)
         header = nifti_make_new_header(NULL, DT_FLOAT64);
@@ -245,8 +245,11 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list)
     copyIfPresent(list, names, "intent_p3", header->intent_p3);
     copyIfPresent(list, names, "intent_code", header->intent_code);
     
-    copyIfPresent(list, names, "datatype", header->datatype);
-    copyIfPresent(list, names, "bitpix", header->bitpix);
+    if (!ignoreDatatype)
+    {
+        copyIfPresent(list, names, "datatype", header->datatype);
+        copyIfPresent(list, names, "bitpix", header->bitpix);
+    }
     
     copyIfPresent(list, names, "slice_start", header->slice_start);
     if (names.count("pixdim") == 1)

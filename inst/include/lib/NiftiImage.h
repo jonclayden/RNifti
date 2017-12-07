@@ -1268,12 +1268,12 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
         Rcpp::List list(object);
         nifti_1_header *header = NULL;
         if (this->isNull())
-            internal::updateHeader(header, list);
+            internal::updateHeader(header, list, true);
         else
         {
             header = (nifti_1_header *) calloc(1, sizeof(nifti_1_header));
             *header = nifti_convert_nim2nhdr(image);
-            internal::updateHeader(header, list);
+            internal::updateHeader(header, list, true);
         }
         
         if (header != NULL)
