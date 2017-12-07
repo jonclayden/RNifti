@@ -108,8 +108,8 @@ retrieveNifti <- function (object)
 #' create the internal object, and then the data and metadata associated with
 #' the \code{image} will overwrite the appropriate parts. If \code{template}
 #' is an incomplete list, the \code{image} will be used to create the internal
-#' object, and then the specified will be overwritten from the list. This
-#' allows users to selectively update certain fields while leaving others
+#' object, and then the specified fields will be overwritten from the list.
+#' This allows users to selectively update certain fields while leaving others
 #' alone.
 #' 
 #' Datatype information in a list \code{template} is ignored. The datatype can
