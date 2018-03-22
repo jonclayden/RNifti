@@ -110,7 +110,7 @@ retrieveNifti <- function (object)
 #' is an incomplete list, the \code{image} will be used to create the internal
 #' object, and then the specified fields will be overwritten from the list.
 #' This allows users to selectively update certain fields while leaving others
-#' alone.
+#' alone (but see the note below).
 #' 
 #' Datatype information in a list \code{template} is ignored. The datatype can
 #' only be changed using the \code{datatype} argument, but in this case the
@@ -131,6 +131,12 @@ retrieveNifti <- function (object)
 #' @return A copy of the original \code{image}, with its internal image
 #'   attribute set or updated appropriately. If \code{datatype} is not
 #'   \code{"auto"} then the result is an internal image.
+#' 
+#' @note The \code{scl_slope} and \code{scl_inter} fields affect the numerical
+#'   interpretation of the pixel data, so it is impossible in general to change
+#'   them without also changing the array values on both the C and the R side.
+#'   Therefore, to avoid unexpected side-effects, these fields are not affected
+#'   by this function.
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @export
