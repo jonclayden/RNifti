@@ -10,10 +10,8 @@ Authors@R: c(person("Jon","Clayden",role=c("cre","aut"),email="code@clayden.org"
              person("Kate","Fissell",role="ctb"),
              person("Jean-loup","Gailly",role="cph"),
              person("Mark","Adler",role="cph"))
-Imports:
-    Rcpp (>= 0.11.0)
-Suggests:
-    testthat (>= 0.11.0)
+Imports: Rcpp (>= 0.11.0)
+Suggests: testthat (>= 0.11.0), reportr
 Enhances: oro.nifti, tractor.base
 LinkingTo: Rcpp
 Description: Provides very fast access to images stored in the NIfTI-1 file
