@@ -1,7 +1,7 @@
 #ifndef _PRINT_H_
 #define _PRINT_H_
 
-#ifndef _NO_R__
+#ifdef USING_R
 
 #define R_USE_C99_IN_CXX
 
@@ -27,6 +27,6 @@
 #define Rf_warning(str) fprintf(stderr, "%s\n", str)
 #define Rprintf(...) fprintf(stderr, __VA_ARGS__)
 
-#endif// _NO_R__
+#endif // USING_R
 
-#endif// _PRINT_H_
+#endif // _PRINT_H_

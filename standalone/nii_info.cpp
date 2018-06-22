@@ -1,7 +1,3 @@
-// Note that the _NO_R__ constant must be defined when using the NiftiImage
-// header in standalone code. In this case it is set in CPPFLAGS within the
-// Makefile, and so does not need to be #define'd here
-
 // The print.h header should be included first. The niftilib header nifti1_io.h
 // contains prototypes for niftilib functions like nifti_convert_nim2nhdr and
 // disp_nifti_1_header, but it is included by lib/NiftiImage.h, so is only here
