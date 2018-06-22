@@ -284,6 +284,14 @@ public:
 #endif
     }
     
+    /**
+     * Initialise using a path string and sequence of required volumes
+     * @param path A string specifying a path to a valid NIfTI-1 file, possibly gzipped
+     * @param volumes The volumes to read in (squashing all dimensions above the third together)
+     * @exception runtime_error If reading from the file fails, or \c volumes is empty
+    **/
+    NiftiImage (const std::string &path, const std::vector<int> &volumes);
+    
 #ifndef _NO_R__ 
     /**
      * Initialise from an R object
@@ -964,6 +972,28 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
 }
 
 #endif // _NO_R__
+
+inline NiftiImage::NiftiImage (const std::string &path, const std::vector<int> &volumes)
+    : persistent(false)
+{
+    if (volumes.empty())
+        throw std::runtime_error("The vector of volumes is empty");
+    
+    nifti_brick_list brickList;
+    this->image = nifti_image_read_bricks(path.c_str(), volumes.size(), &volumes[0], &brickList);
+    if (this->image == NULL)
+        throw std::runtime_error("Failed to read image from path " + path);
+    
+    size_t brickSize = image->nbyper * image->nx * image->ny * image->nz;
+    image->data = calloc(1, nifti_get_volsize(image));
+    for (int i=0; i<brickList.nbricks; i++)
+        memcpy((char *) image->data + i * brickSize, brickList.bricks[i], brickSize);
+    nifti_free_NBL(&brickList);
+    
+#ifndef NDEBUG
+    Rprintf("Creating NiftiImage with pointer %p (from string and volume vector)\n", this->image);
+#endif
+}
 
 inline void NiftiImage::updatePixdim (const std::vector<float> &pixdim)
 {
