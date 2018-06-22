@@ -30,16 +30,16 @@
 #' @seealso \code{\link{writeNifti}}
 #' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @export
-readNifti <- function (file, internal = FALSE)
+readNifti <- function (file, internal = FALSE, volumes = NULL)
 {
     if (!is.character(file))
         stop("File name(s) must be specified in a character vector")
     if (length(file) == 0)
         stop("File name vector is empty")
     else if (length(file) > 1)
-        lapply(file, function(f) .Call("readNifti", path.expand(f), internal, PACKAGE="RNifti"))
+        lapply(file, function(f) .Call("readNifti", path.expand(f), internal, volumes, PACKAGE="RNifti"))
     else
-        .Call("readNifti", path.expand(file), internal, PACKAGE="RNifti")
+        .Call("readNifti", path.expand(file), internal, volumes, PACKAGE="RNifti")
 }
 
 #' Write a NIfTI-1 format file
@@ -94,7 +94,7 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
 #' @export
 retrieveNifti <- function (object)
 {
-    .Call("readNifti", object, TRUE, PACKAGE="RNifti")
+    .Call("readNifti", object, TRUE, NULL, PACKAGE="RNifti")
 }
 
 #' Update an internal NIfTI-1 object using a template

@@ -25,11 +25,23 @@ bool isInternal (RObject object)
     return false;
 }
 
-RcppExport SEXP readNifti (SEXP _object, SEXP _internal)
+RcppExport SEXP readNifti (SEXP _object, SEXP _internal, SEXP _volumes)
 {
 BEGIN_RCPP
-    NiftiImage image(_object);
-    return image.toArrayOrPointer(as<bool>(_internal), "NIfTI image");
+    if (Rf_isNull(_volumes))
+    {
+        NiftiImage image(_object);
+        return image.toArrayOrPointer(as<bool>(_internal), "NIfTI image");
+    }
+    else
+    {
+        std::vector<int> volumes;
+        IntegerVector volumesR(_volumes);
+        for (int i=0; i<volumesR.length(); i++)
+            volumes.push_back(volumesR[i] - 1);
+        NiftiImage image(as<std::string>(_object), volumes);
+        return image.toArrayOrPointer(as<bool>(_internal), "NIfTI image");
+    }
 END_RCPP
 }
 
@@ -199,7 +211,7 @@ END_RCPP
 extern "C" {
 
 static R_CallMethodDef callMethods[] = {
-    { "readNifti",      (DL_FUNC) &readNifti,       2 },
+    { "readNifti",      (DL_FUNC) &readNifti,       3 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      3 },
     { "updateNifti",    (DL_FUNC) &updateNifti,     3 },
     { "dumpNifti",      (DL_FUNC) &dumpNifti,       1 },

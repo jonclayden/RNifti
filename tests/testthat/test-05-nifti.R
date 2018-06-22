@@ -2,6 +2,7 @@ context("Reading, writing and manipulating NIfTI objects")
 
 test_that("NIfTI files can be read and written", {
     imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
+    volumeImagePath <- system.file("extdata", "example_4d.nii.gz", package="RNifti")
     compressedImagePath <- system.file("extdata", "example_compressed.nii.gz", package="RNifti")
     tempPath <- paste(tempfile(), "nii.gz", sep=".")
     
@@ -29,6 +30,10 @@ test_that("NIfTI files can be read and written", {
     
     image <- readNifti(imagePath, internal=TRUE)
     expect_equal(as.array(image)[40,40,30], 368)
+    
+    image <- readNifti(volumeImagePath, volumes=1:2)
+    expect_equal(dim(image), c(96L,96L,60L,2L))
+    expect_equal(max(image), 2)
 })
 
 test_that("image objects can be manipulated", {
