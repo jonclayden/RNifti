@@ -1,5 +1,19 @@
 context("Reading, writing and manipulating NIfTI objects")
 
+test_that("NIfTI objects can be created from data", {
+    data <- array(rnorm(24), dim=c(3L,2L,4L))
+    image <- retrieveNifti(data)
+    
+    expect_equal(ndim(data), 3L)
+    expect_is(image, "internalImage")
+    expect_equal(dim(image), c(3L,2L,4L))
+    expect_equal(pixdim(data), c(1,1,1))
+    expect_equal(pixdim(image), c(1,1,1))
+    expect_equal(pixunits(data), "Unknown")
+    expect_equal(pixunits(image), "Unknown")
+    expect_equal(dumpNifti(image)$datatype, 64L)
+})
+
 test_that("NIfTI files can be read and written", {
     imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
     volumeImagePath <- system.file("extdata", "example_4d.nii.gz", package="RNifti")
@@ -18,6 +32,7 @@ test_that("NIfTI files can be read and written", {
     expect_equal(pixdim(readNifti(tempPath)), c(2.5,2.5,2.5))
     unlink(tempPath)
     
+    expect_output(print(dumpNifti(image)), "NIfTI-1 header")
     expect_equal(dumpNifti(image)$bitpix, 32L)
     writeNifti(image, tempPath, datatype="short")
     expect_equal(dumpNifti(tempPath)$bitpix, 16L)
@@ -30,10 +45,12 @@ test_that("NIfTI files can be read and written", {
     
     image <- readNifti(imagePath, internal=TRUE)
     expect_equal(as.array(image)[40,40,30], 368)
+    expect_error(dim(image) <- c(60L,96L,96L))
     
     image <- readNifti(volumeImagePath, volumes=1:2)
     expect_equal(dim(image), c(96L,96L,60L,2L))
     expect_equal(max(image), 2)
+    expect_output(print(image), "x 1 s")    # time units only appear for 4D+ images
 })
 
 test_that("image objects can be manipulated", {

@@ -6,6 +6,7 @@ test_that("NIfTI sform/qform operations work", {
     
     expect_equal(diag(xform(image)), c(-2.5,2.5,2.5,1))
     expect_equal(diag(xform(image,useQuaternionFirst=FALSE)), c(-2.5,2.5,2.5,1))
+    expect_equal(round(origin(image)), c(50,39,23))
     
     point <- c(40, 40, 20)
     expect_equal(round(voxelToWorld(point,image)), c(25,2,-8))
