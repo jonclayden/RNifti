@@ -4,7 +4,7 @@
 \alias{readNifti}
 \title{Read a NIfTI-1 format file}
 \usage{
-readNifti(file, internal = FALSE)
+readNifti(file, internal = FALSE, volumes = NULL)
 }
 \arguments{
 \item{file}{A character vector of file names.}
@@ -15,10 +15,16 @@ will be returned. If \code{TRUE}, the return value will be an object of
 class \code{"internalImage"}, which contains only minimal metadata about
 the image. Either way, the return value has an attribute which points to a
 C data structure containing the full image.}
+
+\item{volumes}{An integer vector giving the volumes to read (counting along
+all dimensions beyond the third jointly), or \code{NULL}, the default, in
+which case every volume is read. This cannot currently be set differently
+for each file read.}
 }
 \value{
-An array or internal image, with class \code{"niftiImage"}, and
-  possibly also \code{"internalImage"}.
+An array or internal image, with class \code{"niftiImage"} (and
+  possibly also \code{"internalImage"}), or a list of such objects if
+  \code{file} has length greater than one.
 }
 \description{
 This function reads one or more NIfTI-1 files into R, using the standard
