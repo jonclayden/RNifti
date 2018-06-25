@@ -160,7 +160,26 @@ public:
         if (header == NULL)
             return -1;
         else
-            return NIFTI_VERSION(*header);
+        {
+            int version = NIFTI_VERSION(*header);
+            if (version == 0)
+            {
+                // NIfTI-2 has a 540-byte header - check for this or its byte-swapped equivalent
+                if (header->sizeof_hdr == 540 || header->sizeof_hdr == 469893120)
+                {
+                    // The magic number has moved in NIfTI-2, so find it by byte offset
+                    const char *magic = (char *) header + 4;
+                    if (strncmp(magic,"ni2",3) == 0 || strncmp(magic,"n+2",3) == 0)
+                        version = 2;
+                }
+                else if (!nifti_hdr_looks_good(header))
+                {
+                    // Not plausible as ANALYZE, so return -1
+                    version = -1;
+                }
+            }
+            return version;
+        }
     }
     
 
