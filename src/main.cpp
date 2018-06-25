@@ -25,6 +25,14 @@ bool isInternal (RObject object)
     return false;
 }
 
+RcppExport SEXP niftiVersion (SEXP _path)
+{
+BEGIN_RCPP
+    int version = NiftiImage::fileVersion(as<std::string>(_path));
+    return wrap(version);
+END_RCPP
+}
+
 RcppExport SEXP readNifti (SEXP _object, SEXP _internal, SEXP _volumes)
 {
 BEGIN_RCPP
@@ -211,6 +219,7 @@ END_RCPP
 extern "C" {
 
 static R_CallMethodDef callMethods[] = {
+    { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      3 },
     { "updateNifti",    (DL_FUNC) &updateNifti,     3 },
