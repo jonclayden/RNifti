@@ -156,7 +156,7 @@ public:
     **/
     static int fileVersion (const std::string &path)
     {
-        nifti_1_header *header = nifti_read_header(path.c_str(), NULL, FALSE);
+        nifti_1_header *header = nifti_read_header(path.c_str(), NULL, false);
         if (header == NULL)
             return -1;
         else
