@@ -20,6 +20,7 @@ test_that("NIfTI files can be read and written", {
     compressedImagePath <- system.file("extdata", "example_compressed.nii.gz", package="RNifti")
     tempPath <- paste(tempfile(), "nii.gz", sep=".")
     
+    expect_equal(niftiVersion(imagePath), structure(1L,names=imagePath))
     expect_equal(dim(readNifti(imagePath,internal=FALSE)), c(96L,96L,60L))
     expect_equal(dim(readNifti(imagePath,internal=TRUE)), c(96L,96L,60L))
     expect_output(print(readNifti(imagePath,internal=TRUE)), "2.5 mm per voxel")

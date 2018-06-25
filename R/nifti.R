@@ -188,6 +188,33 @@ print.niftiHeader <- function (x, ...)
         cat(paste0(paste(rep(" ",maxWidth-widths[i]),collapse=""), names(x)[i], ": ", paste(format(x[[i]],trim=TRUE),collapse="  "), "\n"))
 }
 
+#' Check the format version of a file
+#' 
+#' This function identifies the likely NIfTI format variant used by one or more
+#' files on disk.
+#' 
+#' @param file A character vector of file names.
+#' @return A vector of integers, of the same length as \code{file}. Each
+#'   element will be 0 for ANALYZE format (the precursor to NIfTI-1), 1 for
+#'   NIfTI-1 (which is now most common), 2 for NIfTI-2, or -1 if the file
+#'   doesn't exist or doesn't look plausible in any of these formats.
+#' 
+#' @note NIfTI-2 format, mostly a variant of NIfTI-1 with wider datatypes used
+#'   for many fields, is not currently supported for reading, but it is
+#'   detected by this function.
+#' 
+#' @examples
+#' path <- system.file("extdata", "example.nii.gz", package="RNifti")
+#' niftiVersion(path)       # 1
+#' 
+#' @author Jon Clayden <code@@clayden.org>
+#' @seealso \code{\link{readNifti}}
+#' @export
+niftiVersion <- function (file)
+{
+    sapply(file, function(f) .Call("niftiVersion", path.expand(f), PACKAGE="RNifti"))
+}
+
 rescaleNifti <- function (image, scales)
 {
     .Call("rescaleImage", image, scales, PACKAGE="RNifti")
