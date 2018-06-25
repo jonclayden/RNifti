@@ -6,6 +6,7 @@
 #define R_USE_C99_IN_CXX
 
 #include <R_ext/Print.h>
+#include <R_ext/Error.h>
 
 #define Rc_printf Rprintf
 #define Rc_fprintf_stdout(...) Rprintf(__VA_ARGS__)
