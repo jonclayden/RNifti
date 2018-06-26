@@ -2,6 +2,26 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.8.0
+
+- The new niftiVersion() function identifies the NIfTI format variant used by
+  files on disk.
+- The readNifti() function gains an option which allows only certain volumes
+  to be read from disk.
+- The updateNifti() function gains an option to set the internal datatype, for
+  advanced usage only (issue #8).
+- Calling updateNifti() with a list containing only a few fields could
+  previously reset the remaining metadata to the defaults. This has been
+  corrected.
+- It is now possible to change the cal_min and cal_max fields with the
+  updateNifti() function (issue #9). The scl_slope and scl_inter fields cannot
+  be changed, but this is now documented.
+- R packages using the RNifti API must now ensure that the USING_R symbol is
+  defined (which it is by the main R header, R.h). Conversely, standalone use
+  of RNifti as a C++ library no longer requires _NO_R__ to be defined.
+
+===============================================================================
+
 VERSION 0.7.1
 
 - The package is now more careful about handling NaNs when converting to
