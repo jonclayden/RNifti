@@ -198,6 +198,14 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP hasData (SEXP _image)
+{
+BEGIN_RCPP
+    const NiftiImage image(_image);
+    return wrap(image->data != NULL);
+END_RCPP
+}
+
 RcppExport SEXP rescaleImage (SEXP _image, SEXP _scales)
 {
 BEGIN_RCPP
@@ -228,6 +236,7 @@ static R_CallMethodDef callMethods[] = {
     { "setXform",       (DL_FUNC) &setXform,        3 },
     { "getOrientation", (DL_FUNC) &getOrientation,  2 },
     { "setOrientation", (DL_FUNC) &setOrientation,  2 },
+    { "hasData",        (DL_FUNC) &hasData,         1 },
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },
     { NULL, NULL, 0 }

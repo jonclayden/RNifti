@@ -215,6 +215,11 @@ niftiVersion <- function (file)
     sapply(file, function(f) .Call("niftiVersion", path.expand(f), PACKAGE="RNifti"))
 }
 
+hasData <- function (image)
+{
+    .Call("hasData", image, PACKAGE="RNifti")
+}
+
 rescaleNifti <- function (image, scales)
 {
     .Call("rescaleImage", image, scales, PACKAGE="RNifti")
