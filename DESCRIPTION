@@ -1,6 +1,6 @@
 Package: RNifti
-Version: 0.8.0
-Date: 2018-06-26
+Version: 0.8.1
+Date: 2018-07-05
 Title: Fast R and C++ Access to NIfTI Images
 Authors@R: c(person("Jon","Clayden",role=c("cre","aut"),email="code@clayden.org"),
              person("Bob","Cox",role="aut"),

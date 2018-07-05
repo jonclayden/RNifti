@@ -3,6 +3,7 @@
 
 #ifdef USING_R
 
+#define R_NO_REMAP
 #define R_USE_C99_IN_CXX
 
 #include <R_ext/Print.h>
