@@ -222,7 +222,7 @@ inline void copyIfPresent (const Rcpp::List &list, const std::set<std::string> n
 
 inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const bool ignoreDatatype = false)
 {
-    if (header == NULL)
+    if (header == NULL || Rf_isNull(list.names()))
         return;
     
     const Rcpp::CharacterVector _names = list.names();
