@@ -14,17 +14,6 @@ using namespace RNifti;
 
 typedef std::vector<float> float_vector;
 
-bool isInternal (RObject object)
-{
-    CharacterVector classNames = object.attr("class");
-    for (int i=0; i<classNames.length(); i++)
-    {
-        if (classNames[i] == "internalImage")
-            return true;
-    }
-    return false;
-}
-
 RcppExport SEXP niftiVersion (SEXP _path)
 {
 BEGIN_RCPP
@@ -113,7 +102,7 @@ BEGIN_RCPP
     const NiftiImage image(_image, false);
     const bool preferQuaternion = as<bool>(_preferQuaternion);
     
-    mat44 xform = image.xform(preferQuaternion);
+    ::mat44 xform = image.xform(preferQuaternion);
     NumericMatrix matrix(4,4);
     for (int i=0; i<4; i++)
     {
@@ -128,16 +117,10 @@ END_RCPP
 RcppExport SEXP setXform (SEXP _image, SEXP _matrix, SEXP _isQform)
 {
 BEGIN_RCPP
-    NiftiImage image(_image);
     NumericMatrix matrix(_matrix);
-    
-    // Duplicate the image object if necessary
-    if (MAYBE_SHARED(_image))
-        image = image;
-    
     if (matrix.cols() != 4 || matrix.rows() != 4)
         throw std::runtime_error("Specified affine matrix does not have dimensions of 4x4");
-    mat44 xform;
+    ::mat44 xform;
     for (int i=0; i<4; i++)
     {
         for (int j=0; j<4; j++)
@@ -148,32 +131,81 @@ BEGIN_RCPP
     if (!Rf_isNull(matrix.attr("code")))
         code = as<int>(matrix.attr("code"));
     
-    if (!image.isNull())
+    if (Rf_isVectorList(_image) && Rf_inherits(_image,"niftiHeader"))
     {
+        // Header only
+        List image(_image);
+        if (MAYBE_SHARED(_image))
+            image = image;
+        
+        float qbcd[3], qxyz[3], dxyz[3], qfac;
+        nifti_mat44_to_quatern(xform, &qbcd[0], &qbcd[1], &qbcd[2], &qxyz[0], &qxyz[1], &qxyz[2], &dxyz[0], &dxyz[1], &dxyz[2], &qfac);
+        
         if (as<bool>(_isQform))
         {
-            image->qto_xyz = xform;
-            image->qto_ijk = nifti_mat44_inverse(image->qto_xyz);
-            nifti_mat44_to_quatern(image->qto_xyz, &image->quatern_b, &image->quatern_c, &image->quatern_d, &image->qoffset_x, &image->qoffset_y, &image->qoffset_z, NULL, NULL, NULL, &image->qfac);
-            
+            *REAL(image["quatern_b"]) = static_cast<double>(qbcd[0]);
+            *REAL(image["quatern_c"]) = static_cast<double>(qbcd[1]);
+            *REAL(image["quatern_d"]) = static_cast<double>(qbcd[2]);
+            *REAL(image["qoffset_x"]) = static_cast<double>(qxyz[0]);
+            *REAL(image["qoffset_y"]) = static_cast<double>(qxyz[1]);
+            *REAL(image["qoffset_z"]) = static_cast<double>(qxyz[2]);
+            REAL(image["pixdim"])[0] = static_cast<double>(qfac);
             if (code >= 0)
-                image->qform_code = code;
+                *INTEGER(image["qform_code"]) = code;
         }
         else
         {
-            image->sto_xyz = xform;
-            image->sto_ijk = nifti_mat44_inverse(image->sto_xyz);
-            
+            for (int i=0; i<4; i++)
+            {
+                REAL(image["srow_x"])[i] = matrix(0,i);
+                REAL(image["srow_y"])[i] = matrix(1,i);
+                REAL(image["srow_z"])[i] = matrix(2,i);
+            }
             if (code >= 0)
-                image->sform_code = code;
+                *INTEGER(image["sform_code"]) = code;
         }
+        
+        const int dimensionality = INTEGER(image["dim"])[0];
+        for (int i=0; i<std::min(3,dimensionality); i++)
+            REAL(image["pixdim"])[i+1] = static_cast<double>(dxyz[i]);
+        
+        return image;
     }
-    
-    // If the image was copied above it will have been marked nonpersistent
-    if (image.isPersistent())
-        return _image;
     else
-        return image.toArrayOrPointer(isInternal(_image), "NIfTI image");
+    {
+        // From here, we assume we have a proper image
+        // First, duplicate the image object if necessary, to preserve usual R semantics
+        NiftiImage image(_image);
+        if (MAYBE_SHARED(_image))
+            image = image;
+    
+        if (!image.isNull())
+        {
+            if (as<bool>(_isQform))
+            {
+                image->qto_xyz = xform;
+                image->qto_ijk = nifti_mat44_inverse(image->qto_xyz);
+                nifti_mat44_to_quatern(image->qto_xyz, &image->quatern_b, &image->quatern_c, &image->quatern_d, &image->qoffset_x, &image->qoffset_y, &image->qoffset_z, NULL, NULL, NULL, &image->qfac);
+            
+                if (code >= 0)
+                    image->qform_code = code;
+            }
+            else
+            {
+                image->sto_xyz = xform;
+                image->sto_ijk = nifti_mat44_inverse(image->sto_xyz);
+            
+                if (code >= 0)
+                    image->sform_code = code;
+            }
+        }
+    
+        // If the image was copied above it will have been marked nonpersistent
+        if (image.isPersistent())
+            return _image;
+        else
+            return image.toArrayOrPointer(Rf_inherits(_image,"internalImage"), "NIfTI image");
+    }
 END_RCPP
 }
 
@@ -194,7 +226,7 @@ BEGIN_RCPP
     if (MAYBE_SHARED(_image))
         image = image;
     image.reorient(as<std::string>(_axes));
-    return image.toArrayOrPointer(isInternal(_image), "NIfTI image");
+    return image.toArrayOrPointer(Rf_inherits(_image,"internalImage"), "NIfTI image");
 END_RCPP
 }
 
