@@ -150,28 +150,32 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
     .Call("updateNifti", image, template, datatype, PACKAGE="RNifti")
 }
 
-#' Dump the contents of an internal NIfTI-1 object
+#' Dump or construct a raw NIfTI header
 #' 
-#' This function extracts the contents of an internal NIfTI-1 object into an R
-#' list. No processing is done to the elements.
+#' This function extracts the contents of a NIfTI-1 header, closely
+#' approximating how it would be stored on disk. Defaults will be used where
+#' information is missing, but no processing is performed on the metadata.
 #' 
 #' @param image An image, in any acceptable form (see
-#'   \code{\link{retrieveNifti}}).
+#'   \code{\link{retrieveNifti}}). A list containing partial header information
+#'   is acceptable, including an empty list, which returns defaults for every
+#'   field.
 #' @param x A \code{"niftiHeader"} object.
 #' @param ... Ignored.
 #' @return For \code{dumpNifti}, a list of class \code{"niftiHeader"}, with
-#'   named components corresponding to the elements in a raw NIfTI-1 file.
+#'   named components corresponding to the elements in a raw NIfTI-1 header.
 #' 
 #' @examples
-#' dumpNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+#' niftiHeader(system.file("extdata", "example.nii.gz", package="RNifti"))
 #' 
 #' # Default header for a standard R array
-#' dumpNifti(array(0L, dim=c(10,10)))
+#' niftiHeader(array(0L, dim=c(10,10)))
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
-#' @export
-dumpNifti <- function (image)
+#' @aliases dumpNifti
+#' @export niftiHeader dumpNifti
+niftiHeader <- dumpNifti <- function (image = list())
 {
     .Call("dumpNifti", image, PACKAGE="RNifti")
 }
