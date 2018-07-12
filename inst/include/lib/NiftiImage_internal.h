@@ -3,6 +3,20 @@
 
 namespace internal {
 
+struct vec3
+{
+    float v[3];
+    
+    vec3 operator-() const
+    {
+        vec3 r;
+        r.v[0] = -v[0];
+        r.v[1] = -v[1];
+        r.v[2] = -v[2];
+        return r;
+    }
+};
+
 template <typename ElementType>
 struct DataRescaler
 {
@@ -318,8 +332,19 @@ inline mat33 topLeftCorner (const mat44 &matrix)
         for (int j=0; j<3; j++)
             newMatrix.m[i][j] = matrix.m[i][j];
     }
-    
     return newMatrix;
+}
+
+inline vec3 matrixVectorProduct (const mat33 &matrix, const vec3 &vector)
+{
+    vec3 newVector;
+    for (int i=0; i<3; i++)
+    {
+        newVector.v[i] = 0.0;
+        for (int j=0; j<3; j++)
+            newVector.v[i] += matrix.m[j][i] * vector.v[i];
+    }
+    return newVector;
 }
 
 #ifdef USING_R
