@@ -1216,11 +1216,14 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
     }
     
     // Extract the mapping between dimensions and the signs
-    int locs[3], signs[3], newdim[3];
+    // These vectors are all indexed in the target space, except "revsigns"
+    int locs[3], signs[3], newdim[3], revsigns[3];
     float newpixdim[3];
     double maxes[3] = { R_NegInf, R_NegInf, R_NegInf };
+    internal::vec3 offset;
     for (int j=0; j<3; j++)
     {
+        // Find the largest absolute value in each column, which gives the old dimension corresponding to each new dimension
         for (int i=0; i<3; i++)
         {
             const double value = static_cast<double>(transform.m[i][j]);
@@ -1232,19 +1235,24 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
             }
         }
         
+        // Obtain the sign for the reverse mapping
+        revsigns[locs[j]] = signs[j];
+        
         // Permute dim and pixdim
         newdim[j] = image->dim[locs[j]+1];
         newpixdim[j] = image->pixdim[locs[j]+1];
         
-        // Flip the origin if necessary
+        // Flip and/or permute the origin
         if (signs[j] < 0)
-            origin.v[j] = image->dim[locs[j]+1] - origin.v[j] - 1.0;
+            offset.v[j] = image->dim[locs[j]+1] - origin.v[locs[j]] - 1.0;
+        else
+            offset.v[j] = origin.v[locs[j]];
     }
     
     // Convert the origin back to an xform offset and insert it
-    origin = -internal::matrixVectorProduct(internal::topLeftCorner(result), origin);
+    offset = -internal::matrixVectorProduct(internal::topLeftCorner(result), offset);
     for (int i=0; i<3; i++)
-        result.m[i][3] = origin.v[i];
+        result.m[i][3] = offset.v[i];
     
     // Update the xforms with nonzero codes
     if (image->qform_code > 0)
@@ -1259,11 +1267,11 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         image->sto_ijk = nifti_mat44_inverse(image->sto_xyz);
     }
     
-    // Calculate strides in target space
+    // Calculate strides: the step in target space associated with each dimension in source space
     ptrdiff_t strides[3];
     strides[locs[0]] = 1;
-    for (int n=1; n<3; n++)
-        strides[locs[n]] = strides[locs[n-1]] * image->dim[locs[n-1]+1];
+    strides[locs[1]] = strides[locs[0]] * image->dim[locs[0]+1];
+    strides[locs[2]] = strides[locs[1]] * image->dim[locs[1]+1];
     
     // Permute the data (if present)
     if (image->data != NULL)
@@ -1278,7 +1286,7 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         size_t volStart = 0;
         for (int i=0; i<3; i++)
         {
-            if (signs[i] < 0)
+            if (revsigns[i] < 0)
                 volStart += (image->dim[i+1] - 1) * strides[i];
         }
         
@@ -1288,15 +1296,15 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         {
             for (int k=0; k<image->nz; k++)
             {
-                ptrdiff_t offset = k * strides[2] * signs[2];
+                ptrdiff_t offset = k * strides[2] * revsigns[2];
                 for (int j=0; j<image->ny; j++)
                 {
                     for (int i=0; i<image->nx; i++)
                     {
                         newData[volStart + offset] = *it++;
-                        offset += strides[0] * signs[0];
+                        offset += strides[0] * revsigns[0];
                     }
-                    offset += strides[1] * signs[1] - image->nx * strides[0] * signs[0];
+                    offset += strides[1] * revsigns[1] - image->nx * strides[0] * revsigns[0];
                 }
             }
             volStart += volSize;

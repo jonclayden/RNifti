@@ -342,7 +342,7 @@ inline vec3 matrixVectorProduct (const mat33 &matrix, const vec3 &vector)
     {
         newVector.v[i] = 0.0;
         for (int j=0; j<3; j++)
-            newVector.v[i] += matrix.m[j][i] * vector.v[i];
+            newVector.v[i] += matrix.m[i][j] * vector.v[j];
     }
     return newVector;
 }
