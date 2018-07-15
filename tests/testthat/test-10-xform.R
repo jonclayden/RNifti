@@ -26,11 +26,20 @@ test_that("NIfTI sform/qform operations work", {
     expect_equal(dumpNifti(image)$sform_code, 4L)
     expect_equal(dumpNifti(image)$srow_x, c(-2,0,0,122))
     expect_equal(dumpNifti(originalImage)$qform_code, 2L)
-    
+})
+
+test_that("image data and metadata can be reoriented", {
+    imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
     image <- readNifti(imagePath, internal=FALSE)
     reorientedImage <- image
+    
     orientation(reorientedImage) <- "PIR"
     expect_equal(orientation(image), "LAS")
     expect_equal(orientation(reorientedImage), "PIR")
+    expect_equal(origin(reorientedImage), (dim(image)-origin(image)+1)[c(2,3,1)], tolerance=1e-4)
     expect_equal(image[40,40,30], reorientedImage[57,31,57])
+    orientation(reorientedImage) <- "RAS"
+    expect_equal(image[40,40,30], reorientedImage[57,40,30])
+    orientation(reorientedImage) <- "LAS"
+    expect_equal(xform(image), xform(reorientedImage), tolerance=1e-4)
 })
