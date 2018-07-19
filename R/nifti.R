@@ -1,7 +1,7 @@
 #' Read a NIfTI-1 format file
 #' 
-#' This function reads one or more NIfTI-1 files into R, using the standard
-#' NIfTI-1 C library.
+#' This function reads one or more NIfTI-1 or ANALYZE-7.5 files into R, using
+#' the standard NIfTI-1 C library.
 #' 
 #' @param file A character vector of file names.
 #' @param internal Logical value. If \code{FALSE} (the default), an array
@@ -150,11 +150,21 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
     .Call("updateNifti", image, template, datatype, PACKAGE="RNifti")
 }
 
-#' Dump or construct a raw NIfTI header
+#' Dump or construct a raw NIfTI or ANALYZE header
 #' 
-#' This function extracts the contents of a NIfTI-1 header, closely
-#' approximating how it would be stored on disk. Defaults will be used where
-#' information is missing, but no processing is performed on the metadata.
+#' These functions extract the contents of a NIfTI-1 or ANALYZE-7.5 header,
+#' closely approximating how it is (or would be) stored on disk. Defaults will
+#' be used where information is missing, but no processing is performed on the
+#' metadata.
+#' 
+#' The NIfTI-1 standard was originally formulated as a roughly backwards-
+#' compatible improvement on the ANALYZE format. Both formats use a binary
+#' header structure of 348 bytes, but the field names and their interpretation
+#' is often non-equivalent. These functions dump these fields, without regard
+#' to whether or not the result makes proper sense.
+#' 
+#' \code{dumpNifti} is an alias of \code{niftiHeader}, but the former is now
+#' soft-deprecated.
 #' 
 #' @param image An image, in any acceptable form (see
 #'   \code{\link{retrieveNifti}}). A list containing partial header information
@@ -162,8 +172,13 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
 #'   field.
 #' @param x A \code{"niftiHeader"} object.
 #' @param ... Ignored.
-#' @return For \code{dumpNifti}, a list of class \code{"niftiHeader"}, with
+#' @return For \code{niftiHeader}, a list of class \code{"niftiHeader"}, with
 #'   named components corresponding to the elements in a raw NIfTI-1 header.
+#'   For \code{analyzeHeader}, the equivalent for ANALYZE-7.5.
+#' 
+#' @note Several medical image analysis packages, such as SPM and FSL, use the
+#'   ANALYZE \code{originator} field to store a coordinate origin. This
+#'   interpretation is also returned, in the \code{origin} field.
 #' 
 #' @examples
 #' niftiHeader(system.file("extdata", "example.nii.gz", package="RNifti"))
@@ -177,14 +192,33 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
 #' @export niftiHeader dumpNifti
 niftiHeader <- dumpNifti <- function (image = list())
 {
-    .Call("dumpNifti", image, PACKAGE="RNifti")
+    .Call("niftiHeader", image, PACKAGE="RNifti")
 }
 
-#' @rdname dumpNifti
+#' @rdname niftiHeader
+#' @export
+analyzeHeader <- function (image = list())
+{
+    .Call("analyzeHeader", image, PACKAGE="RNifti")
+}
+
+#' @rdname niftiHeader
 #' @export
 print.niftiHeader <- function (x, ...)
 {
     cat("NIfTI-1 header\n")
+    widths <- nchar(names(x), "width")
+    maxWidth <- max(widths)
+    
+    for (i in seq_along(widths))
+        cat(paste0(paste(rep(" ",maxWidth-widths[i]),collapse=""), names(x)[i], ": ", paste(format(x[[i]],trim=TRUE),collapse="  "), "\n"))
+}
+
+#' @rdname niftiHeader
+#' @export
+print.analyzeHeader <- function (x, ...)
+{
+    cat("ANALYZE-7.5 header\n")
     widths <- nchar(names(x), "width")
     maxWidth <- max(widths)
     
@@ -212,7 +246,7 @@ print.niftiHeader <- function (x, ...)
 #' niftiVersion(path)       # 1
 #' 
 #' @author Jon Clayden <code@@clayden.org>
-#' @seealso \code{\link{readNifti}}
+#' @seealso \code{\link{readNifti}}, \code{\link{niftiHeader}}
 #' @export
 niftiVersion <- function (file)
 {

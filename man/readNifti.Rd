@@ -27,8 +27,8 @@ An array or internal image, with class \code{"niftiImage"} (and
   \code{file} has length greater than one.
 }
 \description{
-This function reads one or more NIfTI-1 files into R, using the standard
-NIfTI-1 C library.
+This function reads one or more NIfTI-1 or ANALYZE-7.5 files into R, using
+the standard NIfTI-1 C library.
 }
 \note{
 If the \code{internal} argument is \code{FALSE} (the default), the

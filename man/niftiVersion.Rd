@@ -30,7 +30,7 @@ niftiVersion(path)       # 1
 
 }
 \seealso{
-\code{\link{readNifti}}
+\code{\link{readNifti}}, \code{\link{niftiHeader}}
 }
 \author{
 Jon Clayden <code@clayden.org>

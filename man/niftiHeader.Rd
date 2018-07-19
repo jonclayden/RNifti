@@ -3,9 +3,18 @@
 \name{niftiHeader}
 \alias{niftiHeader}
 \alias{dumpNifti}
-\title{Dump or construct a raw NIfTI header}
+\alias{analyzeHeader}
+\alias{print.niftiHeader}
+\alias{print.analyzeHeader}
+\title{Dump or construct a raw NIfTI or ANALYZE header}
 \usage{
 niftiHeader(image = list())
+
+analyzeHeader(image = list())
+
+\method{print}{niftiHeader}(x, ...)
+
+\method{print}{analyzeHeader}(x, ...)
 }
 \arguments{
 \item{image}{An image, in any acceptable form (see
@@ -18,13 +27,30 @@ field.}
 \item{...}{Ignored.}
 }
 \value{
-For \code{dumpNifti}, a list of class \code{"niftiHeader"}, with
+For \code{niftiHeader}, a list of class \code{"niftiHeader"}, with
   named components corresponding to the elements in a raw NIfTI-1 header.
+  For \code{analyzeHeader}, the equivalent for ANALYZE-7.5.
 }
 \description{
-This function extracts the contents of a NIfTI-1 header, closely
-approximating how it would be stored on disk. Defaults will be used where
-information is missing, but no processing is performed on the metadata.
+These functions extract the contents of a NIfTI-1 or ANALYZE-7.5 header,
+closely approximating how it is (or would be) stored on disk. Defaults will
+be used where information is missing, but no processing is performed on the
+metadata.
+}
+\details{
+The NIfTI-1 standard was originally formulated as a roughly backwards-
+compatible improvement on the ANALYZE format. Both formats use a binary
+header structure of 348 bytes, but the field names and their interpretation
+is often non-equivalent. These functions dump these fields, without regard
+to whether or not the result makes proper sense.
+
+\code{dumpNifti} is an alias of \code{niftiHeader}, but the former is now
+soft-deprecated.
+}
+\note{
+Several medical image analysis packages, such as SPM and FSL, use the
+  ANALYZE \code{originator} field to store a coordinate origin. This
+  interpretation is also returned, in the \code{origin} field.
 }
 \examples{
 niftiHeader(system.file("extdata", "example.nii.gz", package="RNifti"))

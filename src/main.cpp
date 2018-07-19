@@ -88,11 +88,82 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP dumpNifti (SEXP _image)
+RcppExport SEXP niftiHeader (SEXP _image)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, false);
     return image.headerToList();
+END_RCPP
+}
+
+RcppExport SEXP analyzeHeader (SEXP _image)
+{
+BEGIN_RCPP
+    nifti_1_header header;
+    
+    if (Rf_isString(_image))
+    {
+        const std::string path = as<std::string>(_image);
+        nifti_1_header *ptr = nifti_read_header(path.c_str(), NULL, true);
+        header = *ptr;
+        free(ptr);
+    }
+    else
+    {
+        const NiftiImage image(_image, false);
+        header = nifti_convert_nim2nhdr(image);
+    }
+    
+    nifti_analyze75 *analyze = (nifti_analyze75 *) &header;
+    List result;
+    
+    result["sizeof_hdr"] = analyze->sizeof_hdr;
+    result["data_type"] = std::string(analyze->data_type, 10);
+    result["db_name"] = std::string(analyze->db_name, 18);
+    result["extents"] = analyze->extents;
+    result["session_error"] = analyze->session_error;
+    result["regular"] = std::string(&analyze->regular, 1);
+    
+    result["dim"] = std::vector<short>(analyze->dim, analyze->dim+8);
+    result["datatype"] = analyze->datatype;
+    result["bitpix"] = analyze->bitpix;
+    result["pixdim"] = std::vector<float>(analyze->pixdim, analyze->pixdim+8);
+    
+    result["vox_offset"] = analyze->vox_offset;
+    result["cal_max"] = analyze->cal_max;
+    result["cal_min"] = analyze->cal_min;
+    result["compressed"] = analyze->compressed;
+    result["verified"] = analyze->verified;
+    result["glmax"] = analyze->glmax;
+    result["glmin"] = analyze->glmin;
+    
+    result["descrip"] = std::string(analyze->descrip, 80);
+    result["aux_file"] = std::string(analyze->aux_file, 24);
+    result["orient"] = int(analyze->orient);
+    result["originator"] = std::string(analyze->originator, 10);
+    
+    // SPM and FSL use the originator field to store a coordinate origin
+    short *origin = (short *) analyze->originator;
+    result["origin"] = std::vector<short>(origin, origin+5);
+    
+    result["generated"] = std::string(analyze->generated, 10);
+    result["scannum"] = std::string(analyze->scannum, 10);
+    result["patient_id"] = std::string(analyze->patient_id, 10);
+    result["exp_date"] = std::string(analyze->exp_date, 10);
+    result["exp_time"] = std::string(analyze->exp_time, 10);
+    
+    result["views"] = analyze->views;
+    result["vols_added"] = analyze->vols_added;
+    result["start_field"] = analyze->start_field;
+    result["field_skip"] = analyze->field_skip;
+    result["omax"] = analyze->omax;
+    result["omin"] = analyze->omin;
+    result["smax"] = analyze->smax;
+    result["smin"] = analyze->smin;
+    
+    result.attr("class") = CharacterVector::create("analyzeHeader");
+    
+    return result;
 END_RCPP
 }
 
@@ -263,7 +334,8 @@ static R_CallMethodDef callMethods[] = {
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      3 },
     { "updateNifti",    (DL_FUNC) &updateNifti,     3 },
-    { "dumpNifti",      (DL_FUNC) &dumpNifti,       1 },
+    { "niftiHeader",    (DL_FUNC) &niftiHeader,     1 },
+    { "analyzeHeader",  (DL_FUNC) &analyzeHeader,   1 },
     { "getXform",       (DL_FUNC) &getXform,        2 },
     { "setXform",       (DL_FUNC) &setXform,        3 },
     { "getOrientation", (DL_FUNC) &getOrientation,  2 },
