@@ -14,6 +14,41 @@ using namespace RNifti;
 
 typedef std::vector<float> float_vector;
 
+::mat44 matrixToXform (const SEXP _matrix, bool *valid = NULL)
+{
+    ::mat44 xform;
+    
+    if (valid != NULL)
+        *valid = false;
+    
+    if (Rf_isMatrix(_matrix))
+    {
+        NumericMatrix matrix(_matrix);
+        if (matrix.cols() == 4 && matrix.rows() == 4)
+        {
+            if (valid != NULL)
+                *valid = true;
+            for (int i=0; i<4; i++)
+            {
+                for (int j=0; j<4; j++)
+                    xform.m[i][j] = static_cast<float>(matrix(i,j));
+            }
+        }
+    }
+    return xform;
+}
+
+NumericMatrix xformToMatrix (const ::mat44 xform)
+{
+    NumericMatrix matrix(4,4);
+    for (int i=0; i<4; i++)
+    {
+        for (int j=0; j<4; j++)
+            matrix(i,j) = static_cast<double>(xform.m[i][j]);
+    }
+    return matrix;
+}
+
 RcppExport SEXP niftiVersion (SEXP _path)
 {
 BEGIN_RCPP
@@ -170,18 +205,17 @@ END_RCPP
 RcppExport SEXP getXform (SEXP _image, SEXP _preferQuaternion)
 {
 BEGIN_RCPP
-    const NiftiImage image(_image, false);
-    const bool preferQuaternion = as<bool>(_preferQuaternion);
+    bool isMatrix = false;
+    ::mat44 xform = matrixToXform(_image, &isMatrix);
     
-    ::mat44 xform = image.xform(preferQuaternion);
-    NumericMatrix matrix(4,4);
-    for (int i=0; i<4; i++)
+    if (isMatrix)
+        return _image;
+    else
     {
-        for (int j=0; j<4; j++)
-            matrix(i,j) = static_cast<double>(xform.m[i][j]);
+        const NiftiImage image(_image, false);
+        ::mat44 xform = image.xform(as<bool>(_preferQuaternion));
+        return xformToMatrix(xform);
     }
-    
-    return matrix;
 END_RCPP
 }
 
@@ -191,12 +225,8 @@ BEGIN_RCPP
     NumericMatrix matrix(_matrix);
     if (matrix.cols() != 4 || matrix.rows() != 4)
         throw std::runtime_error("Specified affine matrix does not have dimensions of 4x4");
-    ::mat44 xform;
-    for (int i=0; i<4; i++)
-    {
-        for (int j=0; j<4; j++)
-            xform.m[i][j] = static_cast<float>(matrix(i,j));
-    }
+    
+    ::mat44 xform = matrixToXform(_matrix);
     
     int code = -1;
     if (!Rf_isNull(matrix.attr("code")))
@@ -283,9 +313,18 @@ END_RCPP
 RcppExport SEXP getOrientation (SEXP _image, SEXP _preferQuaternion)
 {
 BEGIN_RCPP
-    const NiftiImage image(_image, false);
-    const bool preferQuaternion = as<bool>(_preferQuaternion);
-    const std::string orientation = NiftiImage::xformToString(image.xform(preferQuaternion));
+    std::string orientation;
+    bool isMatrix = false;
+    ::mat44 xform = matrixToXform(_image, &isMatrix);
+    
+    if (isMatrix)
+        orientation = NiftiImage::xformToString(xform);
+    else
+    {
+        const NiftiImage image(_image, false);
+        orientation = NiftiImage::xformToString(image.xform(as<bool>(_preferQuaternion)));
+    }
+    
     return wrap(orientation);
 END_RCPP
 }
@@ -293,11 +332,32 @@ END_RCPP
 RcppExport SEXP setOrientation (SEXP _image, SEXP _axes)
 {
 BEGIN_RCPP
-    NiftiImage image(_image);
-    if (MAYBE_SHARED(_image))
-        image = image;
-    image.reorient(as<std::string>(_axes));
-    return image.toArrayOrPointer(Rf_inherits(_image,"internalImage"), "NIfTI image");
+    bool isMatrix = false;
+    ::mat44 xform = matrixToXform(_image, &isMatrix);
+    
+    if (isMatrix)
+    {
+        // Create an empty image for temporary purposes
+        nifti_image *ptr = nifti_make_new_nim(NULL, DT_UNSIGNED_CHAR, 0);
+        NiftiImage image(ptr);
+        
+        // Set the qform matrix
+        image->qto_xyz = xform;
+        image->qto_ijk = nifti_mat44_inverse(image->qto_xyz);
+        nifti_mat44_to_quatern(image->qto_xyz, &image->quatern_b, &image->quatern_c, &image->quatern_d, &image->qoffset_x, &image->qoffset_y, &image->qoffset_z, NULL, NULL, NULL, &image->qfac);
+        image->qform_code = 2;
+        
+        image.reorient(as<std::string>(_axes));
+        return xformToMatrix(image->qto_xyz);
+    }
+    else
+    {
+        NiftiImage image(_image);
+        if (MAYBE_SHARED(_image))
+            image = image;
+        image.reorient(as<std::string>(_axes));
+        return image.toArrayOrPointer(Rf_inherits(_image,"internalImage"), "NIfTI image");
+    }
 END_RCPP
 }
 
