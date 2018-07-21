@@ -11,8 +11,8 @@ updateNifti(image, template = NULL, datatype = "auto")
 
 \item{template}{An image, in any acceptable form (see
 \code{\link{retrieveNifti}}), or a named list of NIfTI-1 properties like
-that produced by \code{\link{dumpNifti}}. The default of \code{NULL} will
-have no effect.}
+that produced by \code{\link{niftiHeader}}. The default of \code{NULL}
+will have no effect.}
 
 \item{datatype}{The NIfTI datatype to use within the internal image. The
 default, \code{"auto"} uses the R type. Other possibilities are
@@ -32,7 +32,7 @@ dimensions, from the \code{image} will replace those from the template.
 }
 \details{
 If \code{template} is a complete list of NIfTI-1 header fields, like that
-produced by \code{\link{dumpNifti}}, or an image, then it will be used to
+produced by \code{\link{niftiHeader}}, or an image, then it will be used to
 create the internal object, and then the data and metadata associated with
 the \code{image} will overwrite the appropriate parts. If \code{template}
 is an incomplete list, the \code{image} will be used to create the internal

@@ -22,7 +22,7 @@ directly. Otherwise, if it is a string, it will be taken to be a filename.
 If it looks like a \code{"nifti"} object (from package \code{oro.nifti}),
 or an \code{"MriImage"} object (from package \code{tractor.base}), a
 conversion will be attempted. A list will be assumed to be of the form
-produced by \code{\link{dumpNifti}}. Finally, a numeric array or matrix
+produced by \code{\link{niftiHeader}}. Finally, a numeric array or matrix
 will be converted using default image parameters.
 }
 \seealso{

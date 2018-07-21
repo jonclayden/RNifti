@@ -22,7 +22,7 @@
 #'   data type of the image pointer will be set to match one of R's native
 #'   numeric data types, i.e., 32-bit signed integer or 64-bit double-precision
 #'   floating-point. In these circumstances the data type reported by the
-#'   \code{\link{dumpNifti}} function will therefore not, in general, match
+#'   \code{\link{niftiHeader}} function will therefore not, in general, match
 #'   the storage type used in the file. See also the \code{datatype} argument
 #'   to \code{\link{writeNifti}}.
 #' 
@@ -88,7 +88,7 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
 #' If it looks like a \code{"nifti"} object (from package \code{oro.nifti}),
 #' or an \code{"MriImage"} object (from package \code{tractor.base}), a
 #' conversion will be attempted. A list will be assumed to be of the form
-#' produced by \code{\link{dumpNifti}}. Finally, a numeric array or matrix
+#' produced by \code{\link{niftiHeader}}. Finally, a numeric array or matrix
 #' will be converted using default image parameters.
 #'
 #' @param object Any suitable object (see Details).
@@ -109,7 +109,7 @@ retrieveNifti <- function (object)
 #' dimensions, from the \code{image} will replace those from the template.
 #' 
 #' If \code{template} is a complete list of NIfTI-1 header fields, like that
-#' produced by \code{\link{dumpNifti}}, or an image, then it will be used to
+#' produced by \code{\link{niftiHeader}}, or an image, then it will be used to
 #' create the internal object, and then the data and metadata associated with
 #' the \code{image} will overwrite the appropriate parts. If \code{template}
 #' is an incomplete list, the \code{image} will be used to create the internal
@@ -126,8 +126,8 @@ retrieveNifti <- function (object)
 #' @param image A numeric array.
 #' @param template An image, in any acceptable form (see
 #'   \code{\link{retrieveNifti}}), or a named list of NIfTI-1 properties like
-#'   that produced by \code{\link{dumpNifti}}. The default of \code{NULL} will
-#'   have no effect.
+#'   that produced by \code{\link{niftiHeader}}. The default of \code{NULL}
+#'   will have no effect.
 #' @param datatype The NIfTI datatype to use within the internal image. The
 #'   default, \code{"auto"} uses the R type. Other possibilities are
 #'   \code{"float"}, \code{"int16"}, etc., which may be preferred to reduce
@@ -187,6 +187,7 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
 #' niftiHeader(array(0L, dim=c(10,10)))
 #' 
 #' @author Jon Clayden <code@@clayden.org>
+#' @seealso \code{\link{niftiVersion}}
 #' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @aliases dumpNifti
 #' @export niftiHeader dumpNifti
