@@ -397,7 +397,9 @@ inline void addAttributes (Rcpp::RObject &object, nifti_image *source, const boo
     else
         object.attr("imagedim") = dim;
     
-    Rcpp::DoubleVector pixdim(source->pixdim+1, source->pixdim+1+nDims);
+    Rcpp::DoubleVector pixdim(nDims);
+    for (int i=0; i<nDims; i++)
+        pixdim[i] = std::abs(static_cast<double>(source->pixdim[i+1]));
     object.attr("pixdim") = pixdim;
     
     if (source->xyz_units == NIFTI_UNITS_UNKNOWN && source->time_units == NIFTI_UNITS_UNKNOWN)
