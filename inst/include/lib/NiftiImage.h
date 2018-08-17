@@ -1478,10 +1478,8 @@ inline std::vector<TargetType> NiftiImage::Block::getData () const
         blockSize *= image->dim[i];
 
     std::vector<TargetType> data(blockSize);
-    internal::convertData<TargetType>(image->data, image->datatype, blockSize, data.begin(), blockSize*index);
-    
-    if (image.isDataScaled())
-        std::transform(data.begin(), data.end(), data.begin(), internal::DataRescaler<TargetType>(image->scl_slope,image->scl_inter));
+    internal::DataConverter<TargetType> converter(image->scl_slope, image->scl_inter);
+    internal::convertData<TargetType>(image->data, image->datatype, blockSize, &data.front(), blockSize*index, &converter);
     
     return data;
 }
@@ -1493,10 +1491,8 @@ inline std::vector<TargetType> NiftiImage::getData () const
         return std::vector<TargetType>();
     
     std::vector<TargetType> data(image->nvox);
-    internal::convertData<TargetType>(image->data, image->datatype, image->nvox, data.begin());
-    
-    if (this->isDataScaled())
-        std::transform(data.begin(), data.end(), data.begin(), internal::DataRescaler<TargetType>(image->scl_slope,image->scl_inter));
+    internal::DataConverter<TargetType> converter(image->scl_slope, image->scl_inter);
+    internal::convertData<TargetType>(image->data, image->datatype, image->nvox, &data.front());
     
     return data;
 }
@@ -1511,7 +1507,7 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype)
         int bytesPerPixel;
         nifti_datatype_sizes(datatype, &bytesPerPixel, NULL);
         void *data = calloc(image->nvox, bytesPerPixel);
-    
+        
         switch (datatype)
         {
             case DT_UINT8:
@@ -1602,13 +1598,15 @@ inline NiftiImage & NiftiImage::replaceData (const std::vector<SourceType> &data
 
 inline void NiftiImage::toFile (const std::string fileName, const short datatype) const
 {
-    // Copy the source image only if the datatype will be changed
-    NiftiImage imageToWrite(image, datatype != DT_NONE);
+    const bool changingDatatype = (datatype != DT_NONE && !this->isNull() && datatype != image->datatype);
     
-    if (datatype == DT_NONE)
-        imageToWrite.setPersistence(true);
-    else
+    // Copy the source image only if the datatype will be changed
+    NiftiImage imageToWrite(image, changingDatatype);
+    
+    if (changingDatatype)
         imageToWrite.changeDatatype(datatype);
+    else
+        imageToWrite.setPersistence(true);
     
     const int status = nifti_set_filenames(imageToWrite, fileName.c_str(), false, true);
     if (status != 0)
