@@ -47,8 +47,8 @@ protected:
     ConversionMode mode;
     
 public:
-    DataConverter ()
-        : mode(CastMode), slope(1.0), intercept(0.0) {}
+    DataConverter (const ConversionMode mode = CastMode)
+        : mode(mode), slope(0.0), intercept(0.0) {}
     
     DataConverter (const float slope, const float intercept)
         : mode(ScaleMode), slope(static_cast<double>(slope)), intercept(static_cast<double>(intercept))
@@ -65,6 +65,12 @@ public:
     {
         mode = newMode;
         return *this;
+    }
+    
+    void copySlopeAndIntercept (float *scaleSlope, float *scaleIntercept) const
+    {
+        *scaleSlope = static_cast<float>(slope);
+        *scaleIntercept = static_cast<float>(intercept);
     }
     
     template <typename SourceType>
@@ -102,7 +108,7 @@ public:
     }
     
     template <typename SourceType>
-    TargetType operator() (const SourceType value)
+    TargetType operator() (const SourceType value) const
     {
         return convertValue(value);
     }
