@@ -17,7 +17,6 @@ test_that("NIfTI objects can be created from data", {
 test_that("NIfTI files can be read and written", {
     imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
     volumeImagePath <- system.file("extdata", "example_4d.nii.gz", package="RNifti")
-    compressedImagePath <- system.file("extdata", "example_compressed.nii.gz", package="RNifti")
     tempPath <- paste(tempfile(), "nii.gz", sep=".")
     
     expect_equal(niftiVersion(imagePath), structure(1L,names=imagePath))
@@ -39,9 +38,14 @@ test_that("NIfTI files can be read and written", {
     expect_equal(dumpNifti(tempPath)$bitpix, 16L)
     unlink(tempPath)
     
-    expect_equal(dumpNifti(compressedImagePath)$datatype, 2L)
-    compressedImage <- readNifti(compressedImagePath)
+    # Type compression with index mapping
+    writeNifti(image, tempPath, datatype="char")
+    expect_equal(dumpNifti(tempPath)$datatype, 2L)
+    compressedImage <- readNifti(tempPath)
     expect_equal(dumpNifti(compressedImage)$datatype, 64L)
+    expect_equal(min(image), min(compressedImage))
+    expect_equal(max(image), max(compressedImage))
+    expect_equal(image, compressedImage, tolerance=0.01)
     expect_equal(round(compressedImage[40,40,30]), 363)
     
     image <- readNifti(imagePath, internal=TRUE)
