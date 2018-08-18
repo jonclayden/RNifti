@@ -1479,7 +1479,7 @@ inline std::vector<TargetType> NiftiImage::Block::getData () const
 
     std::vector<TargetType> data(blockSize);
     internal::DataConverter<TargetType> converter(image->scl_slope, image->scl_inter);
-    internal::convertData<TargetType>(image->data, image->datatype, blockSize, &data.front(), blockSize*index, &converter);
+    internal::convertData<TargetType>(image->data, image->datatype, blockSize, data.begin(), blockSize*index, &converter);
     
     return data;
 }
@@ -1492,7 +1492,7 @@ inline std::vector<TargetType> NiftiImage::getData () const
     
     std::vector<TargetType> data(image->nvox);
     internal::DataConverter<TargetType> converter(image->scl_slope, image->scl_inter);
-    internal::convertData<TargetType>(image->data, image->datatype, image->nvox, &data.front());
+    internal::convertData<TargetType>(image->data, image->datatype, image->nvox, data.begin(), 0, &converter);
     
     return data;
 }
@@ -1630,7 +1630,7 @@ inline Rcpp::RObject NiftiImage::toArray () const
     else if (this->isDataScaled())
     {
         array = internal::imageDataToArray<REALSXP>(image);
-        std::transform(REAL(array), REAL(array)+Rf_length(array), REAL(array), internal::DataRescaler<double>(image->scl_slope,image->scl_inter));
+        std::transform(REAL(array), REAL(array)+Rf_length(array), REAL(array), internal::DataConverter<double>(image->scl_slope,image->scl_inter));
     }
     else
     {

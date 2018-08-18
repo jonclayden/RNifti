@@ -17,21 +17,7 @@ struct vec3
     }
 };
 
-template <typename ElementType>
-struct DataRescaler
-{
-    float slope, intercept;
-    
-    DataRescaler (const float slope, const float intercept)
-        : slope(slope), intercept(intercept) {}
-    
-    inline ElementType operator() (const ElementType value)
-    {
-        return static_cast<ElementType>(value * slope + intercept);
-    }
-};
-
-double roundEven (const double value)
+inline double roundEven (const double value)
 {
     if (ISNAN(value))
         return value;
@@ -100,26 +86,6 @@ public:
     }
     
     template <typename SourceType>
-    TargetType indexValue (const SourceType value) const
-    {
-        // If NaNs aren't going to make it across, treat them as zero
-        if (std::numeric_limits<SourceType>::has_quiet_NaN && !std::numeric_limits<TargetType>::has_quiet_NaN && ISNAN(value))
-            return static_cast<TargetType>(roundEven(-intercept / slope));
-        else
-            return static_cast<TargetType>(roundEven((static_cast<double>(value) - intercept) / slope));
-    }
-    
-    template <typename SourceType>
-    TargetType scaleValue (const SourceType value) const
-    {
-        // If NaNs aren't going to make it across, treat them as zero
-        if (std::numeric_limits<SourceType>::has_quiet_NaN && !std::numeric_limits<TargetType>::has_quiet_NaN && ISNAN(value))
-            return TargetType(0);
-        else
-            return static_cast<TargetType>(static_cast<double>(value) * slope + intercept);
-    }
-    
-    template <typename SourceType>
     TargetType convertValue (const SourceType value) const
     {
         // If NaNs aren't going to make it across, treat them as zero
@@ -136,24 +102,14 @@ public:
     }
     
     template <typename SourceType>
-    void run (const SourceType *source, const size_t length, TargetType *target) const
+    TargetType operator() (const SourceType value)
     {
-        for (size_t i=0; i<length; i++)
-            target[i] = convertValue(source[i]);
+        return convertValue(value);
     }
 };
 
-template <typename SourceType, typename TargetType>
-inline TargetType convertValue (SourceType value)
-{
-    if (std::numeric_limits<SourceType>::has_quiet_NaN && !std::numeric_limits<TargetType>::has_quiet_NaN && ISNAN(value))
-        return TargetType(0);
-    else
-        return static_cast<TargetType>(value);
-}
-
-template <typename TargetType>
-inline void convertData (void *source, const short datatype, const size_t length, TargetType *target, const ptrdiff_t offset = 0, DataConverter<TargetType> *converter = NULL)
+template <typename TargetType, class OutputIterator>
+inline void convertData (void *source, const short datatype, const size_t length, OutputIterator target, const ptrdiff_t offset = 0, DataConverter<TargetType> *converter = NULL)
 {
     if (source == NULL)
         return;
@@ -169,70 +125,88 @@ inline void convertData (void *source, const short datatype, const size_t length
             uint8_t *castSource = static_cast<uint8_t *>(source) + offset;
             if (converter->getMode() == DataConverter<TargetType>::IndexMode)
                 converter->calibrate(castSource, length);
-            converter->run(castSource, length, target);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_INT16:
         {
             int16_t *castSource = static_cast<int16_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<int16_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_INT32:
         {
             int32_t *castSource = static_cast<int32_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<int32_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_FLOAT32:
         {
             float *castSource = static_cast<float *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<float,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_FLOAT64:
         {
             double *castSource = static_cast<double *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<double,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_INT8:
         {
             int8_t *castSource = static_cast<int8_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<int8_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_UINT16:
         {
             uint16_t *castSource = static_cast<uint16_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<uint16_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_UINT32:
         {
             uint32_t *castSource = static_cast<uint32_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<uint32_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_INT64:
         {
             int64_t *castSource = static_cast<int64_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<int64_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_UINT64:
         {
             uint64_t *castSource = static_cast<uint64_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<uint64_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
@@ -253,43 +227,43 @@ inline void replaceData (InputIterator begin, InputIterator end, void *target, c
     switch (datatype)
     {
         case DT_UINT8:
-        std::transform(begin, end, static_cast<uint8_t *>(target), convertValue<SourceType,uint8_t>);
+        std::transform(begin, end, static_cast<uint8_t *>(target), DataConverter<uint8_t>());
         break;
         
         case DT_INT16:
-        std::transform(begin, end, static_cast<int16_t *>(target), convertValue<SourceType,int16_t>);
+        std::transform(begin, end, static_cast<int16_t *>(target), DataConverter<int16_t>());
         break;
         
         case DT_INT32:
-        std::transform(begin, end, static_cast<int32_t *>(target), convertValue<SourceType,int32_t>);
+        std::transform(begin, end, static_cast<int32_t *>(target), DataConverter<int32_t>());
         break;
         
         case DT_FLOAT32:
-        std::transform(begin, end, static_cast<float *>(target), convertValue<SourceType,float>);
+        std::transform(begin, end, static_cast<float *>(target), DataConverter<float>());
         break;
         
         case DT_FLOAT64:
-        std::transform(begin, end, static_cast<double *>(target), convertValue<SourceType,double>);
+        std::transform(begin, end, static_cast<double *>(target), DataConverter<double>());
         break;
         
         case DT_INT8:
-        std::transform(begin, end, static_cast<int8_t *>(target), convertValue<SourceType,int8_t>);
+        std::transform(begin, end, static_cast<int8_t *>(target), DataConverter<int8_t>());
         break;
         
         case DT_UINT16:
-        std::transform(begin, end, static_cast<uint16_t *>(target), convertValue<SourceType,uint16_t>);
+        std::transform(begin, end, static_cast<uint16_t *>(target), DataConverter<uint16_t>());
         break;
         
         case DT_UINT32:
-        std::transform(begin, end, static_cast<uint32_t *>(target), convertValue<SourceType,uint32_t>);
+        std::transform(begin, end, static_cast<uint32_t *>(target), DataConverter<uint32_t>());
         break;
         
         case DT_INT64:
-        std::transform(begin, end, static_cast<int64_t *>(target), convertValue<SourceType,int64_t>);
+        std::transform(begin, end, static_cast<int64_t *>(target), DataConverter<int64_t>());
         break;
         
         case DT_UINT64:
-        std::transform(begin, end, static_cast<uint64_t *>(target), convertValue<SourceType,uint64_t>);
+        std::transform(begin, end, static_cast<uint64_t *>(target), DataConverter<uint64_t>());
         break;
         
         default:
@@ -491,9 +465,9 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
     {
         Rcpp::Vector<SexpType> array(static_cast<int>(source->nvox));
         if (SexpType == INTSXP || SexpType == LGLSXP)
-            convertData(source->data, source->datatype, source->nvox, INTEGER(array));
+            convertData<int>(source->data, source->datatype, source->nvox, array.begin());
         else if (SexpType == REALSXP)
-            convertData(source->data, source->datatype, source->nvox, REAL(array));
+            convertData<double>(source->data, source->datatype, source->nvox, array.begin());
         else
             throw std::runtime_error("Only numeric arrays can be created");
         return array;
