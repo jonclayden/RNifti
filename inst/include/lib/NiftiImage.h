@@ -104,7 +104,7 @@ public:
          * values will fit within the requested type. No check is made for this
         **/
         template <typename TargetType>
-        std::vector<TargetType> getData (const bool useSlope) const;
+        std::vector<TargetType> getData (const bool useSlope = true) const;
     };
     
 #ifdef USING_R
