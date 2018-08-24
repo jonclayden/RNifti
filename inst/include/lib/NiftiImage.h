@@ -1537,7 +1537,8 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
             {
                 internal::DataConverter<uint8_t> converter(useSlope ? internal::DataConverter<uint8_t>::IndexMode : internal::DataConverter<uint8_t>::CastMode);
                 internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint8_t *>(data), 0, &converter);
-                converter.copySlopeAndIntercept(&image->scl_slope, &image->scl_inter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
                 break;
             }
         
@@ -1545,7 +1546,8 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
             {
                 internal::DataConverter<int16_t> converter(useSlope ? internal::DataConverter<int16_t>::IndexMode : internal::DataConverter<int16_t>::CastMode);
                 internal::convertData(image->data, image->datatype, image->nvox, static_cast<int16_t *>(data), 0, &converter);
-                converter.copySlopeAndIntercept(&image->scl_slope, &image->scl_inter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
                 break;
             }
         
@@ -1553,7 +1555,8 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
             {
                 internal::DataConverter<int32_t> converter(useSlope ? internal::DataConverter<int32_t>::IndexMode : internal::DataConverter<int32_t>::CastMode);
                 internal::convertData(image->data, image->datatype, image->nvox, static_cast<int32_t *>(data), 0, &converter);
-                converter.copySlopeAndIntercept(&image->scl_slope, &image->scl_inter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
                 break;
             }
         
@@ -1561,7 +1564,8 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
             {
                 internal::DataConverter<float> converter(useSlope ? internal::DataConverter<float>::IndexMode : internal::DataConverter<float>::CastMode);
                 internal::convertData(image->data, image->datatype, image->nvox, static_cast<float *>(data), 0, &converter);
-                converter.copySlopeAndIntercept(&image->scl_slope, &image->scl_inter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
                 break;
             }
         
@@ -1569,7 +1573,8 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
             {
                 internal::DataConverter<double> converter(useSlope ? internal::DataConverter<double>::IndexMode : internal::DataConverter<double>::CastMode);
                 internal::convertData(image->data, image->datatype, image->nvox, static_cast<double *>(data), 0, &converter);
-                converter.copySlopeAndIntercept(&image->scl_slope, &image->scl_inter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
                 break;
             }
         
@@ -1577,7 +1582,8 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
             {
                 internal::DataConverter<int8_t> converter(useSlope ? internal::DataConverter<int8_t>::IndexMode : internal::DataConverter<int8_t>::CastMode);
                 internal::convertData(image->data, image->datatype, image->nvox, static_cast<int8_t *>(data), 0, &converter);
-                converter.copySlopeAndIntercept(&image->scl_slope, &image->scl_inter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
                 break;
             }
         
@@ -1585,7 +1591,8 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
             {
                 internal::DataConverter<uint16_t> converter(useSlope ? internal::DataConverter<uint16_t>::IndexMode : internal::DataConverter<uint16_t>::CastMode);
                 internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint16_t *>(data), 0, &converter);
-                converter.copySlopeAndIntercept(&image->scl_slope, &image->scl_inter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
                 break;
             }
         
@@ -1593,7 +1600,8 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
             {
                 internal::DataConverter<uint32_t> converter(useSlope ? internal::DataConverter<uint32_t>::IndexMode : internal::DataConverter<uint32_t>::CastMode);
                 internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint32_t *>(data), 0, &converter);
-                converter.copySlopeAndIntercept(&image->scl_slope, &image->scl_inter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
                 break;
             }
         
@@ -1601,7 +1609,8 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
             {
                 internal::DataConverter<int64_t> converter(useSlope ? internal::DataConverter<int64_t>::IndexMode : internal::DataConverter<int64_t>::CastMode);
                 internal::convertData(image->data, image->datatype, image->nvox, static_cast<int64_t *>(data), 0, &converter);
-                converter.copySlopeAndIntercept(&image->scl_slope, &image->scl_inter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
                 break;
             }
         
@@ -1609,7 +1618,8 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
             {
                 internal::DataConverter<uint64_t> converter(useSlope ? internal::DataConverter<uint64_t>::IndexMode : internal::DataConverter<uint64_t>::CastMode);
                 internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint64_t *>(data), 0, &converter);
-                converter.copySlopeAndIntercept(&image->scl_slope, &image->scl_inter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
                 break;
             }
         

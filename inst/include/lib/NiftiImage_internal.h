@@ -67,12 +67,6 @@ public:
         return *this;
     }
     
-    void copySlopeAndIntercept (float *scaleSlope, float *scaleIntercept) const
-    {
-        *scaleSlope = static_cast<float>(slope);
-        *scaleIntercept = static_cast<float>(intercept);
-    }
-    
     template <typename SourceType>
     DataConverter & calibrate (const SourceType *source, const size_t length)
     {
@@ -82,10 +76,17 @@ public:
             const double typeMax = static_cast<double>(std::numeric_limits<TargetType>::max());
             const double dataMin = static_cast<double>(*std::min_element(source, source + length));
             const double dataMax = static_cast<double>(*std::max_element(source, source + length));
-            if (!std::numeric_limits<SourceType>::is_integer || dataMin < typeMin || dataMax > typeMax)
+            
+            // If the source type is floating-point but values are in range, we will just round them
+            if (dataMin < typeMin || dataMax > typeMax)
             {
                 slope = (dataMax - dataMin) / (typeMax - typeMin);
                 intercept = dataMin - slope * typeMin;
+            }
+            else
+            {
+                slope = 1.0;
+                intercept = 0.0;
             }
         }
         return *this;
