@@ -17,7 +17,8 @@
 #' to that default.
 #' 
 #' The upper-left 3x3 matrix in a 3D affine transform governs scale, rotation
-#' and skew, while the last column is a translation. The final row is always
+#' and skew, while the last column is a translation. (The \code{rotation}
+#' function extracts the rotation part alone.) The final row is always
 #' (0,0,0,1). Reorienting an image involves permuting and possibly reversing
 #' some of the axes, both in the data and the metadata. The sense of the
 #' translation may also need to be reversed, but this is only possible if the
@@ -89,6 +90,13 @@ orientation <- function (x, useQuaternionFirst = TRUE)
 "orientation<-" <- function (x, value)
 {
     return (.Call("setOrientation", x, as.character(value), PACKAGE="RNifti"))
+}
+
+#' @rdname xform
+#' @export
+rotation <- function (x, useQuaternionFirst = TRUE)
+{
+    return (.Call("getRotation", x, isTRUE(useQuaternionFirst), PACKAGE="RNifti"))
 }
 
 #' Transform points between voxel and ``world'' coordinates

@@ -361,6 +361,31 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP getRotation (SEXP _image, SEXP _preferQuaternion)
+{
+BEGIN_RCPP
+    ::mat33 rotation;
+    bool isMatrix = false;
+    ::mat44 xform = matrixToXform(_image, &isMatrix);
+    
+    if (isMatrix)
+        rotation = NiftiImage::xformToRotation(xform);
+    else
+    {
+        const NiftiImage image(_image, false);
+        rotation = NiftiImage::xformToRotation(image.xform(as<bool>(_preferQuaternion)));
+    }
+    
+    NumericMatrix matrix(3,3);
+    for (int i=0; i<3; i++)
+    {
+        for (int j=0; j<3; j++)
+            matrix(i,j) = static_cast<double>(rotation.m[i][j]);
+    }
+    return matrix;
+END_RCPP
+}
+
 RcppExport SEXP hasData (SEXP _image)
 {
 BEGIN_RCPP
@@ -400,6 +425,7 @@ static R_CallMethodDef callMethods[] = {
     { "setXform",       (DL_FUNC) &setXform,        3 },
     { "getOrientation", (DL_FUNC) &getOrientation,  2 },
     { "setOrientation", (DL_FUNC) &setOrientation,  2 },
+    { "getRotation",    (DL_FUNC) &getRotation,     2 },
     { "hasData",        (DL_FUNC) &hasData,         1 },
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },

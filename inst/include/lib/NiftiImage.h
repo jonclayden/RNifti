@@ -167,6 +167,19 @@ public:
 #endif
     
     /**
+     * Extract the pure rotation part of a 4x4 xform matrix
+     * @param matrix An xform matrix
+     * @return A 3x3 rotation matrix
+    **/
+    static mat33 xformToRotation (const mat44 matrix)
+    {
+        float qb, qc, qd, qfac;
+        nifti_mat44_to_quatern(matrix, &qb, &qc, &qd, NULL, NULL, NULL, NULL, NULL, NULL, &qfac);
+        mat44 rotationMatrix = nifti_quatern_to_mat44(qb, qc, qd, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, qfac);
+        return internal::topLeftCorner(rotationMatrix);
+    }
+    
+    /**
      * Convert a 4x4 xform matrix to a string describing its canonical axes
      * @param matrix An xform matrix
      * @return A string containing three characters
@@ -597,7 +610,7 @@ public:
     **/
     NiftiImage & update (const Rcpp::RObject &object);
 #endif
-
+    
     /**
      * Obtain an xform matrix, indicating the orientation of the image
      * @param preferQuaternion If \c true, use the qform matrix in preference to the sform

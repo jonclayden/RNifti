@@ -6,6 +6,7 @@
 \alias{sform<-}
 \alias{orientation}
 \alias{orientation<-}
+\alias{rotation}
 \title{Obtain or replace the ``xform'' transforms for an image}
 \usage{
 xform(image, useQuaternionFirst = TRUE)
@@ -17,6 +18,8 @@ sform(x) <- value
 orientation(x, useQuaternionFirst = TRUE)
 
 orientation(x) <- value
+
+rotation(x, useQuaternionFirst = TRUE)
 }
 \arguments{
 \item{image, x}{An image, in any acceptable form (see
@@ -55,7 +58,8 @@ the third towards the top. An xform matrix is an affine transform relative
 to that default.
 
 The upper-left 3x3 matrix in a 3D affine transform governs scale, rotation
-and skew, while the last column is a translation. The final row is always
+and skew, while the last column is a translation. (The \code{rotation}
+function extracts the rotation part alone.) The final row is always
 (0,0,0,1). Reorienting an image involves permuting and possibly reversing
 some of the axes, both in the data and the metadata. The sense of the
 translation may also need to be reversed, but this is only possible if the
