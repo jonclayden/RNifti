@@ -115,6 +115,63 @@ public:
     }
 };
 
+// Throw-catch RTTI hack (based on http://www.drdobbs.com/cpp/229401004, by Cassio Neri)
+// Problem: still have to cast the data back to the right type
+class NiftiData
+{
+protected:
+    void *data;
+    void (*throwFunction)(void *);
+    
+    template <typename Type>
+    static void thrower (void *ptr) { throw static_cast<Type *>(ptr); }
+    
+public:
+    template <typename Type>
+    NiftiData (Type *data)
+        : data(data), throwFunction(&NiftiData::thrower<Type>) {}
+    
+    template <typename Type>
+    operator Type* () const
+    {
+        try { throwFunction(data); }
+        catch (Type *ptr) { return static_cast<Type *>(ptr); }
+        catch (...) {}
+        return NULL;
+    }
+};
+
+// External polymorphism approach
+// Problem: no templated virtual functions, so implementing conversion will be tricky
+class NiftiDataHandler {};
+
+template <typename Type>
+class NiftiDataTypeHandler : public NiftiDataHandler {};
+
+inline NiftiDataHandler getDataHandler (const short datatype)
+{
+    static std::map<short,NiftiDataHandler> map;
+    if (map.empty())
+    {
+        map.insert(std::make_pair(DT_UINT8, NiftiDataTypeHandler<uint8_t>()));
+        map.insert(std::make_pair(DT_INT16, NiftiDataTypeHandler<int16_t>()));
+        map.insert(std::make_pair(DT_INT32, NiftiDataTypeHandler<int32_t>()));
+        map.insert(std::make_pair(DT_FLOAT32, NiftiDataTypeHandler<float>()));
+        map.insert(std::make_pair(DT_FLOAT64, NiftiDataTypeHandler<double>()));
+        map.insert(std::make_pair(DT_INT8, NiftiDataTypeHandler<int8_t>()));
+        map.insert(std::make_pair(DT_UINT16, NiftiDataTypeHandler<uint16_t>()));
+        map.insert(std::make_pair(DT_UINT32, NiftiDataTypeHandler<uint32_t>()));
+        map.insert(std::make_pair(DT_INT64, NiftiDataTypeHandler<int64_t>()));
+        map.insert(std::make_pair(DT_UINT64, NiftiDataTypeHandler<uint64_t>()));
+    }
+    
+    std::map<short,NiftiDataHandler>::iterator it = map.find(datatype);
+    if (it == map.end())
+        return NiftiDataHandler();
+    else
+        return it->second;
+}
+
 template <typename TargetType, class OutputIterator>
 inline void convertData (void *source, const short datatype, const size_t length, OutputIterator target, const ptrdiff_t offset = 0, DataConverter<TargetType> *converter = NULL)
 {
