@@ -38,6 +38,47 @@
 
 namespace RNifti {
 
+namespace internal {
+
+struct vec3
+{
+    float v[3];
+
+    vec3 operator-() const
+    {
+        vec3 r;
+        r.v[0] = -v[0];
+        r.v[1] = -v[1];
+        r.v[2] = -v[2];
+        return r;
+    }
+};
+
+inline mat33 topLeftCorner (const mat44 &matrix)
+{
+    mat33 newMatrix;
+    for (int i=0; i<3; i++)
+    {
+        for (int j=0; j<3; j++)
+            newMatrix.m[i][j] = matrix.m[i][j];
+    }
+    return newMatrix;
+}
+
+inline vec3 matrixVectorProduct (const mat33 &matrix, const vec3 &vector)
+{
+    vec3 newVector;
+    for (int i=0; i<3; i++)
+    {
+        newVector.v[i] = 0.0;
+        for (int j=0; j<3; j++)
+            newVector.v[i] += matrix.m[i][j] * vector.v[j];
+    }
+    return newVector;
+}
+
+} // internal namespace
+
 /**
  * Thin wrapper around a C-style \c nifti_image struct that allows C++-style destruction
  * @author Jon Clayden
