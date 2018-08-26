@@ -3,9 +3,29 @@
 
 namespace internal {
 
+extern "C" {
+extern int f_isnan (const float x);
+extern int d_isnan (const double x);
+}
+
+template <typename Type>
+inline bool isNaN (const Type x) { return false; }
+
+template <>
+inline bool isNaN<float> (const float x) { return bool(f_isnan(x)); }
+
+template <>
+inline bool isNaN<double> (const double x) { return bool(d_isnan(x)); }
+
+#ifdef USING_R
+// For R specifically, we have to catch NA_INTEGER (aka INT_MIN), otherwise it will wildly distort calibration below
+template <>
+inline bool isNaN<int> (const int x) { return (x == NA_INTEGER); }
+#endif
+
 inline double roundEven (const double value)
 {
-    if (ISNAN(value))
+    if (isNaN(value))
         return value;
     
     double whole;
@@ -31,6 +51,12 @@ public:
 protected:
     double slope, intercept;
     ConversionMode mode;
+    
+    template <typename Type>
+    static bool lessThan (Type a, Type b)
+    {
+        return (!isNaN(a) && !isNaN(b) && a < b);
+    }
     
 public:
     DataConverter (const ConversionMode mode = CastMode)
@@ -60,8 +86,8 @@ public:
         {
             const double typeMin = static_cast<double>(std::numeric_limits<TargetType>::min());
             const double typeMax = static_cast<double>(std::numeric_limits<TargetType>::max());
-            const double dataMin = static_cast<double>(*std::min_element(source, source + length));
-            const double dataMax = static_cast<double>(*std::max_element(source, source + length));
+            const double dataMin = static_cast<double>(*std::min_element(source, source + length, DataConverter::lessThan<SourceType>));
+            const double dataMax = static_cast<double>(*std::max_element(source, source + length, DataConverter::lessThan<SourceType>));
             
             // If the source type is floating-point but values are in range, we will just round them
             if (dataMin < typeMin || dataMax > typeMax)
@@ -82,7 +108,7 @@ public:
     TargetType convertValue (const SourceType value) const
     {
         // If NaNs aren't going to make it across, treat them as zero
-        if (std::numeric_limits<SourceType>::has_quiet_NaN && !std::numeric_limits<TargetType>::has_quiet_NaN && ISNAN(value))
+        if (isNaN(value) && !std::numeric_limits<TargetType>::has_quiet_NaN)
             return (mode == IndexMode ? static_cast<TargetType>(roundEven(-intercept / slope)) : TargetType(0));
         else if (mode == CastMode)
             return static_cast<TargetType>(value);

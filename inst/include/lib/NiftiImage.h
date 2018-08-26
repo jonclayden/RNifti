@@ -9,7 +9,6 @@
 #else
 
 #define R_NegInf -INFINITY
-#define ISNAN(x) (x != x)
 
 #include <stdint.h>
 #include <cstddef>
