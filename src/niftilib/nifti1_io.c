@@ -4980,7 +4980,7 @@ size_t nifti_read_buffer(znzFile fp, void* dataptr, size_t ntot,
     nifti_swap_Nbytes( (int)(ntot / nim->swapsize), nim->swapsize , dataptr ) ;
   }
 
-#ifdef isfinite
+#if defined(isfinite) && !defined(USING_R)
 {
   /* check input float arrays for goodness, and fix bad floats */
   int fix_count = 0 ;
