@@ -3,21 +3,15 @@
 
 namespace internal {
 
-extern "C" {
-extern int f_isnan (const float x);
-extern int d_isnan (const double x);
-}
-
+// A poor man's NaN check, but should work whenever proper IEEE arithmetic is being used
 template <typename Type>
-inline bool isNaN (const Type x) { return false; }
-
-template <>
-inline bool isNaN<float> (const float x) { return bool(f_isnan(x)); }
-
-template <>
-inline bool isNaN<double> (const double x) { return bool(d_isnan(x)); }
+inline bool isNaN (const Type x) { return (x != x); }
 
 #ifdef USING_R
+// R offers the portable ISNAN macro for doubles, which is more robust
+template <>
+inline bool isNaN<double> (const double x) { return bool(ISNAN(x)); }
+
 // For R specifically, we have to catch NA_INTEGER (aka INT_MIN), otherwise it will wildly distort calibration below
 template <>
 inline bool isNaN<int> (const int x) { return (x == NA_INTEGER); }
