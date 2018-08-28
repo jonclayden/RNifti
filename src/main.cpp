@@ -62,7 +62,7 @@ RcppExport SEXP readNifti (SEXP _object, SEXP _internal, SEXP _volumes)
 BEGIN_RCPP
     if (Rf_isNull(_volumes))
     {
-        NiftiImage image(_object);
+        NiftiImage image(as<std::string>(_object));
         return image.toArrayOrPointer(as<bool>(_internal), "NIfTI image");
     }
     else
