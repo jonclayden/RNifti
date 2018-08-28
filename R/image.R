@@ -188,3 +188,36 @@ pixunits.default <- function (object)
     
     return (object)
 }
+
+#' Access to metadata elements
+#' 
+#' These methods provide shorthand access to metadata elements from the NIfTI
+#' header corresponding to an image. The extraction version returns the
+#' corresponding element from the result of \code{niftiHeader}, while the
+#' replacement version calls \code{updateNifti} to replace it.
+#' 
+#' @param x A \code{"niftiImage"} object, internal or otherwise.
+#' @param name A string naming the field required.
+#' @param value A new value for the field.
+#' 
+#' @examples
+#' im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+#' print(im$descrip)
+#' 
+#' @author Jon Clayden <code@@clayden.org>
+#' @seealso \code{\link{niftiHeader}}, \code{\link{updateNifti}}
+#' @rdname indexing
+#' @export
+"$.niftiImage" <- function (x, name)
+{
+    return (niftiHeader(x)[[name]])
+}
+
+#' @rdname indexing
+#' @export
+"$<-.niftiImage" <- function (x, name, value)
+{
+    template <- list()
+    template[[name]] <- value
+    return (updateNifti(x, template))
+}
