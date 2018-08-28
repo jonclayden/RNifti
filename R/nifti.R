@@ -99,7 +99,7 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
 #' @export
 retrieveNifti <- function (object)
 {
-    .Call("readNifti", object, TRUE, NULL, PACKAGE="RNifti")
+    .Call("asNifti", object, PACKAGE="RNifti")
 }
 
 #' Update an internal NIfTI-1 object using a template

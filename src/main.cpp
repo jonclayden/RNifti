@@ -49,6 +49,14 @@ NumericMatrix xformToMatrix (const ::mat44 xform)
     return matrix;
 }
 
+RcppExport SEXP asNifti (SEXP _object)
+{
+BEGIN_RCPP
+    NiftiImage image(_object);
+    return image.toPointer("NIfTI image");
+END_RCPP
+}
+
 RcppExport SEXP niftiVersion (SEXP _path)
 {
 BEGIN_RCPP
@@ -415,6 +423,7 @@ END_RCPP
 extern "C" {
 
 static R_CallMethodDef callMethods[] = {
+    { "asNifti",        (DL_FUNC) &asNifti,         1 },
     { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      3 },
