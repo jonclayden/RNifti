@@ -245,7 +245,7 @@ BEGIN_RCPP
         // Header only
         List image(_image);
         if (MAYBE_SHARED(_image))
-            image = image;
+            image = Rf_duplicate(image);
         
         float qbcd[3], qxyz[3], dxyz[3], qfac;
         nifti_mat44_to_quatern(xform, &qbcd[0], &qbcd[1], &qbcd[2], &qxyz[0], &qxyz[1], &qxyz[2], &dxyz[0], &dxyz[1], &dxyz[2], &qfac);
@@ -286,7 +286,7 @@ BEGIN_RCPP
         // First, duplicate the image object if necessary, to preserve usual R semantics
         NiftiImage image(_image);
         if (MAYBE_SHARED(_image))
-            image = image;
+            image = NiftiImage(image);
     
         if (!image.isNull())
         {
@@ -362,7 +362,7 @@ BEGIN_RCPP
     {
         NiftiImage image(_image);
         if (MAYBE_SHARED(_image))
-            image = image;
+            image = NiftiImage(image);
         image.reorient(as<std::string>(_axes));
         return image.toArrayOrPointer(Rf_inherits(_image,"internalImage"), "NIfTI image");
     }
