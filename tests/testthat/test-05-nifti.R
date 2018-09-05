@@ -11,7 +11,7 @@ test_that("NIfTI objects can be created from data", {
     expect_equal(pixdim(image), c(1,1,1))
     expect_equal(pixunits(data), "Unknown")
     expect_equal(pixunits(image), "Unknown")
-    expect_equal(dumpNifti(image)$datatype, 64L)
+    expect_equal(image$datatype, 64L)
 })
 
 test_that("NIfTI files can be read and written", {
@@ -28,21 +28,26 @@ test_that("NIfTI files can be read and written", {
     expect_equal(image[40,40,30], 368)
     expect_equal(pixunits(image), c("mm","s"))
     
+    data <- as.vector(image)        # strips all attributes
+    expect_equal(pixdim(data), 1)
+    data <- updateNifti(data, image)
+    expect_equal(pixdim(data), c(2.5,2.5,2.5))
+    
     writeNifti(image, tempPath)
     expect_equal(pixdim(readNifti(tempPath)), c(2.5,2.5,2.5))
     unlink(tempPath)
     
-    expect_output(print(dumpNifti(image)), "NIfTI-1 header")
-    expect_equal(dumpNifti(image)$bitpix, 32L)
+    expect_output(print(niftiHeader(image)), "NIfTI-1 header")
+    expect_equal(image$bitpix, 32L)
     writeNifti(image, tempPath, datatype="short")
-    expect_equal(dumpNifti(tempPath)$bitpix, 16L)
+    expect_equal(niftiHeader(tempPath)$bitpix, 16L)
     unlink(tempPath)
     
     # Type compression with index mapping
     writeNifti(image, tempPath, datatype="char")
-    expect_equal(dumpNifti(tempPath)$datatype, 2L)
+    expect_equal(niftiHeader(tempPath)$datatype, 2L)
     compressedImage <- readNifti(tempPath)
-    expect_equal(dumpNifti(compressedImage)$datatype, 64L)
+    expect_equal(compressedImage$datatype, 64L)
     expect_equal(min(image), min(compressedImage))
     expect_equal(max(image), max(compressedImage))
     expect_equal(image, compressedImage, tolerance=0.01)
@@ -56,22 +61,27 @@ test_that("NIfTI files can be read and written", {
     expect_equal(dim(image), c(96L,96L,60L,2L))
     expect_equal(max(image), 2)
     expect_output(print(image), "x 1 s")    # time units only appear for 4D+ images
+    
+    analyze <- analyzeHeader()
+    expect_is(analyze, "analyzeHeader")
+    expect_output(print(analyze), "ANALYZE-7.5")
+    expect_equal(analyze$regular, "r")
 })
 
 test_that("image objects can be manipulated", {
     imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
     image <- readNifti(imagePath)
     
-    expect_equal(dumpNifti(image)$dim, c(3L,96L,96L,60L,1L,1L,1L,1L))
+    expect_equal(image$dim, c(3L,96L,96L,60L,1L,1L,1L,1L))
     pixdim(image) <- c(5,5,5)
-    expect_equal(dumpNifti(image)$pixdim, c(-1,5,5,5,0,0,0,0))
+    expect_equal(image$pixdim, c(-1,5,5,5,0,0,0,0))
     pixunits(image) <- c("m","ms")
-    expect_equal(dumpNifti(image)$xyzt_units, 17L)
+    expect_equal(image$xyzt_units, 17L)
     
-    image <- updateNifti(image, list(intent_code=1000L))
-    expect_equal(dumpNifti(image)$intent_code, 1000L)
+    image$intent_code <- 1000L
+    expect_equal(image$intent_code, 1000L)
     image <- updateNifti(image, datatype="float")
-    expect_equal(dumpNifti(image)$datatype, 16L)
+    expect_equal(image$datatype, 16L)
     
     image <- readNifti(imagePath, internal=TRUE)
     image <- RNifti:::rescaleNifti(image, c(0.5,0.5,0.5))
