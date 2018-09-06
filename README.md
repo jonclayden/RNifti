@@ -1,3 +1,5 @@
+[![CRAN version](http://www.r-pkg.org/badges/version/RNifti)](https://cran.r-project.org/package=RNifti) [![Build Status](https://travis-ci.org/jonclayden/RNifti.svg?branch=master)](https://travis-ci.org/jonclayden/RNifti)
+
 # RNifti: Fast R and C++ Access to NIfTI Images
 
 The [NIfTI-1 format](http://www.nitrc.org/docman/view.php/26/64/nifti1.h) is a popular file format for storing medical imaging data, widely used in medical research and related fields. Conceptually, a NIfTI-1 file incorporates multidimensional numeric data, like an R `array`, but with additional metadata describing the real-space resolution of the image, the physical orientation of the image, and how the image should be interpreted.
