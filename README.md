@@ -39,10 +39,10 @@ pixunits(image)
 
 So this image is of size 96 x 96 x 60 voxels, with each voxel representing 2.5 x 2.5 x 2.5 mm in real space. (The temporal unit, seconds here, only applies to the fourth dimension, if it is present.) Replacement versions of the latter functions are also available, for modifying the metadata.
 
-A fuller list of the raw metadata stored in the file can be obtained using the `dumpNifti` function.
+A fuller list of the raw metadata stored in the file can be obtained using the `niftiHeader` function.
 
 ```r
-dumpNifti(image)
+niftiHeader(image)
 # NIfTI-1 header
 #     sizeof_hdr: 348
 #       dim_info: 0
@@ -51,12 +51,12 @@ dumpNifti(image)
 #      intent_p2: 0
 #      intent_p3: 0
 #    intent_code: 0
-#       datatype: 64
-#         bitpix: 64
+#       datatype: 8
+#         bitpix: 32
 #    slice_start: 0
 #         pixdim: -1.0  2.5  2.5  2.5  0.0  0.0  0.0  0.0
 #     vox_offset: 352
-#      scl_slope: 1
+#      scl_slope: 0
 #      scl_inter: 0
 #      slice_end: 0
 #     slice_code: 0
@@ -65,7 +65,7 @@ dumpNifti(image)
 #        cal_min: 0
 # slice_duration: 0
 #        toffset: 0
-#        descrip: FSL5.0
+#        descrip: TractoR NIfTI writer v3.0.0
 #       aux_file: 
 #     qform_code: 2
 #     sform_code: 2
@@ -82,17 +82,71 @@ dumpNifti(image)
 #          magic: n+1
 ```
 
-Advanced users who know the NIfTI format well may want to alter elements of this metadata directly, and the `updateNifti` function provides a mechanism for this, either by passing a second, "template" image, or by providing lists with elements named as above, as in
+Advanced users who know the NIfTI format well may want to alter elements of this metadata directly, and this can be performed using the `$` operator shorthand, as in
 
 ```r
-image <- updateNifti(image, list(intent_code=1L))
+image$intent_code <- 1
 ```
 
-An image can be written back to NIfTI-1 format using the `writeNifti` function.
+If you need to modify multiple metadata elements at once, or replace metadata wholesale with new information from another image, the `updateNifti` function provides a more efficient interface. See `?updateNifti` for details.
+
+An image can be written back to NIfTI-1 format using the `writeNifti` function. gzip compression will be used if the specified file name ends with ".gz".
 
 ```r
 writeNifti(image, "file.nii.gz")
 ```
+
+## Image orientation
+
+The NIfTI-1 format has a mechanism for indicating the physical orientation and location of the image volume in real space. The reference orientation has the left–right direction aligned with the x-axis, the posterior–anterior (back–front) direction aligned with the y-axis, and the inferior–superior (bottom–top) direction aligned with the z-axis; but "xform" information stored with the image can , in the form of an affine matrix. To obtain the full xform for an image, call the `xform` function:
+
+```r
+xform(image)
+#      [,1] [,2] [,3]      [,4]
+# [1,] -2.5  0.0  0.0 122.03390
+# [2,]  0.0  2.5  0.0 -95.18523
+# [3,]  0.0  0.0  2.5 -55.03814
+# [4,]  0.0  0.0  0.0   1.00000
+```
+
+Just the rotation with respect to the canonical axes can be obtained with the `rotation` function:
+
+```r
+#      [,1] [,2] [,3]
+# [1,]   -1    0    0
+# [2,]    0    1    0
+# [3,]    0    0    1
+```
+
+In this case, the image is flipped along the x-axis relative to the canonical axes, so the positive x-direction points towards the left rather than the right. This is compactly represented by the output of the `orientation` function, which indicates the approximate real-world directions of the positive axes in each dimension.
+
+```r
+orientation(image)
+# [1] "LAS"
+```
+
+So, here, "LAS" means that the positive x-axis points left, the positive y-axis anterior and the positive z-axis superior. There is also a replacement version of the `orientation` function, which will reorient the image to align with the requested directions. This is a relatively complex operation, affecting the xform and the storage order of the data.
+
+```r
+image[30,30,20]
+# [1] 457
+
+orientation(image) <- "RAS"
+xform(image)
+#      [,1] [,2] [,3]       [,4]
+# [1,]  2.5  0.0  0.0 -115.46609
+# [2,]  0.0  2.5  0.0  -95.18523
+# [3,]  0.0  0.0  2.5  -55.03814
+# [4,]  0.0  0.0  0.0    1.00000
+image[30,30,20]
+# [1] 409
+image[67,30,20]
+# [1] 457
+```
+
+Notice that the sign of the top-left element of the xform has now flipped, and the value of the image at location (30,30,20) has changed because the data has been reordered. The equivalent x-location is now 67, which is the 30th element counting from the other end (96 - 30 + 1 = 67).
+
+This latter operation can be useful to ensure that indexing into several images with different native storage conventions will end up always have approximately the same meaning. It is non-destructive, because no interpolation of the data is performed. This means that the axes will not exactly align with the requested directions if the original image was oblique to the canonical axes, but conversely it ensures that no degradation in the image will result.
 
 ## Performance
 
