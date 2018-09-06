@@ -9,3 +9,6 @@ script:
 - R CMD build .
 - R CMD check *tar.gz
 - cd standalone && make clean && make CC="$(R CMD config CC)" CXX="$(R CMD config CXX)" && ./nii_info ../inst/extdata/example.nii.gz
+
+after_success:
+  - Rscript -e 'covr::coveralls()'
