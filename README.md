@@ -90,7 +90,7 @@ image$intent_code <- 1
 
 If you need to modify multiple metadata elements at once, or replace metadata wholesale with new information from another image, the `updateNifti` function provides a more efficient interface. See `?updateNifti` for details.
 
-An image can be written back to NIfTI-1 format using the `writeNifti` function. gzip compression will be used if the specified file name ends with ".gz".
+An image can be written back to NIfTI-1 format using the `writeNifti` function. `gzip` compression will be used if the specified file name ends with ".gz".
 
 ```r
 writeNifti(image, "file.nii.gz")
@@ -98,7 +98,7 @@ writeNifti(image, "file.nii.gz")
 
 ## Image orientation
 
-The NIfTI-1 format has a mechanism for indicating the physical orientation and location of the image volume in real space. The reference orientation has the left–right direction aligned with the x-axis, the posterior–anterior (back–front) direction aligned with the y-axis, and the inferior–superior (bottom–top) direction aligned with the z-axis; but "xform" information stored with the image can , in the form of an affine matrix. To obtain the full xform for an image, call the `xform` function:
+The NIfTI-1 format has a mechanism for indicating the physical orientation and location of the image volume in real space. The reference orientation has the left–right direction aligned with the x-axis, the posterior–anterior (back–front) direction aligned with the y-axis, and the inferior–superior (bottom–top) direction aligned with the z-axis; but "xform" information stored with an image can describe a transformation from that coordinate system to the one used by that particular image, in the form of an affine matrix. To obtain the full xform matrix for an image, call the `xform` function:
 
 ```r
 xform(image)
@@ -112,6 +112,7 @@ xform(image)
 Just the rotation with respect to the canonical axes can be obtained with the `rotation` function:
 
 ```r
+rotation(image)
 #      [,1] [,2] [,3]
 # [1,]   -1    0    0
 # [2,]    0    1    0
@@ -144,13 +145,13 @@ image[67,30,20]
 # [1] 457
 ```
 
-Notice that the sign of the top-left element of the xform has now flipped, and the value of the image at location (30,30,20) has changed because the data has been reordered. The equivalent x-location is now 67, which is the 30th element counting from the other end (96 - 30 + 1 = 67).
+Notice that the sign of the top-left element of the xform has now flipped, and the value of the image at location (30,30,20) has changed because the data has been reordered. The equivalent x-location is now 67, which is the 30th element counting in the other direction (96 - 30 + 1 = 67).
 
-This latter operation can be useful to ensure that indexing into several images with different native storage conventions will end up always have approximately the same meaning. It is non-destructive, because no interpolation of the data is performed. This means that the axes will not exactly align with the requested directions if the original image was oblique to the canonical axes, but conversely it ensures that no degradation in the image will result.
+This latter operation can be useful to ensure that indexing into several images with different native storage conventions will end up always having approximately the same meaning. It is non-destructive, because no interpolation of the data is performed. This means that the axes will not exactly align with the requested directions if the original image was oblique to the canonical axes, but conversely it ensures that no degradation in the image will result. (The [`RNiftyReg` package](https://github.com/jonclayden/RNiftyReg) can be used to apply an arbitrary rotation to an image and interpolate the data onto the new grid, if required.)
 
 ## Performance
 
-The `RNifti` package uses the robust NIfTI-1 reference implementation, which is written in C, to read and write NIfTI files. It also uses the standard NIfTI-1 data structure as its canonical representation of a file in memory. Together, these make the package extremely fast, as the following benchmark against packages [`AnalyzeFMRI`](https://cran.r-project.org/package=AnalyzeFMRI), [`ANTsR`](https://github.com/stnava/ANTsR),  [`neuroim`](https://cran.r-project.org/package=neuroim), [`oro.nifti`](https://cran.r-project.org/package=oro.nifti) and [`tractor.base`](https://cran.r-project.org/package=tractor.base) shows.
+The `RNifti` package uses the robust NIfTI-1 reference implementation, which is written in C, to read and write NIfTI files. It also uses the standard NIfTI-1 data structure as its canonical representation of an image in memory. Together, these make the package extremely fast, as the following benchmark against packages [`AnalyzeFMRI`](https://cran.r-project.org/package=AnalyzeFMRI), [`ANTsRCore`](https://github.com/ANTsX/ANTsRCore),  [`neuroim`](https://cran.r-project.org/package=neuroim), [`oro.nifti`](https://cran.r-project.org/package=oro.nifti) and [`tractor.base`](https://cran.r-project.org/package=tractor.base) shows.
 
 ```r
 installed.packages()[c("AnalyzeFMRI","ANTsRCore","neuroim","oro.nifti","RNifti",
@@ -186,7 +187,7 @@ With a median runtime of less than 2 ms, `RNifti` is typically at least ten time
 
 ## Implementation details
 
-The package does not fully duplicate the NIfTI-1 structure's contents in R-visible objects. Instead, it passes key metadata back to R, such as the image dimensions and pixel dimensions, and it also passes back the pixel values where they are needed. It also creates an [external pointer](http://r-manuals.flakery.org/R-exts.html#External-pointers-and-weak-references) to the native data structure, which is stored in an attribute. This pointer is dereferenced whenever the object is passed back to the C++ code, thereby avoiding unnecessary duplication and ensuring that all metadata remains intact. The full NIfTI-1 header can be obtained using the `dumpNifti` R function, if it is needed.
+The package does not fully duplicate the NIfTI-1 structure's contents in R-visible objects. Instead, it passes key metadata back to R, such as the image dimensions and pixel dimensions, and it also passes back the pixel values where they are needed. It also creates an [external pointer](http://r-manuals.flakery.org/R-exts.html#External-pointers-and-weak-references) to the native data structure, which is stored in an attribute. This pointer is dereferenced whenever the object is passed back to the C++ code, thereby avoiding unnecessary duplication and ensuring that all metadata remains intact. The full NIfTI-1 header can be obtained using the `niftiHeader` R function, if it is needed.
 
 This arrangement is efficient and generally works well, but many R operations strip attributes—in which case the external pointer will be removed. The internal structure will be built again when necessary, but using default metadata. In these cases, if it is important to keep the original metadata, the `updateNifti` function should be called explicitly, with a template object. This reconstructs the NIfTI-1 data structure, using the template as a starting point.
 
@@ -255,6 +256,6 @@ Note that the `NiftiImage` class is header-only, but C code from the NIfTI-1 ref
 
 ## The NIfTI-2 format
 
-The [NIfTI-2 format](https://nifti.nimh.nih.gov/nifti-2) is a evolution of the far more widely-used NIfTI-1. It primarily [uses wider types for various fields](https://www.nitrc.org/forum/forum.php?thread_id=2148&forum_id=1941), to support large datasets and improve precision.
+The [NIfTI-2 format](https://nifti.nimh.nih.gov/nifti-2) is an evolution of the far more widely-used NIfTI-1. It primarily [uses wider types for various fields](https://www.nitrc.org/forum/forum.php?thread_id=2148&forum_id=1941), to support large datasets and improve precision.
 
 Unfortunately, the NIfTI-1 version of the reference library is not forwards-compatible with NIfTI-2, and does not recognise NIfTI-2 files as valid, while the NIfTI-2 version changes the definition of the `nifti_image` data structure, and hence the return type of several core functions, rendering it potentially incompatible with software written for the original library. As a result, adding full NIfTI-2 support to `RNifti` without breaking existing code is not straightforward. Nevertheless, as of `RNifti` version 0.8.0, R function `niftiVersion()` and C++ static method `NiftiImage::fileVersion()` offer a forwards-compatible way to determine the version of the format used by a particular file, so that calling functions can take action accordingly.
