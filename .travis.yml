@@ -3,7 +3,7 @@ sudo: false
 cache: packages
 
 install:
-- Rscript -e 'install.packages(c("Rcpp","testthat","tractor.base","oro.nifti"))'
+- Rscript -e 'install.packages(c("Rcpp","testthat","covr","tractor.base","oro.nifti"))'
 
 script:
 - R CMD build .
