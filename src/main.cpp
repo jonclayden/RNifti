@@ -214,7 +214,7 @@ RcppExport SEXP getXform (SEXP _image, SEXP _preferQuaternion)
 {
 BEGIN_RCPP
     bool isMatrix = false;
-    ::mat44 xform = matrixToXform(_image, &isMatrix);
+    matrixToXform(_image, &isMatrix);
     
     if (isMatrix)
         return _image;

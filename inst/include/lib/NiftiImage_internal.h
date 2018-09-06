@@ -43,8 +43,8 @@ public:
     enum ConversionMode { CastMode, ScaleMode, IndexMode };
     
 protected:
-    double slope, intercept;
     ConversionMode mode;
+    double slope, intercept;
     
     template <typename Type>
     static bool lessThan (Type a, Type b)
