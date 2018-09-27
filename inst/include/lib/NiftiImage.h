@@ -242,7 +242,17 @@ public:
 
 protected:
     nifti_image *image;         /**< The wrapped \c nifti_image pointer */
-    bool persistent;            /**< Marker of persistence, which determines whether the nifti_image should be freed on destruction */
+    int *refCount;              /**< A reference counter, shared with other objects wrapping the same pointer */
+    
+    void acquire (nifti_image * const image);
+    
+    void acquire (const NiftiImage &source)
+    {
+        refCount = source.refCount;
+        acquire(source.image);
+    }
+    
+    void release ();
     
     /**
      * Copy the contents of a \c nifti_image to create a new image
@@ -311,18 +321,21 @@ public:
      * Default constructor
     **/
     NiftiImage ()
-        : image(NULL), persistent(false) {}
+        : image(NULL), refCount(NULL) {}
     
     /**
      * Copy constructor
      * @param source Another \c NiftiImage object
     **/
-    NiftiImage (const NiftiImage &source)
-        : image(NULL), persistent(false)
+    NiftiImage (const NiftiImage &source, const bool copy = true)
+        : image(NULL), refCount(NULL)
     {
-        this->copy(source);
+        if (copy)
+            this->copy(source);
+        else
+            acquire(source);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
 #endif
     }
     
@@ -331,11 +344,11 @@ public:
      * @param source A \c Block object, referring to part of another \c NiftiImage
     **/
     NiftiImage (const Block &source)
-        : image(NULL), persistent(false)
+        : image(NULL), refCount(NULL)
     {
         this->copy(source);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
 #endif
     }
     
@@ -345,15 +358,12 @@ public:
      * @param copy If \c true, the image data will be copied; otherwise this object just wraps
      * the pointer passed to it
     **/
-    NiftiImage (nifti_image * const image, const bool copy = false)
-        : image(NULL), persistent(false)
+    NiftiImage (nifti_image * const image)
+        : image(NULL), refCount(NULL)
     {
-        if (copy)
-            this->copy(image);
-        else
-            this->image = image;
+        acquire(image);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from pointer)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from pointer)\n", this->image);
 #endif
     }
     
@@ -364,13 +374,13 @@ public:
      * @exception runtime_error If reading from the file fails
     **/
     NiftiImage (const std::string &path, const bool readData = true)
-        : persistent(false)
+        : image(NULL), refCount(NULL)
     {
-        this->image = nifti_image_read(path.c_str(), readData);
-        if (this->image == NULL)
+        acquire(nifti_image_read(path.c_str(), readData));
+        if (image == NULL)
             throw std::runtime_error("Failed to read image from path " + path);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from string)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from string)\n", this->image);
 #endif
     }
     
@@ -392,18 +402,9 @@ public:
 #endif
     
     /**
-     * Destructor which frees the wrapped pointer, unless the object is marked as persistent
+     * Destructor which decrements the reference counter, and releases the wrapped pointer if the counter drops to zero
     **/
-    virtual ~NiftiImage ()
-    {
-        if (!persistent)
-        {
-#ifndef NDEBUG
-            Rprintf("Freeing NiftiImage with pointer %p\n", this->image);
-#endif
-            nifti_image_free(image);
-        }
-    }
+    virtual ~NiftiImage () { release(); }
     
     /**
      * Allows a \c NiftiImage object to be treated as a pointer to a \c const \c nifti_image
@@ -433,7 +434,7 @@ public:
     {
         copy(source);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
 #endif
         return *this;
     }
@@ -447,7 +448,7 @@ public:
     {
         copy(source);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
 #endif
         return *this;
     }
@@ -458,11 +459,6 @@ public:
     **/
     NiftiImage & setPersistence (const bool persistent)
     {
-        this->persistent = persistent;
-#ifndef NDEBUG
-        if (persistent)
-            Rprintf("Setting NiftiImage with pointer %p to be persistent\n", this->image);
-#endif
         return *this;
     }
     
@@ -471,10 +467,12 @@ public:
     **/
     bool isNull () const { return (image == NULL); }
     
+    bool isShared () const { return (refCount != NULL && *refCount > 1); }
+    
     /**
      * Determine whether or not the image is marked as persistent
     **/
-    bool isPersistent () const { return persistent; }
+    bool isPersistent () const { return false; }
     
     /**
      * Determine whether nontrivial scale and slope parameters are set
@@ -724,16 +722,57 @@ public:
 // Include helper functions
 #include "lib/NiftiImage_internal.h"
 
+inline void NiftiImage::acquire (nifti_image * const image)
+{
+    // If we're taking ownership of a new image, release the old one
+    if (this->image != NULL && this->image != image)
+        release();
+    
+    // Set the internal pointer and create or update the reference counter
+    this->image = image;
+    if (image != NULL)
+    {
+        if (this->refCount == NULL)
+            this->refCount = new int(1);
+        else
+            (*this->refCount)++;
+        
+#ifndef NDEBUG
+        Rc_printf("Acquiring pointer %p (reference count is %d)\n", this->image, *this->refCount);
+#endif
+    }
+}
+
+inline void NiftiImage::release ()
+{
+    if (this->image != NULL)
+    {
+        if (this->refCount != NULL)
+        {
+            (*this->refCount)--;
+#ifndef NDEBUG
+            Rc_printf("Releasing pointer %p (reference count is %d)\n", this->image, *this->refCount);
+#endif
+            if (*this->refCount < 1)
+            {
+                nifti_image_free(this->image);
+                this->image = NULL;
+                delete this->refCount;
+                this->refCount = NULL;
+            }
+        }
+        else
+            Rc_printf("Releasing untracked object %p", this->image);
+    }
+}
+
 inline void NiftiImage::copy (const nifti_image *source)
 {
-    if (image != NULL && !persistent)
-        nifti_image_free(image);
-        
     if (source == NULL)
-        image = NULL;
+        acquire(NULL);
     else
     {
-        image = nifti_copy_nim_info(source);
+        acquire(nifti_copy_nim_info(source));
         if (source->data != NULL)
         {
             size_t dataSize = nifti_get_volsize(source);
@@ -741,8 +780,6 @@ inline void NiftiImage::copy (const nifti_image *source)
             memcpy(image->data, source->data, dataSize);
         }
     }
-    
-    persistent = false;
 }
 
 inline void NiftiImage::copy (const NiftiImage &source)
@@ -753,15 +790,12 @@ inline void NiftiImage::copy (const NiftiImage &source)
 
 inline void NiftiImage::copy (const Block &source)
 {
-    if (image != NULL && !persistent)
-        nifti_image_free(image);
-    
     const nifti_image *sourceStruct = source.image;
     if (sourceStruct == NULL)
-        image = NULL;
+        acquire(NULL);
     else
     {
-        image = nifti_copy_nim_info(sourceStruct);
+        acquire(nifti_copy_nim_info(sourceStruct));
         image->dim[0] = source.image->dim[0] - 1;
         image->dim[source.dimension] = 1;
         image->pixdim[source.dimension] = 1.0;
@@ -774,8 +808,6 @@ inline void NiftiImage::copy (const Block &source)
             memcpy(image->data, static_cast<char*>(source.image->data) + blockSize*source.index, blockSize);
         }
     }
-    
-    persistent = false;
 }
 
 #ifdef USING_R
@@ -854,7 +886,7 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
     else
         throw std::runtime_error("Data type is not supported");
     
-    this->image = nifti_convert_nhdr2nim(header, NULL);
+    acquire(nifti_convert_nhdr2nim(header, NULL));
     
     const SEXP data = PROTECT(object.slot(".Data"));
     if (!copyData || Rf_length(data) <= 1)
@@ -883,7 +915,7 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
     Rcpp::Function getXform = mriImage.field("getXform");
     Rcpp::NumericMatrix xform = getXform();
     
-    this->image = NULL;
+    acquire(NULL);
     
     if (Rf_length(mriImage.field("tags")) > 0)
         initFromList(mriImage.field("tags"));
@@ -909,7 +941,7 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
     }
     
     if (this->image == NULL)
-        this->image = nifti_make_new_nim(dims, datatype, FALSE);
+        acquire(nifti_make_new_nim(dims, datatype, FALSE));
     else
     {
         std::copy(dims, dims+8, this->image->dim);
@@ -967,7 +999,7 @@ inline void NiftiImage::initFromList (const Rcpp::RObject &object)
     
     internal::updateHeader(header, list);
     
-    this->image = nifti_convert_nhdr2nim(*header, NULL);
+    acquire(nifti_convert_nhdr2nim(*header, NULL));
     this->image->data = NULL;
     free(header);
 }
@@ -983,7 +1015,7 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
         dims[i+1] = dimVector[i];
     
     const short datatype = sexpTypeToNiftiType(object.sexp_type());
-    this->image = nifti_make_new_nim(dims, datatype, int(copyData));
+    acquire(nifti_make_new_nim(dims, datatype, int(copyData)));
     
     if (copyData)
     {
@@ -1012,7 +1044,7 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
 }
 
 inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
-    : persistent(false)
+    : image(NULL), refCount(NULL)
 {
     Rcpp::RObject imageObject(object);
     bool resolved = false;
@@ -1023,8 +1055,7 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
         NiftiImage *ptr = imagePtr;
         if (ptr != NULL)
         {
-            this->image = ptr->image;
-            this->persistent = true;
+            acquire(*ptr);
             resolved = true;
             
             if (imageObject.hasAttribute("dim"))
@@ -1039,11 +1070,11 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
     if (!resolved)
     {
         if (Rf_isNull(object))
-            this->image = NULL;
+            acquire(NULL);
         else if (Rf_isString(object))
         {
             const std::string path = Rcpp::as<std::string>(object);
-            this->image = nifti_image_read(path.c_str(), readData);
+            acquire(nifti_image_read(path.c_str(), readData));
             if (this->image == NULL)
                 throw std::runtime_error("Failed to read image from path " + path);
         }
@@ -1065,21 +1096,21 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
         nifti_update_dims_from_array(this->image);
     
 #ifndef NDEBUG
-    Rprintf("Creating NiftiImage with pointer %p (from SEXP)\n", this->image);
+    Rc_printf("Creating NiftiImage with pointer %p (from SEXP)\n", this->image);
 #endif
 }
 
 #endif // USING_R
 
 inline NiftiImage::NiftiImage (const std::string &path, const std::vector<int> &volumes)
-    : persistent(false)
+    : image(NULL), refCount(NULL)
 {
     if (volumes.empty())
         throw std::runtime_error("The vector of volumes is empty");
     
     nifti_brick_list brickList;
-    this->image = nifti_image_read_bricks(path.c_str(), volumes.size(), &volumes[0], &brickList);
-    if (this->image == NULL)
+    acquire(nifti_image_read_bricks(path.c_str(), volumes.size(), &volumes[0], &brickList));
+    if (image == NULL)
         throw std::runtime_error("Failed to read image from path " + path);
     
     size_t brickSize = image->nbyper * image->nx * image->ny * image->nz;
@@ -1089,7 +1120,7 @@ inline NiftiImage::NiftiImage (const std::string &path, const std::vector<int> &
     nifti_free_NBL(&brickList);
     
 #ifndef NDEBUG
-    Rprintf("Creating NiftiImage with pointer %p (from string and volume vector)\n", this->image);
+    Rc_printf("Creating NiftiImage with pointer %p (from string and volume vector)\n", this->image);
 #endif
 }
 
@@ -1188,8 +1219,7 @@ inline NiftiImage & NiftiImage::rescale (const std::vector<float> &scales)
     nifti_update_dims_from_array(image);
     
     // Data vector is now the wrong size, so drop it
-    if (!persistent)
-        nifti_image_unload(image);
+    nifti_image_unload(image);
     
     image->scl_slope = 0.0;
     image->scl_inter = 0.0;
@@ -1435,16 +1465,21 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
         
         if (header != NULL)
         {
-            nifti_image *newImage = nifti_convert_nhdr2nim(*header, NULL);
-            if (this->image->data != NULL)
-            {
-                size_t dataSize = nifti_get_volsize(image);
-                newImage->data = calloc(1, dataSize);
-                memcpy(newImage->data, image->data, dataSize);
-            }
-            if (!persistent)
-                nifti_image_free(image);
-            this->image = newImage;
+            // Retain the data pointer, but otherwise overwrite the stored object with one created from the header
+            void *dataPtr = image->data;
+            nifti_image *tempImage = nifti_convert_nhdr2nim(*header, NULL);
+            
+            memcpy(image, tempImage, sizeof(nifti_image));
+            if (tempImage->fname != NULL)
+                image->fname = nifti_strdup(tempImage->fname);
+            if (tempImage->iname != NULL)
+                image->iname = nifti_strdup(tempImage->iname);
+            image->num_ext = 0;
+            image->ext_list = NULL;
+            image->data = dataPtr;
+            
+            nifti_image_free(tempImage);
+            free(header);
         }
     }
     else if (object.hasAttribute("dim"))
@@ -1477,8 +1512,7 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
         image->datatype = NiftiImage::sexpTypeToNiftiType(object.sexp_type());
         nifti_datatype_sizes(image->datatype, &image->nbyper, NULL);
     
-        if (!persistent)
-            nifti_image_unload(image);
+        nifti_image_unload(image);
     
         const size_t dataSize = nifti_get_volsize(image);
         image->data = calloc(1, dataSize);
@@ -1727,12 +1761,10 @@ inline void NiftiImage::toFile (const std::string fileName, const short datatype
     const bool changingDatatype = (datatype != DT_NONE && !this->isNull() && datatype != image->datatype);
     
     // Copy the source image only if the datatype will be changed
-    NiftiImage imageToWrite(image, changingDatatype);
+    NiftiImage imageToWrite(*this, changingDatatype);
     
     if (changingDatatype)
         imageToWrite.changeDatatype(datatype, true);
-    else
-        imageToWrite.setPersistence(true);
     
     const int status = nifti_set_filenames(imageToWrite, fileName.c_str(), false, true);
     if (status != 0)
@@ -1783,7 +1815,7 @@ inline Rcpp::RObject NiftiImage::toArray () const
         }
     }
     
-    internal::addAttributes(array, image);
+    internal::addAttributes(array, *this);
     array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "array");
     return array;
 }
@@ -1795,7 +1827,7 @@ inline Rcpp::RObject NiftiImage::toPointer (const std::string label) const
     else
     {
         Rcpp::RObject string = Rcpp::wrap(label);
-        internal::addAttributes(string, image, false);
+        internal::addAttributes(string, *this, false);
         string.attr("class") = Rcpp::CharacterVector::create("internalImage", "niftiImage");
         return string;
     }
