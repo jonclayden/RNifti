@@ -358,10 +358,13 @@ public:
      * @param copy If \c true, the image data will be copied; otherwise this object just wraps
      * the pointer passed to it
     **/
-    NiftiImage (nifti_image * const image)
+    NiftiImage (nifti_image * const image, const bool copy = false)
         : image(NULL), refCount(NULL)
     {
-        acquire(image);
+        if (copy)
+            this->copy(image);
+        else
+            acquire(image);
 #ifndef NDEBUG
         Rc_printf("Creating NiftiImage with pointer %p (from pointer)\n", this->image);
 #endif
