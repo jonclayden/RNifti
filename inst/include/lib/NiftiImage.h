@@ -235,6 +235,7 @@ public:
                     version = -1;
                 }
             }
+            free(header);
             return version;
         }
     }
@@ -1469,14 +1470,16 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
         if (header != NULL)
         {
             // Retain the data pointer, but otherwise overwrite the stored object with one created from the header
+            // The file names can't be preserved through the round-trip, so free them
             void *dataPtr = image->data;
             nifti_image *tempImage = nifti_convert_nhdr2nim(*header, NULL);
             
+            if (image->fname != NULL)
+                free(image->fname);
+            if (image->iname != NULL)
+                free(image->iname);
+            
             memcpy(image, tempImage, sizeof(nifti_image));
-            if (tempImage->fname != NULL)
-                image->fname = nifti_strdup(tempImage->fname);
-            if (tempImage->iname != NULL)
-                image->iname = nifti_strdup(tempImage->iname);
             image->num_ext = 0;
             image->ext_list = NULL;
             image->data = dataPtr;
