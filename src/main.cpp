@@ -394,6 +394,25 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP getAddresses (SEXP _image)
+{
+BEGIN_RCPP
+    const NiftiImage image(_image, true, true);
+    std::ostringstream imageString, dataString;
+    if (image.isNull())
+    {
+        imageString << NULL;
+        dataString << NULL;
+    }
+    else
+    {
+        imageString << (const nifti_image *) image;
+        dataString << image->data;
+    }
+    return CharacterVector::create(Named("image")=imageString.str(), Named("data")=dataString.str());
+END_RCPP
+}
+
 RcppExport SEXP hasData (SEXP _image)
 {
 BEGIN_RCPP
@@ -435,6 +454,7 @@ static R_CallMethodDef callMethods[] = {
     { "getOrientation", (DL_FUNC) &getOrientation,  2 },
     { "setOrientation", (DL_FUNC) &setOrientation,  2 },
     { "getRotation",    (DL_FUNC) &getRotation,     2 },
+    { "getAddresses",   (DL_FUNC) &getAddresses,    1 },
     { "hasData",        (DL_FUNC) &hasData,         1 },
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },

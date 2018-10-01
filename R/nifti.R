@@ -254,6 +254,11 @@ niftiVersion <- function (file)
     sapply(file, function(f) .Call("niftiVersion", path.expand(f), PACKAGE="RNifti"))
 }
 
+addresses <- function (image)
+{
+    .Call("getAddresses", image, PACKAGE="RNifti")
+}
+
 hasData <- function (image)
 {
     .Call("hasData", image, PACKAGE="RNifti")
