@@ -6,6 +6,11 @@
 
 #include <Rcpp.h>
 
+// Defined since R 3.1.0, according to Tomas Kalibera, but there's no reason to break compatibility with 3.0.x
+#ifndef MAYBE_SHARED
+#define MAYBE_SHARED(x) (NAMED(x) > 1)
+#endif
+
 #else
 
 #define R_NegInf -INFINITY
@@ -398,11 +403,16 @@ public:
     
 #ifdef USING_R
     /**
-     * Initialise from an R object
+     * Initialise from an R object, retrieving an existing image from an external pointer attribute
+     * if available; otherwise constructing a new one from the R object itself
      * @param object The source object
-     * @param readData If \c true, the data will be copied as well as the metadata
+     * @param readData If \c true, the data will be retrieved as well as the metadata
+     * @param readOnly If \c true, the caller asserts that its intent is read-only. Otherwise, if
+     * the \c SEXP may have multiple names at the R level (according to the \c MAYBE_SHARED R
+     * macro), an image retrieved from an external pointer will be duplicated to preserve R's usual
+     * semantics
     **/
-    NiftiImage (const SEXP object, const bool readData = true);
+    NiftiImage (const SEXP object, const bool readData = true, const bool readOnly = false);
 #endif
     
     /**
@@ -1047,7 +1057,7 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     }
 }
 
-inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
+inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const bool readOnly)
     : image(NULL), refCount(NULL)
 {
     Rcpp::RObject imageObject(object);
@@ -1059,7 +1069,10 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
         NiftiImage *ptr = imagePtr;
         if (ptr != NULL)
         {
-            acquire(*ptr);
+            if (MAYBE_SHARED(object) && !readOnly)
+                copy(*ptr);
+            else
+                acquire(*ptr);
             resolved = true;
             
             if (imageObject.hasAttribute("dim"))

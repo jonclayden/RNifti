@@ -4,11 +4,6 @@
 #include "niftilib/nifti1_io.h"
 #include "lib/NiftiImage.h"
 
-// Defined since R 3.1.0, according to Tomas Kalibera, but there's no reason to break compatibility with 3.0.x
-#ifndef MAYBE_SHARED
-#define MAYBE_SHARED(x) (NAMED(x) > 1)
-#endif
-
 using namespace Rcpp;
 using namespace RNifti;
 
@@ -52,7 +47,7 @@ NumericMatrix xformToMatrix (const ::mat44 xform)
 RcppExport SEXP asNifti (SEXP _object)
 {
 BEGIN_RCPP
-    NiftiImage image(_object);
+    const NiftiImage image(_object, true, true);
     return image.toPointer("NIfTI image");
 END_RCPP
 }
@@ -70,7 +65,7 @@ RcppExport SEXP readNifti (SEXP _object, SEXP _internal, SEXP _volumes)
 BEGIN_RCPP
     if (Rf_isNull(_volumes))
     {
-        NiftiImage image(as<std::string>(_object));
+        const NiftiImage image(as<std::string>(_object));
         return image.toArrayOrPointer(as<bool>(_internal), "NIfTI image");
     }
     else
@@ -79,7 +74,7 @@ BEGIN_RCPP
         IntegerVector volumesR(_volumes);
         for (int i=0; i<volumesR.length(); i++)
             volumes.push_back(volumesR[i] - 1);
-        NiftiImage image(as<std::string>(_object), volumes);
+        const NiftiImage image(as<std::string>(_object), volumes);
         return image.toArrayOrPointer(as<bool>(_internal), "NIfTI image");
     }
 END_RCPP
@@ -88,7 +83,7 @@ END_RCPP
 RcppExport SEXP writeNifti (SEXP _image, SEXP _file, SEXP _datatype)
 {
 BEGIN_RCPP
-    NiftiImage image(_image);
+    const NiftiImage image(_image, true, true);
     image.toFile(as<std::string>(_file), as<std::string>(_datatype));
     return R_NilValue;
 END_RCPP
@@ -110,7 +105,7 @@ BEGIN_RCPP
     }
     else
     {
-        const NiftiImage reference(_reference);
+        const NiftiImage reference(_reference, true, true);
         if (reference.isNull() && willChangeDatatype)
         {
             NiftiImage image(_image);
@@ -134,7 +129,7 @@ END_RCPP
 RcppExport SEXP niftiHeader (SEXP _image)
 {
 BEGIN_RCPP
-    const NiftiImage image(_image, false);
+    const NiftiImage image(_image, false, true);
     return image.headerToList();
 END_RCPP
 }
@@ -153,7 +148,7 @@ BEGIN_RCPP
     }
     else
     {
-        const NiftiImage image(_image, false);
+        const NiftiImage image(_image, false, true);
         header = nifti_convert_nim2nhdr(image);
     }
     
@@ -220,7 +215,7 @@ BEGIN_RCPP
         return _image;
     else
     {
-        const NiftiImage image(_image, false);
+        const NiftiImage image(_image, false, true);
         ::mat44 xform = image.xform(as<bool>(_preferQuaternion));
         return xformToMatrix(xform);
     }
@@ -283,11 +278,8 @@ BEGIN_RCPP
     else
     {
         // From here, we assume we have a proper image
-        // First, duplicate the image object if necessary, to preserve usual R semantics
         NiftiImage image(_image);
-        if (MAYBE_SHARED(_image))
-            image = NiftiImage(image);
-    
+        
         if (!image.isNull())
         {
             if (as<bool>(_isQform))
@@ -310,10 +302,7 @@ BEGIN_RCPP
         }
     
         // If the image was copied above it will have been marked nonpersistent
-        if (image.isPersistent())
-            return _image;
-        else
-            return image.toArrayOrPointer(Rf_inherits(_image,"internalImage"), "NIfTI image");
+        return image.toArrayOrPointer(Rf_inherits(_image,"internalImage"), "NIfTI image");
     }
 END_RCPP
 }
@@ -329,7 +318,7 @@ BEGIN_RCPP
         orientation = NiftiImage::xformToString(xform);
     else
     {
-        const NiftiImage image(_image, false);
+        const NiftiImage image(_image, false, true);
         orientation = NiftiImage::xformToString(image.xform(as<bool>(_preferQuaternion)));
     }
     
@@ -361,8 +350,6 @@ BEGIN_RCPP
     else
     {
         NiftiImage image(_image);
-        if (MAYBE_SHARED(_image))
-            image = NiftiImage(image);
         image.reorient(as<std::string>(_axes));
         return image.toArrayOrPointer(Rf_inherits(_image,"internalImage"), "NIfTI image");
     }
@@ -380,7 +367,7 @@ BEGIN_RCPP
         rotation = NiftiImage::xformToRotation(xform);
     else
     {
-        const NiftiImage image(_image, false);
+        const NiftiImage image(_image, false, true);
         rotation = NiftiImage::xformToRotation(image.xform(as<bool>(_preferQuaternion)));
     }
     
@@ -416,7 +403,7 @@ END_RCPP
 RcppExport SEXP hasData (SEXP _image)
 {
 BEGIN_RCPP
-    const NiftiImage image(_image);
+    const NiftiImage image(_image, true, true);
     return wrap(image->data != NULL);
 END_RCPP
 }
@@ -424,10 +411,9 @@ END_RCPP
 RcppExport SEXP rescaleImage (SEXP _image, SEXP _scales)
 {
 BEGIN_RCPP
-    const NiftiImage image(_image);
-    NiftiImage newImage(image);
-    newImage.rescale(as<float_vector>(_scales));
-    return newImage.toPointer("NIfTI image");
+    NiftiImage image(_image);
+    image.rescale(as<float_vector>(_scales));
+    return image.toPointer("NIfTI image");
 END_RCPP
 }
 
