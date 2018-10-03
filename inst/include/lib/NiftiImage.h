@@ -84,8 +84,10 @@ inline vec3 matrixVectorProduct (const mat33 &matrix, const vec3 &vector)
 } // internal namespace
 
 /**
- * Thin wrapper around a C-style \c nifti_image struct that allows C++-style destruction
- * @author Jon Clayden
+ * Thin wrapper around a C-style \c nifti_image struct that allows C++-style destruction. Reference
+ * counting is used to allow multiple \c NifiImage objects to wrap the same \c nifti_image pointer,
+ * akin to a \c std::shared_ptr (but without requiring C++11).
+ * @author Jon Clayden (<code@clayden.org>)
 **/
 class NiftiImage
 {
@@ -250,30 +252,44 @@ protected:
     nifti_image *image;         /**< The wrapped \c nifti_image pointer */
     int *refCount;              /**< A reference counter, shared with other objects wrapping the same pointer */
     
+    /**
+     * Acquire the specified pointer to a \c nifti_image \c struct, taking (possibly shared)
+     * responsibility for freeing the associated memory. If the object currently wraps another
+     * pointer, it will be released
+     * @param image The pointer to wrap
+    **/
     void acquire (nifti_image * const image);
     
+    /**
+     * Acquire the same pointer as another \c NiftiImage, incrementing the shared reference count
+     * @param source A reference to a \c NiftiImage
+    **/
     void acquire (const NiftiImage &source)
     {
         refCount = source.refCount;
         acquire(source.image);
     }
     
+    /**
+     * Release the currently wrapped pointer, if it is not \c NULL, decrementing the reference
+     * count and releasing memory if there are no remaining references to the pointer
+    **/
     void release ();
     
     /**
-     * Copy the contents of a \c nifti_image to create a new image
+     * Copy the contents of a \c nifti_image to create a new image, acquiring the new pointer
      * @param source A pointer to a \c nifti_image
     **/
     void copy (const nifti_image *source);
     
     /**
-     * Copy the contents of another \c NiftiImage to create a new image
+     * Copy the contents of another \c NiftiImage to create a new image, acquiring a new pointer
      * @param source A reference to a \c NiftiImage
     **/
     void copy (const NiftiImage &source);
     
     /**
-     * Copy the contents of a \ref Block to create a new image
+     * Copy the contents of a \ref Block to create a new image, acquiring a new pointer
      * @param source A reference to a \ref Block
     **/
     void copy (const Block &source);
@@ -332,6 +348,8 @@ public:
     /**
      * Copy constructor
      * @param source Another \c NiftiImage object
+     * @param copy If \c true, the underlying \c nifti_image will be copied; otherwise the new
+     * object wraps the same \c nifti_image and increments the shared reference count
     **/
     NiftiImage (const NiftiImage &source, const bool copy = true)
         : image(NULL), refCount(NULL)
@@ -416,7 +434,8 @@ public:
 #endif
     
     /**
-     * Destructor which decrements the reference counter, and releases the wrapped pointer if the counter drops to zero
+     * Destructor which decrements the reference counter, and releases the wrapped pointer if the
+     * counter drops to zero
     **/
     virtual ~NiftiImage () { release(); }
     
@@ -468,33 +487,44 @@ public:
     }
     
     /**
-     * Marked the image as persistent, so that it can be passed back to R
+     * Mark the image as persistent, so that it can be passed back to R
      * @param persistent The new persistence state of the object
+     * @return A reference to the callee.
+     * @deprecated The persistence mechanism has been replaced with reference counting, so this
+     * function no longer has any effect. Instead it returns \c *this, unmodified.
     **/
-    NiftiImage & setPersistence (const bool persistent)
-    {
-        return *this;
-    }
+    NiftiImage & setPersistence (const bool persistent) { return *this; }
     
     /**
-     * Determine whether or not the internal pointer is \c NULL
+     * Determine whether or not the wrapped pointer is \c NULL
+     * @return \c true if the wrapped pointer is \c NULL; \c false otherwise
     **/
     bool isNull () const { return (image == NULL); }
     
+    /**
+     * Determine whether the wrapped pointer is shared with another \c NiftiImage
+     * @return \c true if the reference count is greater than 1; \c false otherwise
+    **/
     bool isShared () const { return (refCount != NULL && *refCount > 1); }
     
     /**
      * Determine whether or not the image is marked as persistent
+     * @return \c false, always
+     * @deprecated The persistence mechanism has been replaced with reference counting, so this
+     * function will always return \c false. Use \ref isShared instead.
     **/
     bool isPersistent () const { return false; }
     
     /**
      * Determine whether nontrivial scale and slope parameters are set
+     * @return \c true if the object wraps an image pointer, its slope is not zero and the slope
+     *         and intercept are not exactly one and zero; \c false otherwise
     **/
     bool isDataScaled () const { return (image != NULL && image->scl_slope != 0.0 && (image->scl_slope != 1.0 || image->scl_inter != 0.0)); }
     
     /**
      * Return the number of dimensions in the image
+     * @return An integer giving the image dimensionality
     **/
     int nDims () const
     {
@@ -548,6 +578,7 @@ public:
      * Extract a vector of data from the image, casting it to any required element type
      * @param useSlope If \c true, the default, then the data will be adjusted for the slope and
      * intercept stored with the image, if any
+     * @return A vector of data values, cast to the required type
      * @note If the slope and intercept are applied, there is no guarantee that the adjusted values
      * will fit within the requested type. No check is made for this
     **/
@@ -559,6 +590,7 @@ public:
      * @param datatype A NIfTI datatype code
      * @param useSlope If \c true, and conversion is to an integer type, the data will be rescaled
      * and the image's slope and intercept set to capture the full range of original values
+     * @return Self, after changing the datatype
     **/
     NiftiImage & changeDatatype (const short datatype, const bool useSlope = false);
     
@@ -567,6 +599,7 @@ public:
      * @param datatype A string specifying the new datatype
      * @param useSlope If \c true, and conversion is to an integer type, the data will be rescaled
      * and the image's slope and intercept set to capture the full range of original values
+     * @return Self, after changing the datatype
     **/
     NiftiImage & changeDatatype (const std::string &datatype, const bool useSlope = false);
     
@@ -576,12 +609,14 @@ public:
      * An exception will be raised if this does not have a length matching the image
      * @param datatype The final datatype required. By default the existing datatype of the image
      * is used
+     * @return Self, after replacing the data
     **/
     template <typename SourceType>
     NiftiImage & replaceData (const std::vector<SourceType> &data, const short datatype = DT_NONE);
     
     /**
      * Drop the data from the image, retaining only the metadata
+     * @return Self, after dropping the data
     **/
     NiftiImage & dropData ()
     {
@@ -592,6 +627,7 @@ public:
     /**
      * Rescale the image, changing its image dimensions and pixel dimensions
      * @param scales Vector of scale factors along each dimension
+     * @return Self, after rescaling the metadata
      * @note No interpolation is performed on the pixel data, which is simply dropped
     **/
     NiftiImage & rescale (const std::vector<float> &scales);
@@ -600,6 +636,7 @@ public:
      * Reorient the image by permuting dimensions and potentially reversing some
      * @param i,j,k Constants such as \c NIFTI_L2R, \c NIFTI_P2A and \c NIFTI_I2S, giving the
      * canonical axes to reorient to
+     * @return Self, after reorientation
      * @note The pixel data is reordered, but not resampled. The xform matrices will also be
      * adjusted in line with the transformation
     **/
@@ -609,6 +646,7 @@ public:
      * Reorient the image by permuting dimensions and potentially reversing some
      * @param orientation A string containing some permutation of the letters \c L or \c R,
      * \c P or \c A, \c I or \c S, giving the canonical axes to reorient to
+     * @return Self, after reorientation
      * @note The pixel data is reordered, but not resampled. The xform matrices will also be
      * adjusted in line with the transformation
     **/
@@ -618,6 +656,7 @@ public:
     /**
      * Update the image from an R array
      * @param array An R array or list object
+     * @return Self, after updating data and/or metadata
     **/
     NiftiImage & update (const Rcpp::RObject &object);
 #endif
@@ -631,6 +670,7 @@ public:
     
     /**
      * Return the number of blocks in the image
+     * @return An integer giving the number of blocks in the image
     **/
     int nBlocks () const
     {
