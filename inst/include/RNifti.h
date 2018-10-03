@@ -6,11 +6,17 @@
 #define USING_R
 #endif
 
+// Defined since RNifti v0.10.0
+// Equal to 100 * (major version) + (minor version)
+// Does not change with patch level, since the API should not change
+#define RNIFTI_VERSION 10
+
 #include "niftilib/nifti1_io.h"
 
 #ifdef __cplusplus
 #include "lib/NiftiImage.h"
 
+// Defined since RNifti v0.3.0
 #define HAVE_RNIFTI_NAMESPACE
 
 extern "C" {
