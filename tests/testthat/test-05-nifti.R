@@ -88,3 +88,11 @@ test_that("image objects can be manipulated", {
     expect_equal(pixdim(image), c(5,5,5))
     expect_warning(as.array(image), "no data")
 })
+
+test_that("NIfTI objects have the expected copying semantics", {
+    im1 <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+    im2 <- im1
+    expect_true(all(RNifti:::addresses(im1) == RNifti:::addresses(im2)))
+    im1$intent_code <- 1000L
+    expect_false(all(RNifti:::addresses(im1) == RNifti:::addresses(im2)))
+})
