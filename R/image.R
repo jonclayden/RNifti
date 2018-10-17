@@ -27,14 +27,6 @@ dim.internalImage <- function (x)
 }
 
 
-#' @name internalImage-class
-#' @aliases internalImage
-#' 
-#' @rdname internalImage
-#' @exportClass internalImage
-setOldClass("internalImage")
-
-
 #' @rdname internalImage
 #' @export
 as.array.internalImage <- function (x, ...)

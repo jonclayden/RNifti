@@ -19,6 +19,14 @@ test_that("NIfTI files can be read and written", {
     volumeImagePath <- system.file("extdata", "example_4d.nii.gz", package="RNifti")
     tempPath <- paste(tempfile(), "nii.gz", sep=".")
     
+    
+    expect_true(is.niftiImage(readNifti(imagePath)))
+    expect_false(is.internalImage(readNifti(imagePath)))
+    
+    
+    expect_true(is.niftiImage(readNifti(imagePath, internal = TRUE)))
+    expect_true(is.internalImage(readNifti(imagePath, internal = TRUE)))
+
     expect_equal(niftiVersion(imagePath), structure(1L,names=imagePath))
     expect_equal(dim(readNifti(imagePath,internal=FALSE)), c(96L,96L,60L))
     expect_equal(dim(readNifti(imagePath,internal=TRUE)), c(96L,96L,60L))
