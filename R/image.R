@@ -12,7 +12,6 @@
 #' @param ... Additional parameters to methods. Currently unused.
 #' 
 #' @author Jon Clayden <code@@clayden.org>
-#' @aliases internalImage
 #' @rdname internalImage
 #' @export
 dim.internalImage <- function (x)
@@ -26,6 +25,15 @@ dim.internalImage <- function (x)
 {
     stop("Dimensions of an internal image cannot be changed")
 }
+
+
+#' @name internalImage-class
+#' @aliases internalImage
+#' 
+#' @rdname internalImage
+#' @exportClass internalImage
+setOldClass("internalImage")
+
 
 #' @rdname internalImage
 #' @export

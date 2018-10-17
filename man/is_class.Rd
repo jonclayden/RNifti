@@ -19,7 +19,7 @@ A logical \code{TRUE} or \code{FALSE}
 Logical Checks on Nifti Image classes
 }
 \examples{
-file = system.file("extdata", "example.nii.gz")
+file = system.file("extdata", "example.nii.gz", package = "RNifti")
 is.niftiImage(file)
 img = readNifti(file)
 is.niftiImage(img)

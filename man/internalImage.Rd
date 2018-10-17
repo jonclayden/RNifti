@@ -2,8 +2,9 @@
 % Please edit documentation in R/image.R
 \name{dim.internalImage}
 \alias{dim.internalImage}
-\alias{internalImage}
 \alias{dim<-.internalImage}
+\alias{internalImage-class}
+\alias{internalImage}
 \alias{as.array.internalImage}
 \title{Internal images}
 \usage{
