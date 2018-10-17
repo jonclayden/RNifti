@@ -1,3 +1,4 @@
+^\.Rhistory$
 ^Doxyfile$
 ^\.travis\.yml$
 ^.*\.Rproj$
