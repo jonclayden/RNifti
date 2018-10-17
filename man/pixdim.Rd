@@ -47,9 +47,12 @@ temporal units that they are given in. The former defaults to 1 in each
 dimension, if there is no attribute.
 }
 \examples{
-im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+fname = system.file("extdata", "example.nii.gz", package="RNifti")
+im <- readNifti(fname)
 pixdim(im)
+pixdim(fname)
 pixunits(im)
+pixunits(fname) # should be unknown
 
 }
 \author{

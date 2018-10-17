@@ -105,9 +105,12 @@ ndim <- function (object)
 #'   spatial and temporal unit names.
 #' 
 #' @examples
-#' im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+#' fname = system.file("extdata", "example.nii.gz", package="RNifti")
+#' im <- readNifti(fname)
 #' pixdim(im)
+#' pixdim(fname)
 #' pixunits(im)
+#' pixunits(fname) # should be unknown
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @export
@@ -124,8 +127,18 @@ pixdim.default <- function (object)
         return (attr(object, "pixdim"))
     else if (!is.null(dim(object)))
         return (rep(1, length(dim(object))))
-    else
+    else {
+        pdim = tryCatch({
+            hdr = niftiHeader(object)
+            d1 = abs(hdr$dim[1])
+            hdr$pixdim[seq(2, 2 + d1 - 1)]
+        })
+        if (!inherits(pdim, "try-error")) {
+            return(pdim)
+        }
         return (1)
+        
+    }
 }
 
 #' @rdname pixdim
