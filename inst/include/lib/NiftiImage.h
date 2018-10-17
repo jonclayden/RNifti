@@ -2,14 +2,18 @@
 #define _NIFTI_IMAGE_H_
 
 
-#ifndef _NO_R__
+#ifdef USING_R
 
 #include <Rcpp.h>
+
+// Defined since R 3.1.0, according to Tomas Kalibera, but there's no reason to break compatibility with 3.0.x
+#ifndef MAYBE_SHARED
+#define MAYBE_SHARED(x) (NAMED(x) > 1)
+#endif
 
 #else
 
 #define R_NegInf -INFINITY
-#define ISNAN(x) (x != x)
 
 #include <stdint.h>
 #include <cstddef>
@@ -38,9 +42,52 @@
 
 namespace RNifti {
 
+namespace internal {
+
+struct vec3
+{
+    float v[3];
+
+    vec3 operator-() const
+    {
+        vec3 r;
+        r.v[0] = -v[0];
+        r.v[1] = -v[1];
+        r.v[2] = -v[2];
+        return r;
+    }
+};
+
+inline mat33 topLeftCorner (const mat44 &matrix)
+{
+    mat33 newMatrix;
+    for (int i=0; i<3; i++)
+    {
+        for (int j=0; j<3; j++)
+            newMatrix.m[i][j] = matrix.m[i][j];
+    }
+    return newMatrix;
+}
+
+inline vec3 matrixVectorProduct (const mat33 &matrix, const vec3 &vector)
+{
+    vec3 newVector;
+    for (int i=0; i<3; i++)
+    {
+        newVector.v[i] = 0.0;
+        for (int j=0; j<3; j++)
+            newVector.v[i] += matrix.m[i][j] * vector.v[j];
+    }
+    return newVector;
+}
+
+} // internal namespace
+
 /**
- * Thin wrapper around a C-style \c nifti_image struct that allows C++-style destruction
- * @author Jon Clayden
+ * Thin wrapper around a C-style \c nifti_image struct that allows C++-style destruction. Reference
+ * counting is used to allow multiple \c NifiImage objects to wrap the same \c nifti_image pointer,
+ * akin to a \c std::shared_ptr (but without requiring C++11).
+ * @author Jon Clayden (<code@clayden.org>)
 **/
 class NiftiImage
 {
@@ -98,12 +145,16 @@ public:
         
         /**
          * Extract a vector of data from a block, casting it to any required element type
+         * @param useSlope If \c true, the default, then the data will be adjusted for the slope
+         * and intercept stored with the image, if any
+         * @note If the slope and intercept are applied, there is no guarantee that the adjusted
+         * values will fit within the requested type. No check is made for this
         **/
         template <typename TargetType>
-        std::vector<TargetType> getData () const;
+        std::vector<TargetType> getData (const bool useSlope = true) const;
     };
     
-#ifndef _NO_R__ 
+#ifdef USING_R
     /**
      * Convert between R \c SEXP object type and \c nifti_image datatype codes
      * @param sexpType A numeric R \c SEXP type code
@@ -120,6 +171,19 @@ public:
             throw std::runtime_error("Array elements must be numeric");
     }
 #endif
+    
+    /**
+     * Extract the pure rotation part of a 4x4 xform matrix
+     * @param matrix An xform matrix
+     * @return A 3x3 rotation matrix
+    **/
+    static mat33 xformToRotation (const mat44 matrix)
+    {
+        float qb, qc, qd, qfac;
+        nifti_mat44_to_quatern(matrix, &qb, &qc, &qd, NULL, NULL, NULL, NULL, NULL, NULL, &qfac);
+        mat44 rotationMatrix = nifti_quatern_to_mat44(qb, qc, qd, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, qfac);
+        return internal::topLeftCorner(rotationMatrix);
+    }
     
     /**
      * Convert a 4x4 xform matrix to a string describing its canonical axes
@@ -148,31 +212,90 @@ public:
         return result;
     }
     
+    /**
+     * Get the NIfTI format version used by the file at the specified path
+     * @param path A string specifying a file path
+     * @return An integer: -1 if the file is not present or not valid, 0 for ANALYZE-7.5, or
+     *         a value greater than 0 for NIfTI
+    **/
+    static int fileVersion (const std::string &path)
+    {
+        nifti_1_header *header = nifti_read_header(path.c_str(), NULL, false);
+        if (header == NULL)
+            return -1;
+        else
+        {
+            int version = NIFTI_VERSION(*header);
+            if (version == 0)
+            {
+                // NIfTI-2 has a 540-byte header - check for this or its byte-swapped equivalent
+                if (header->sizeof_hdr == 540 || header->sizeof_hdr == 469893120)
+                {
+                    // The magic number has moved in NIfTI-2, so find it by byte offset
+                    const char *magic = (char *) header + 4;
+                    if (strncmp(magic,"ni2",3) == 0 || strncmp(magic,"n+2",3) == 0)
+                        version = 2;
+                }
+                else if (!nifti_hdr_looks_good(header))
+                {
+                    // Not plausible as ANALYZE, so return -1
+                    version = -1;
+                }
+            }
+            free(header);
+            return version;
+        }
+    }
+    
 
 protected:
     nifti_image *image;         /**< The wrapped \c nifti_image pointer */
-    bool persistent;            /**< Marker of persistence, which determines whether the nifti_image should be freed on destruction */
+    int *refCount;              /**< A reference counter, shared with other objects wrapping the same pointer */
     
     /**
-     * Copy the contents of a \c nifti_image to create a new image
+     * Acquire the specified pointer to a \c nifti_image \c struct, taking (possibly shared)
+     * responsibility for freeing the associated memory. If the object currently wraps another
+     * pointer, it will be released
+     * @param image The pointer to wrap
+    **/
+    void acquire (nifti_image * const image);
+    
+    /**
+     * Acquire the same pointer as another \c NiftiImage, incrementing the shared reference count
+     * @param source A reference to a \c NiftiImage
+    **/
+    void acquire (const NiftiImage &source)
+    {
+        refCount = source.refCount;
+        acquire(source.image);
+    }
+    
+    /**
+     * Release the currently wrapped pointer, if it is not \c NULL, decrementing the reference
+     * count and releasing memory if there are no remaining references to the pointer
+    **/
+    void release ();
+    
+    /**
+     * Copy the contents of a \c nifti_image to create a new image, acquiring the new pointer
      * @param source A pointer to a \c nifti_image
     **/
     void copy (const nifti_image *source);
     
     /**
-     * Copy the contents of another \c NiftiImage to create a new image
+     * Copy the contents of another \c NiftiImage to create a new image, acquiring a new pointer
      * @param source A reference to a \c NiftiImage
     **/
     void copy (const NiftiImage &source);
     
     /**
-     * Copy the contents of a \ref Block to create a new image
+     * Copy the contents of a \ref Block to create a new image, acquiring a new pointer
      * @param source A reference to a \ref Block
     **/
     void copy (const Block &source);
 
 
-#ifndef _NO_R__
+#ifdef USING_R
 
     /**
      * Initialise the object from an S4 object of class \c "nifti"
@@ -220,18 +343,23 @@ public:
      * Default constructor
     **/
     NiftiImage ()
-        : image(NULL), persistent(false) {}
+        : image(NULL), refCount(NULL) {}
     
     /**
      * Copy constructor
      * @param source Another \c NiftiImage object
+     * @param copy If \c true, the underlying \c nifti_image will be copied; otherwise the new
+     * object wraps the same \c nifti_image and increments the shared reference count
     **/
-    NiftiImage (const NiftiImage &source)
-        : image(NULL), persistent(false)
+    NiftiImage (const NiftiImage &source, const bool copy = true)
+        : image(NULL), refCount(NULL)
     {
-        this->copy(source);
+        if (copy)
+            this->copy(source);
+        else
+            acquire(source);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
 #endif
     }
     
@@ -240,11 +368,11 @@ public:
      * @param source A \c Block object, referring to part of another \c NiftiImage
     **/
     NiftiImage (const Block &source)
-        : image(NULL), persistent(false)
+        : image(NULL), refCount(NULL)
     {
         this->copy(source);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
 #endif
     }
     
@@ -255,14 +383,14 @@ public:
      * the pointer passed to it
     **/
     NiftiImage (nifti_image * const image, const bool copy = false)
-        : image(NULL), persistent(false)
+        : image(NULL), refCount(NULL)
     {
         if (copy)
             this->copy(image);
         else
-            this->image = image;
+            acquire(image);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from pointer)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from pointer)\n", this->image);
 #endif
     }
     
@@ -273,38 +401,43 @@ public:
      * @exception runtime_error If reading from the file fails
     **/
     NiftiImage (const std::string &path, const bool readData = true)
-        : persistent(false)
+        : image(NULL), refCount(NULL)
     {
-        this->image = nifti_image_read(path.c_str(), readData);
-        if (this->image == NULL)
+        acquire(nifti_image_read(path.c_str(), readData));
+        if (image == NULL)
             throw std::runtime_error("Failed to read image from path " + path);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from string)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from string)\n", this->image);
 #endif
     }
     
-#ifndef _NO_R__ 
     /**
-     * Initialise from an R object
+     * Initialise using a path string and sequence of required volumes
+     * @param path A string specifying a path to a valid NIfTI-1 file, possibly gzipped
+     * @param volumes The volumes to read in (squashing all dimensions above the third together)
+     * @exception runtime_error If reading from the file fails, or \c volumes is empty
+    **/
+    NiftiImage (const std::string &path, const std::vector<int> &volumes);
+    
+#ifdef USING_R
+    /**
+     * Initialise from an R object, retrieving an existing image from an external pointer attribute
+     * if available; otherwise constructing a new one from the R object itself
      * @param object The source object
-     * @param readData If \c true, the data will be copied as well as the metadata
+     * @param readData If \c true, the data will be retrieved as well as the metadata
+     * @param readOnly If \c true, the caller asserts that its intent is read-only. Otherwise, if
+     * the \c SEXP may have multiple names at the R level (according to the \c MAYBE_SHARED R
+     * macro), an image retrieved from an external pointer will be duplicated to preserve R's usual
+     * semantics
     **/
-    NiftiImage (const SEXP object, const bool readData = true);
+    NiftiImage (const SEXP object, const bool readData = true, const bool readOnly = false);
 #endif
     
     /**
-     * Destructor which frees the wrapped pointer, unless the object is marked as persistent
+     * Destructor which decrements the reference counter, and releases the wrapped pointer if the
+     * counter drops to zero
     **/
-    virtual ~NiftiImage ()
-    {
-        if (!persistent)
-        {
-#ifndef NDEBUG
-            Rprintf("Freeing NiftiImage with pointer %p\n", this->image);
-#endif
-            nifti_image_free(image);
-        }
-    }
+    virtual ~NiftiImage () { release(); }
     
     /**
      * Allows a \c NiftiImage object to be treated as a pointer to a \c const \c nifti_image
@@ -334,7 +467,7 @@ public:
     {
         copy(source);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
 #endif
         return *this;
     }
@@ -348,42 +481,50 @@ public:
     {
         copy(source);
 #ifndef NDEBUG
-        Rprintf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
+        Rc_printf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
 #endif
         return *this;
     }
     
     /**
-     * Marked the image as persistent, so that it can be passed back to R
+     * Mark the image as persistent, so that it can be passed back to R
      * @param persistent The new persistence state of the object
+     * @return A reference to the callee.
+     * @deprecated The persistence mechanism has been replaced with reference counting, so this
+     * function no longer has any effect. Instead it returns \c *this, unmodified.
     **/
-    NiftiImage & setPersistence (const bool persistent)
-    {
-        this->persistent = persistent;
-#ifndef NDEBUG
-        if (persistent)
-            Rprintf("Setting NiftiImage with pointer %p to be persistent\n", this->image);
-#endif
-        return *this;
-    }
+    NiftiImage & setPersistence (const bool persistent) { return *this; }
     
     /**
-     * Determine whether or not the internal pointer is \c NULL
+     * Determine whether or not the wrapped pointer is \c NULL
+     * @return \c true if the wrapped pointer is \c NULL; \c false otherwise
     **/
     bool isNull () const { return (image == NULL); }
     
     /**
-     * Determine whether or not the image is marked as persistent
+     * Determine whether the wrapped pointer is shared with another \c NiftiImage
+     * @return \c true if the reference count is greater than 1; \c false otherwise
     **/
-    bool isPersistent () const { return persistent; }
+    bool isShared () const { return (refCount != NULL && *refCount > 1); }
+    
+    /**
+     * Determine whether or not the image is marked as persistent
+     * @return \c false, always
+     * @deprecated The persistence mechanism has been replaced with reference counting, so this
+     * function will always return \c false. Use \ref isShared instead.
+    **/
+    bool isPersistent () const { return false; }
     
     /**
      * Determine whether nontrivial scale and slope parameters are set
+     * @return \c true if the object wraps an image pointer, its slope is not zero and the slope
+     *         and intercept are not exactly one and zero; \c false otherwise
     **/
     bool isDataScaled () const { return (image != NULL && image->scl_slope != 0.0 && (image->scl_slope != 1.0 || image->scl_inter != 0.0)); }
     
     /**
      * Return the number of dimensions in the image
+     * @return An integer giving the image dimensionality
     **/
     int nDims () const
     {
@@ -435,21 +576,32 @@ public:
     
     /**
      * Extract a vector of data from the image, casting it to any required element type
+     * @param useSlope If \c true, the default, then the data will be adjusted for the slope and
+     * intercept stored with the image, if any
+     * @return A vector of data values, cast to the required type
+     * @note If the slope and intercept are applied, there is no guarantee that the adjusted values
+     * will fit within the requested type. No check is made for this
     **/
     template <typename TargetType>
-    std::vector<TargetType> getData () const;
+    std::vector<TargetType> getData (const bool useSlope = true) const;
     
     /**
      * Change the datatype of the image, casting the pixel data if present
      * @param datatype A NIfTI datatype code
+     * @param useSlope If \c true, and conversion is to an integer type, the data will be rescaled
+     * and the image's slope and intercept set to capture the full range of original values
+     * @return Self, after changing the datatype
     **/
-    NiftiImage & changeDatatype (const short datatype);
+    NiftiImage & changeDatatype (const short datatype, const bool useSlope = false);
     
     /**
      * Change the datatype of the image, casting the pixel data if present
      * @param datatype A string specifying the new datatype
+     * @param useSlope If \c true, and conversion is to an integer type, the data will be rescaled
+     * and the image's slope and intercept set to capture the full range of original values
+     * @return Self, after changing the datatype
     **/
-    NiftiImage & changeDatatype (const std::string &datatype);
+    NiftiImage & changeDatatype (const std::string &datatype, const bool useSlope = false);
     
     /**
      * Replace the pixel data in the image with the contents of a vector
@@ -457,12 +609,14 @@ public:
      * An exception will be raised if this does not have a length matching the image
      * @param datatype The final datatype required. By default the existing datatype of the image
      * is used
+     * @return Self, after replacing the data
     **/
     template <typename SourceType>
     NiftiImage & replaceData (const std::vector<SourceType> &data, const short datatype = DT_NONE);
     
     /**
      * Drop the data from the image, retaining only the metadata
+     * @return Self, after dropping the data
     **/
     NiftiImage & dropData ()
     {
@@ -473,6 +627,7 @@ public:
     /**
      * Rescale the image, changing its image dimensions and pixel dimensions
      * @param scales Vector of scale factors along each dimension
+     * @return Self, after rescaling the metadata
      * @note No interpolation is performed on the pixel data, which is simply dropped
     **/
     NiftiImage & rescale (const std::vector<float> &scales);
@@ -481,6 +636,7 @@ public:
      * Reorient the image by permuting dimensions and potentially reversing some
      * @param i,j,k Constants such as \c NIFTI_L2R, \c NIFTI_P2A and \c NIFTI_I2S, giving the
      * canonical axes to reorient to
+     * @return Self, after reorientation
      * @note The pixel data is reordered, but not resampled. The xform matrices will also be
      * adjusted in line with the transformation
     **/
@@ -490,19 +646,21 @@ public:
      * Reorient the image by permuting dimensions and potentially reversing some
      * @param orientation A string containing some permutation of the letters \c L or \c R,
      * \c P or \c A, \c I or \c S, giving the canonical axes to reorient to
+     * @return Self, after reorientation
      * @note The pixel data is reordered, but not resampled. The xform matrices will also be
      * adjusted in line with the transformation
     **/
     NiftiImage & reorient (const std::string &orientation);
     
-#ifndef _NO_R__
+#ifdef USING_R
     /**
      * Update the image from an R array
      * @param array An R array or list object
+     * @return Self, after updating data and/or metadata
     **/
     NiftiImage & update (const Rcpp::RObject &object);
 #endif
-
+    
     /**
      * Obtain an xform matrix, indicating the orientation of the image
      * @param preferQuaternion If \c true, use the qform matrix in preference to the sform
@@ -512,6 +670,7 @@ public:
     
     /**
      * Return the number of blocks in the image
+     * @return An integer giving the number of blocks in the image
     **/
     int nBlocks () const
     {
@@ -581,7 +740,7 @@ public:
     **/
     void toFile (const std::string fileName, const std::string &datatype) const;
     
-#ifndef _NO_R__
+#ifdef USING_R
     
     /**
      * Create an R array from the image
@@ -617,16 +776,57 @@ public:
 // Include helper functions
 #include "lib/NiftiImage_internal.h"
 
+inline void NiftiImage::acquire (nifti_image * const image)
+{
+    // If we're taking ownership of a new image, release the old one
+    if (this->image != NULL && this->image != image)
+        release();
+    
+    // Set the internal pointer and create or update the reference counter
+    this->image = image;
+    if (image != NULL)
+    {
+        if (this->refCount == NULL)
+            this->refCount = new int(1);
+        else
+            (*this->refCount)++;
+        
+#ifndef NDEBUG
+        Rc_printf("Acquiring pointer %p (reference count is %d)\n", this->image, *this->refCount);
+#endif
+    }
+}
+
+inline void NiftiImage::release ()
+{
+    if (this->image != NULL)
+    {
+        if (this->refCount != NULL)
+        {
+            (*this->refCount)--;
+#ifndef NDEBUG
+            Rc_printf("Releasing pointer %p (reference count is %d)\n", this->image, *this->refCount);
+#endif
+            if (*this->refCount < 1)
+            {
+                nifti_image_free(this->image);
+                this->image = NULL;
+                delete this->refCount;
+                this->refCount = NULL;
+            }
+        }
+        else
+            Rc_printf("Releasing untracked object %p", this->image);
+    }
+}
+
 inline void NiftiImage::copy (const nifti_image *source)
 {
-    if (image != NULL && !persistent)
-        nifti_image_free(image);
-        
     if (source == NULL)
-        image = NULL;
+        acquire(NULL);
     else
     {
-        image = nifti_copy_nim_info(source);
+        acquire(nifti_copy_nim_info(source));
         if (source->data != NULL)
         {
             size_t dataSize = nifti_get_volsize(source);
@@ -634,8 +834,6 @@ inline void NiftiImage::copy (const nifti_image *source)
             memcpy(image->data, source->data, dataSize);
         }
     }
-    
-    persistent = false;
 }
 
 inline void NiftiImage::copy (const NiftiImage &source)
@@ -646,15 +844,12 @@ inline void NiftiImage::copy (const NiftiImage &source)
 
 inline void NiftiImage::copy (const Block &source)
 {
-    if (image != NULL && !persistent)
-        nifti_image_free(image);
-    
     const nifti_image *sourceStruct = source.image;
     if (sourceStruct == NULL)
-        image = NULL;
+        acquire(NULL);
     else
     {
-        image = nifti_copy_nim_info(sourceStruct);
+        acquire(nifti_copy_nim_info(sourceStruct));
         image->dim[0] = source.image->dim[0] - 1;
         image->dim[source.dimension] = 1;
         image->pixdim[source.dimension] = 1.0;
@@ -667,11 +862,9 @@ inline void NiftiImage::copy (const Block &source)
             memcpy(image->data, static_cast<char*>(source.image->data) + blockSize*source.index, blockSize);
         }
     }
-    
-    persistent = false;
 }
 
-#ifndef _NO_R__
+#ifdef USING_R
 
 // Convert an S4 "nifti" object, as defined in the oro.nifti package, to a "nifti_image" struct
 inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool copyData)
@@ -747,7 +940,7 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
     else
         throw std::runtime_error("Data type is not supported");
     
-    this->image = nifti_convert_nhdr2nim(header, NULL);
+    acquire(nifti_convert_nhdr2nim(header, NULL));
     
     const SEXP data = PROTECT(object.slot(".Data"));
     if (!copyData || Rf_length(data) <= 1)
@@ -776,7 +969,7 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
     Rcpp::Function getXform = mriImage.field("getXform");
     Rcpp::NumericMatrix xform = getXform();
     
-    this->image = NULL;
+    acquire(NULL);
     
     if (Rf_length(mriImage.field("tags")) > 0)
         initFromList(mriImage.field("tags"));
@@ -802,7 +995,7 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
     }
     
     if (this->image == NULL)
-        this->image = nifti_make_new_nim(dims, datatype, FALSE);
+        acquire(nifti_make_new_nim(dims, datatype, FALSE));
     else
     {
         std::copy(dims, dims+8, this->image->dim);
@@ -856,11 +1049,11 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
 inline void NiftiImage::initFromList (const Rcpp::RObject &object)
 {
     Rcpp::List list(object);
-    nifti_1_header *header = NULL;
+    nifti_1_header *header = nifti_make_new_header(NULL, DT_FLOAT64);
     
     internal::updateHeader(header, list);
     
-    this->image = nifti_convert_nhdr2nim(*header, NULL);
+    acquire(nifti_convert_nhdr2nim(*header, NULL));
     this->image->data = NULL;
     free(header);
 }
@@ -876,7 +1069,7 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
         dims[i+1] = dimVector[i];
     
     const short datatype = sexpTypeToNiftiType(object.sexp_type());
-    this->image = nifti_make_new_nim(dims, datatype, int(copyData));
+    acquire(nifti_make_new_nim(dims, datatype, int(copyData)));
     
     if (copyData)
     {
@@ -904,8 +1097,8 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     }
 }
 
-inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
-    : persistent(false)
+inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const bool readOnly)
+    : image(NULL), refCount(NULL)
 {
     Rcpp::RObject imageObject(object);
     bool resolved = false;
@@ -916,8 +1109,10 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
         NiftiImage *ptr = imagePtr;
         if (ptr != NULL)
         {
-            this->image = ptr->image;
-            this->persistent = true;
+            if (MAYBE_SHARED(object) && !readOnly)
+                copy(*ptr);
+            else
+                acquire(*ptr);
             resolved = true;
             
             if (imageObject.hasAttribute("dim"))
@@ -932,11 +1127,11 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
     if (!resolved)
     {
         if (Rf_isNull(object))
-            this->image = NULL;
+            acquire(NULL);
         else if (Rf_isString(object))
         {
             const std::string path = Rcpp::as<std::string>(object);
-            this->image = nifti_image_read(path.c_str(), readData);
+            acquire(nifti_image_read(path.c_str(), readData));
             if (this->image == NULL)
                 throw std::runtime_error("Failed to read image from path " + path);
         }
@@ -958,11 +1153,33 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData)
         nifti_update_dims_from_array(this->image);
     
 #ifndef NDEBUG
-    Rprintf("Creating NiftiImage with pointer %p (from SEXP)\n", this->image);
+    Rc_printf("Creating NiftiImage with pointer %p (from SEXP)\n", this->image);
 #endif
 }
 
-#endif // _NO_R__
+#endif // USING_R
+
+inline NiftiImage::NiftiImage (const std::string &path, const std::vector<int> &volumes)
+    : image(NULL), refCount(NULL)
+{
+    if (volumes.empty())
+        throw std::runtime_error("The vector of volumes is empty");
+    
+    nifti_brick_list brickList;
+    acquire(nifti_image_read_bricks(path.c_str(), volumes.size(), &volumes[0], &brickList));
+    if (image == NULL)
+        throw std::runtime_error("Failed to read image from path " + path);
+    
+    size_t brickSize = image->nbyper * image->nx * image->ny * image->nz;
+    image->data = calloc(1, nifti_get_volsize(image));
+    for (int i=0; i<brickList.nbricks; i++)
+        memcpy((char *) image->data + i * brickSize, brickList.bricks[i], brickSize);
+    nifti_free_NBL(&brickList);
+    
+#ifndef NDEBUG
+    Rc_printf("Creating NiftiImage with pointer %p (from string and volume vector)\n", this->image);
+#endif
+}
 
 inline void NiftiImage::updatePixdim (const std::vector<float> &pixdim)
 {
@@ -1059,8 +1276,7 @@ inline NiftiImage & NiftiImage::rescale (const std::vector<float> &scales)
     nifti_update_dims_from_array(image);
     
     // Data vector is now the wrong size, so drop it
-    if (!persistent)
-        nifti_image_unload(image);
+    nifti_image_unload(image);
     
     image->scl_slope = 0.0;
     image->scl_inter = 0.0;
@@ -1087,6 +1303,13 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
     
     const int codes[3] = { icode, jcode, kcode };
     const mat44 native = this->xform();
+    
+    // Calculate the origin, which requires inverting the current xform
+    // Here we use a simplified formula that exploits blockwise inversion and the nature of xforms
+    internal::vec3 origin;
+    for (int i=0; i<3; i++)
+        origin.v[i] = native.m[i][3];
+    origin = -internal::matrixVectorProduct(nifti_mat33_inverse(internal::topLeftCorner(native)), origin);
     
     // Create a target xform (rotation matrix only)
     mat33 target;
@@ -1133,7 +1356,7 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
     
     // The transform is t(approx_old_xform) %*% target_xform
     // The new xform is old_xform %*% transform
-    // NB: "transform" is really 4x4, but the last row and column are filled implicitly during the multiplication loop
+    // NB: "transform" is really 4x4, but the last row is simple and the last column is filled below
     mat33 transform = nifti_mat33_mul(nativeAxesTransposed, target);
     mat44 result;
     for (int i=0; i<4; i++)
@@ -1141,8 +1364,47 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         for (int j=0; j<3; j++)
             result.m[i][j] = native.m[i][0] * transform.m[0][j] + native.m[i][1] * transform.m[1][j] + native.m[i][2] * transform.m[2][j];
         
-        result.m[i][3] = native.m[i][3];
+        result.m[3][i] = i == 3 ? 1.0 : 0.0;
     }
+    
+    // Extract the mapping between dimensions and the signs
+    // These vectors are all indexed in the target space, except "revsigns"
+    int locs[3], signs[3], newdim[3], revsigns[3];
+    float newpixdim[3];
+    double maxes[3] = { R_NegInf, R_NegInf, R_NegInf };
+    internal::vec3 offset;
+    for (int j=0; j<3; j++)
+    {
+        // Find the largest absolute value in each column, which gives the old dimension corresponding to each new dimension
+        for (int i=0; i<3; i++)
+        {
+            const double value = static_cast<double>(transform.m[i][j]);
+            if (fabs(value) > maxes[j])
+            {
+                maxes[j] = fabs(value);
+                signs[j] = value > 0.0 ? 1 : -1;
+                locs[j] = i;
+            }
+        }
+        
+        // Obtain the sign for the reverse mapping
+        revsigns[locs[j]] = signs[j];
+        
+        // Permute dim and pixdim
+        newdim[j] = image->dim[locs[j]+1];
+        newpixdim[j] = image->pixdim[locs[j]+1];
+        
+        // Flip and/or permute the origin
+        if (signs[j] < 0)
+            offset.v[j] = image->dim[locs[j]+1] - origin.v[locs[j]] - 1.0;
+        else
+            offset.v[j] = origin.v[locs[j]];
+    }
+    
+    // Convert the origin back to an xform offset and insert it
+    offset = -internal::matrixVectorProduct(internal::topLeftCorner(result), offset);
+    for (int i=0; i<3; i++)
+        result.m[i][3] = offset.v[i];
     
     // Update the xforms with nonzero codes
     if (image->qform_code > 0)
@@ -1157,34 +1419,13 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         image->sto_ijk = nifti_mat44_inverse(image->sto_xyz);
     }
     
-    // Extract the mapping between dimensions and the signs
-    int locs[3], signs[3], newdim[3];
-    float newpixdim[3];
-    double maxes[3] = { R_NegInf, R_NegInf, R_NegInf };
-    for (int j=0; j<3; j++)
-    {
-        for (int i=0; i<3; i++)
-        {
-            const double value = static_cast<double>(transform.m[i][j]);
-            if (fabs(value) > maxes[j])
-            {
-                maxes[j] = fabs(value);
-                signs[j] = value > 0.0 ? 1 : -1;
-                locs[j] = i;
-            }
-        }
-        
-        // Permute dim and pixdim
-        newdim[j] = image->dim[locs[j]+1];
-        newpixdim[j] = image->pixdim[locs[j]+1];
-    }
-    
-    // Calculate strides in target space
+    // Calculate strides: the step in target space associated with each dimension in source space
     ptrdiff_t strides[3];
     strides[locs[0]] = 1;
-    for (int n=1; n<3; n++)
-        strides[locs[n]] = strides[locs[n-1]] * image->dim[locs[n-1]+1];
+    strides[locs[1]] = strides[locs[0]] * image->dim[locs[0]+1];
+    strides[locs[2]] = strides[locs[1]] * image->dim[locs[1]+1];
     
+    // Permute the data (if present)
     if (image->data != NULL)
     {    
         size_t volSize = size_t(image->nx * image->ny * image->nz);
@@ -1197,7 +1438,7 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         size_t volStart = 0;
         for (int i=0; i<3; i++)
         {
-            if (signs[i] < 0)
+            if (revsigns[i] < 0)
                 volStart += (image->dim[i+1] - 1) * strides[i];
         }
         
@@ -1207,15 +1448,15 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         {
             for (int k=0; k<image->nz; k++)
             {
-                ptrdiff_t offset = k * strides[2] * signs[2];
+                ptrdiff_t offset = k * strides[2] * revsigns[2];
                 for (int j=0; j<image->ny; j++)
                 {
                     for (int i=0; i<image->nx; i++)
                     {
                         newData[volStart + offset] = *it++;
-                        offset += strides[0] * signs[0];
+                        offset += strides[0] * revsigns[0];
                     }
-                    offset += strides[1] * signs[1] - image->nx * strides[0] * signs[0];
+                    offset += strides[1] * revsigns[1] - image->nx * strides[0] * revsigns[0];
                 }
             }
             volStart += volSize;
@@ -1259,7 +1500,7 @@ inline NiftiImage & NiftiImage::reorient (const std::string &orientation)
     return reorient(codes[0], codes[1], codes[2]);
 }
 
-#ifndef _NO_R__
+#ifdef USING_R
 
 inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
 {
@@ -1268,7 +1509,10 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
         Rcpp::List list(object);
         nifti_1_header *header = NULL;
         if (this->isNull())
+        {
+            header = nifti_make_new_header(NULL, DT_FLOAT64);
             internal::updateHeader(header, list, true);
+        }
         else
         {
             header = (nifti_1_header *) calloc(1, sizeof(nifti_1_header));
@@ -1278,16 +1522,23 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
         
         if (header != NULL)
         {
-            nifti_image *newImage = nifti_convert_nhdr2nim(*header, NULL);
-            if (this->image->data != NULL)
-            {
-                size_t dataSize = nifti_get_volsize(image);
-                newImage->data = calloc(1, dataSize);
-                memcpy(newImage->data, image->data, dataSize);
-            }
-            if (!persistent)
-                nifti_image_free(image);
-            this->image = newImage;
+            // Retain the data pointer, but otherwise overwrite the stored object with one created from the header
+            // The file names can't be preserved through the round-trip, so free them
+            void *dataPtr = image->data;
+            nifti_image *tempImage = nifti_convert_nhdr2nim(*header, NULL);
+            
+            if (image->fname != NULL)
+                free(image->fname);
+            if (image->iname != NULL)
+                free(image->iname);
+            
+            memcpy(image, tempImage, sizeof(nifti_image));
+            image->num_ext = 0;
+            image->ext_list = NULL;
+            image->data = dataPtr;
+            
+            nifti_image_free(tempImage);
+            free(header);
         }
     }
     else if (object.hasAttribute("dim"))
@@ -1320,23 +1571,14 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
         image->datatype = NiftiImage::sexpTypeToNiftiType(object.sexp_type());
         nifti_datatype_sizes(image->datatype, &image->nbyper, NULL);
     
-        if (!persistent)
-            nifti_image_unload(image);
+        nifti_image_unload(image);
     
         const size_t dataSize = nifti_get_volsize(image);
         image->data = calloc(1, dataSize);
         if (image->datatype == DT_INT32)
-        {
             memcpy(image->data, INTEGER(object), dataSize);
-            image->cal_min = static_cast<float>(*std::min_element(INTEGER(object), INTEGER(object)+image->nvox));
-            image->cal_max = static_cast<float>(*std::max_element(INTEGER(object), INTEGER(object)+image->nvox));
-        }
         else
-        {
             memcpy(image->data, REAL(object), dataSize);
-            image->cal_min = static_cast<float>(*std::min_element(REAL(object), REAL(object)+image->nvox));
-            image->cal_max = static_cast<float>(*std::max_element(REAL(object), REAL(object)+image->nvox));
-        }
     
         image->scl_slope = 0.0;
         image->scl_inter = 0.0;
@@ -1345,7 +1587,7 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
     return *this;
 }
 
-#endif// _NO_R__
+#endif // USING_R
 
 inline mat44 NiftiImage::xform (const bool preferQuaternion) const
 {
@@ -1384,7 +1626,7 @@ inline mat44 NiftiImage::xform (const bool preferQuaternion) const
 }
 
 template <typename TargetType>
-inline std::vector<TargetType> NiftiImage::Block::getData () const
+inline std::vector<TargetType> NiftiImage::Block::getData (const bool useSlope) const
 {
     if (image.isNull())
         return std::vector<TargetType>();
@@ -1394,81 +1636,138 @@ inline std::vector<TargetType> NiftiImage::Block::getData () const
         blockSize *= image->dim[i];
 
     std::vector<TargetType> data(blockSize);
-    internal::convertData<TargetType>(image->data, image->datatype, blockSize, data.begin(), blockSize*index);
+    internal::DataConverter<TargetType> *converter = NULL;
+    if (useSlope && image.isDataScaled())
+        converter = new internal::DataConverter<TargetType>(image->scl_slope, image->scl_inter);
     
-    if (image.isDataScaled())
-        std::transform(data.begin(), data.end(), data.begin(), internal::DataRescaler<TargetType>(image->scl_slope,image->scl_inter));
+    internal::convertData<TargetType>(image->data, image->datatype, blockSize, data.begin(), blockSize*index, converter);
     
+    delete converter;
     return data;
 }
 
 template <typename TargetType>
-inline std::vector<TargetType> NiftiImage::getData () const
+inline std::vector<TargetType> NiftiImage::getData (const bool useSlope) const
 {
     if (this->isNull())
         return std::vector<TargetType>();
     
     std::vector<TargetType> data(image->nvox);
-    internal::convertData<TargetType>(image->data, image->datatype, image->nvox, data.begin());
+    internal::DataConverter<TargetType> *converter = NULL;
+    if (useSlope && this->isDataScaled())
+        converter = new internal::DataConverter<TargetType>(image->scl_slope, image->scl_inter);
     
-    if (this->isDataScaled())
-        std::transform(data.begin(), data.end(), data.begin(), internal::DataRescaler<TargetType>(image->scl_slope,image->scl_inter));
+    internal::convertData<TargetType>(image->data, image->datatype, image->nvox, data.begin(), 0, converter);
     
+    delete converter;
     return data;
 }
 
-inline NiftiImage & NiftiImage::changeDatatype (const short datatype)
+inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool useSlope)
 {
     if (this->isNull() || image->datatype == datatype)
         return *this;
+    
+    if (useSlope && this->isDataScaled())
+        throw std::runtime_error("Resetting the slope and intercept for an image with them already set is not supported");
     
     if (image->data != NULL)
     {
         int bytesPerPixel;
         nifti_datatype_sizes(datatype, &bytesPerPixel, NULL);
         void *data = calloc(image->nvox, bytesPerPixel);
-    
+        
         switch (datatype)
         {
             case DT_UINT8:
-            internal::convertData<uint8_t>(image->data, image->datatype, image->nvox, static_cast<uint8_t *>(data));
-            break;
+            {
+                internal::DataConverter<uint8_t> converter(useSlope ? internal::DataConverter<uint8_t>::IndexMode : internal::DataConverter<uint8_t>::CastMode);
+                internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint8_t *>(data), 0, &converter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
+                break;
+            }
         
             case DT_INT16:
-            internal::convertData<int16_t>(image->data, image->datatype, image->nvox, static_cast<int16_t *>(data));
-            break;
+            {
+                internal::DataConverter<int16_t> converter(useSlope ? internal::DataConverter<int16_t>::IndexMode : internal::DataConverter<int16_t>::CastMode);
+                internal::convertData(image->data, image->datatype, image->nvox, static_cast<int16_t *>(data), 0, &converter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
+                break;
+            }
         
             case DT_INT32:
-            internal::convertData<int32_t>(image->data, image->datatype, image->nvox, static_cast<int32_t *>(data));
-            break;
+            {
+                internal::DataConverter<int32_t> converter(useSlope ? internal::DataConverter<int32_t>::IndexMode : internal::DataConverter<int32_t>::CastMode);
+                internal::convertData(image->data, image->datatype, image->nvox, static_cast<int32_t *>(data), 0, &converter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
+                break;
+            }
         
             case DT_FLOAT32:
-            internal::convertData<float>(image->data, image->datatype, image->nvox, static_cast<float *>(data));
-            break;
+            {
+                internal::DataConverter<float> converter(useSlope ? internal::DataConverter<float>::IndexMode : internal::DataConverter<float>::CastMode);
+                internal::convertData(image->data, image->datatype, image->nvox, static_cast<float *>(data), 0, &converter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
+                break;
+            }
         
             case DT_FLOAT64:
-            internal::convertData<double>(image->data, image->datatype, image->nvox, static_cast<double *>(data));
-            break;
+            {
+                internal::DataConverter<double> converter(useSlope ? internal::DataConverter<double>::IndexMode : internal::DataConverter<double>::CastMode);
+                internal::convertData(image->data, image->datatype, image->nvox, static_cast<double *>(data), 0, &converter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
+                break;
+            }
         
             case DT_INT8:
-            internal::convertData<int8_t>(image->data, image->datatype, image->nvox, static_cast<int8_t *>(data));
-            break;
+            {
+                internal::DataConverter<int8_t> converter(useSlope ? internal::DataConverter<int8_t>::IndexMode : internal::DataConverter<int8_t>::CastMode);
+                internal::convertData(image->data, image->datatype, image->nvox, static_cast<int8_t *>(data), 0, &converter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
+                break;
+            }
         
             case DT_UINT16:
-            internal::convertData<uint16_t>(image->data, image->datatype, image->nvox, static_cast<uint16_t *>(data));
-            break;
+            {
+                internal::DataConverter<uint16_t> converter(useSlope ? internal::DataConverter<uint16_t>::IndexMode : internal::DataConverter<uint16_t>::CastMode);
+                internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint16_t *>(data), 0, &converter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
+                break;
+            }
         
             case DT_UINT32:
-            internal::convertData<uint32_t>(image->data, image->datatype, image->nvox, static_cast<uint32_t *>(data));
-            break;
+            {
+                internal::DataConverter<uint32_t> converter(useSlope ? internal::DataConverter<uint32_t>::IndexMode : internal::DataConverter<uint32_t>::CastMode);
+                internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint32_t *>(data), 0, &converter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
+                break;
+            }
         
             case DT_INT64:
-            internal::convertData<int64_t>(image->data, image->datatype, image->nvox, static_cast<int64_t *>(data));
-            break;
+            {
+                internal::DataConverter<int64_t> converter(useSlope ? internal::DataConverter<int64_t>::IndexMode : internal::DataConverter<int64_t>::CastMode);
+                internal::convertData(image->data, image->datatype, image->nvox, static_cast<int64_t *>(data), 0, &converter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
+                break;
+            }
         
             case DT_UINT64:
-            internal::convertData<uint64_t>(image->data, image->datatype, image->nvox, static_cast<uint64_t *>(data));
-            break;
+            {
+                internal::DataConverter<uint64_t> converter(useSlope ? internal::DataConverter<uint64_t>::IndexMode : internal::DataConverter<uint64_t>::CastMode);
+                internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint64_t *>(data), 0, &converter);
+                image->scl_slope = static_cast<float>(converter.getSlope());
+                image->scl_inter = static_cast<float>(converter.getIntercept());
+                break;
+            }
         
             default:
             throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
@@ -1484,9 +1783,9 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype)
     return *this;
 }
 
-inline NiftiImage & NiftiImage::changeDatatype (const std::string &datatype)
+inline NiftiImage & NiftiImage::changeDatatype (const std::string &datatype, const bool useSlope)
 {
-    return changeDatatype(internal::stringToDatatype(datatype));
+    return changeDatatype(internal::stringToDatatype(datatype), useSlope);
 }
 
 template <typename SourceType>
@@ -1518,13 +1817,13 @@ inline NiftiImage & NiftiImage::replaceData (const std::vector<SourceType> &data
 
 inline void NiftiImage::toFile (const std::string fileName, const short datatype) const
 {
-    // Copy the source image only if the datatype will be changed
-    NiftiImage imageToWrite(image, datatype != DT_NONE);
+    const bool changingDatatype = (datatype != DT_NONE && !this->isNull() && datatype != image->datatype);
     
-    if (datatype == DT_NONE)
-        imageToWrite.setPersistence(true);
-    else
-        imageToWrite.changeDatatype(datatype);
+    // Copy the source image only if the datatype will be changed
+    NiftiImage imageToWrite(*this, changingDatatype);
+    
+    if (changingDatatype)
+        imageToWrite.changeDatatype(datatype, true);
     
     const int status = nifti_set_filenames(imageToWrite, fileName.c_str(), false, true);
     if (status != 0)
@@ -1537,7 +1836,7 @@ inline void NiftiImage::toFile (const std::string fileName, const std::string &d
     toFile(fileName, internal::stringToDatatype(datatype));
 }
 
-#ifndef _NO_R__
+#ifdef USING_R
 
 inline Rcpp::RObject NiftiImage::toArray () const
 {
@@ -1548,7 +1847,7 @@ inline Rcpp::RObject NiftiImage::toArray () const
     else if (this->isDataScaled())
     {
         array = internal::imageDataToArray<REALSXP>(image);
-        std::transform(REAL(array), REAL(array)+Rf_length(array), REAL(array), internal::DataRescaler<double>(image->scl_slope,image->scl_inter));
+        std::transform(REAL(array), REAL(array)+Rf_length(array), REAL(array), internal::DataConverter<double>(image->scl_slope,image->scl_inter));
     }
     else
     {
@@ -1575,7 +1874,7 @@ inline Rcpp::RObject NiftiImage::toArray () const
         }
     }
     
-    internal::addAttributes(array, image);
+    internal::addAttributes(array, *this);
     array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "array");
     return array;
 }
@@ -1587,7 +1886,7 @@ inline Rcpp::RObject NiftiImage::toPointer (const std::string label) const
     else
     {
         Rcpp::RObject string = Rcpp::wrap(label);
-        internal::addAttributes(string, image, false);
+        internal::addAttributes(string, *this, false);
         string.attr("class") = Rcpp::CharacterVector::create("internalImage", "niftiImage");
         return string;
     }
@@ -1654,7 +1953,7 @@ inline Rcpp::RObject NiftiImage::headerToList () const
     return result;
 }
 
-#endif // _NO_R__
+#endif // USING_R
 
 } // namespace
 

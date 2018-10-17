@@ -2,4 +2,6 @@
 ^\.travis\.yml$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^standalone
+^appveyor.yml$
+^standalone$
+^revdep$

@@ -1,4 +1,4 @@
-CPPFLAGS += -D_NO_R__ -DNDEBUG -DHAVE_ZLIB
+CPPFLAGS += -DNDEBUG -DHAVE_ZLIB
 CFLAGS += -I../inst/include
 CXXFLAGS += -I../inst/include
 

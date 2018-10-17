@@ -16,7 +16,8 @@ origin(image, ...)
 \item{points}{A vector giving the coordinates of a point, or a matrix with
 one point per row.}
 
-\item{image}{The image in whose space the points are given.}
+\item{image}{The image in whose space the points are given, or a 4x4 numeric
+xform matrix.}
 
 \item{simple}{A logical value: if \code{TRUE} then the transformation is
 performed simply by rescaling the points according to the voxel dimensions

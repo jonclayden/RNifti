@@ -11,8 +11,8 @@ updateNifti(image, template = NULL, datatype = "auto")
 
 \item{template}{An image, in any acceptable form (see
 \code{\link{retrieveNifti}}), or a named list of NIfTI-1 properties like
-that produced by \code{\link{dumpNifti}}. The default of \code{NULL} will
-have no effect.}
+that produced by \code{\link{niftiHeader}}. The default of \code{NULL}
+will have no effect.}
 
 \item{datatype}{The NIfTI datatype to use within the internal image. The
 default, \code{"auto"} uses the R type. Other possibilities are
@@ -32,19 +32,26 @@ dimensions, from the \code{image} will replace those from the template.
 }
 \details{
 If \code{template} is a complete list of NIfTI-1 header fields, like that
-produced by \code{\link{dumpNifti}}, or an image, then it will be used to
+produced by \code{\link{niftiHeader}}, or an image, then it will be used to
 create the internal object, and then the data and metadata associated with
 the \code{image} will overwrite the appropriate parts. If \code{template}
 is an incomplete list, the \code{image} will be used to create the internal
-object, and then the specified will be overwritten from the list. This
-allows users to selectively update certain fields while leaving others
-alone.
+object, and then the specified fields will be overwritten from the list.
+This allows users to selectively update certain fields while leaving others
+alone (but see the note below).
 
 Datatype information in a list \code{template} is ignored. The datatype can
 only be changed using the \code{datatype} argument, but in this case the
 internal object gets out of sync with the R array, so an internal image is
 returned to avoid the mismatch. Changing the internal datatype in this way
 is for advanced usage only.
+}
+\note{
+The \code{scl_slope} and \code{scl_inter} fields affect the numerical
+  interpretation of the pixel data, so it is impossible in general to change
+  them without also changing the array values on both the C and the R side.
+  Therefore, to avoid unexpected side-effects, these fields are not affected
+  by this function.
 }
 \author{
 Jon Clayden <code@clayden.org>

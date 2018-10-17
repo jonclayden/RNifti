@@ -24,8 +24,9 @@ static char const *(*_nifti_units_string)(int) = NULL;
 static size_t(*_nifti_get_volsize)(const nifti_image *) = NULL;
 static int(*_nifti_update_dims_from_array)(nifti_image *) = NULL;
 
+static char*(*_nifti_strdup)(const char *) = NULL;
 static int(*_nifti_set_filenames)(nifti_image*, const char*, int, int) = NULL;
-static nifti_image *(*_nifti_image_read)(const char*, int) = NULL;
+static nifti_image*(*_nifti_image_read)(const char*, int) = NULL;
 static void(*_nifti_image_write)(nifti_image *) = NULL;
 
 static float(*_nifti_mat33_rownorm)(mat33) = NULL;
@@ -66,8 +67,9 @@ void niftilib_register_all ()
         _nifti_get_volsize = (size_t(*)(const nifti_image *)) R_GetCCallable("RNifti","nii_get_volsize");
         _nifti_update_dims_from_array = (int(*)(nifti_image *)) R_GetCCallable("RNifti","nii_update_dims_from_array");
         
+        _nifti_strdup = (char*(*)(const char *)) R_GetCCallable("RNifti","nii_strdup");
         _nifti_set_filenames = (int(*)(nifti_image*, const char*, int, int)) R_GetCCallable("RNifti","nii_set_filenames");
-        _nifti_image_read = (nifti_image *(*)(const char*, int)) R_GetCCallable("RNifti","nii_image_read");
+        _nifti_image_read = (nifti_image*(*)(const char*, int)) R_GetCCallable("RNifti","nii_image_read");
         _nifti_image_write = (void(*)(nifti_image *)) R_GetCCallable("RNifti","nii_image_write");
         
         _nifti_mat33_rownorm = (float(*)(mat33)) R_GetCCallable("RNifti","nii_mat33_rownorm");
@@ -177,6 +179,13 @@ int nifti_update_dims_from_array (nifti_image *nim)
     if (_nifti_update_dims_from_array == NULL)
         niftilib_register_all();
     return _nifti_update_dims_from_array(nim);
+}
+
+char * nifti_strdup (const char *str)
+{
+    if (_nifti_strdup == NULL)
+        niftilib_register_all();
+    return _nifti_strdup(str);
 }
 
 int nifti_set_filenames (nifti_image *nim, const char *prefix, int check, int set_byte_order)

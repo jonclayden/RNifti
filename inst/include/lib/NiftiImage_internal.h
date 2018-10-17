@@ -3,110 +3,232 @@
 
 namespace internal {
 
-template <typename ElementType>
-struct DataRescaler
+// A poor man's NaN check, but should work whenever proper IEEE arithmetic is being used
+template <typename Type>
+inline bool isNaN (const Type x) { return (x != x); }
+
+#ifdef USING_R
+// R offers the portable ISNAN macro for doubles, which is more robust
+template <>
+inline bool isNaN<double> (const double x) { return bool(ISNAN(x)); }
+
+// For R specifically, we have to catch NA_INTEGER (aka INT_MIN), otherwise it will wildly distort calibration below
+template <>
+inline bool isNaN<int> (const int x) { return (x == NA_INTEGER); }
+#endif
+
+inline double roundEven (const double value)
 {
-    float slope, intercept;
+    if (isNaN(value))
+        return value;
     
-    DataRescaler (const float slope, const float intercept)
-        : slope(slope), intercept(intercept) {}
+    double whole;
+    double frac = std::fabs(std::modf(value, &whole));
+    double sign = (value < 0.0 ? -1.0 : 1.0);
     
-    inline ElementType operator() (const ElementType value)
+    if (frac < 0.5)
+        return whole;
+    else if (frac > 0.5)
+        return whole + sign;
+    else if (std::fmod(whole, 2.0) < 0.0001)
+        return whole;
+    else
+        return whole + sign;
+}
+
+template <typename TargetType>
+class DataConverter
+{
+public:
+    enum ConversionMode { CastMode, ScaleMode, IndexMode };
+    
+protected:
+    ConversionMode mode;
+    double slope, intercept;
+    
+    template <typename Type>
+    static bool lessThan (Type a, Type b)
     {
-        return static_cast<ElementType>(value * slope + intercept);
+        return (!isNaN(a) && !isNaN(b) && a < b);
+    }
+    
+public:
+    DataConverter (const ConversionMode mode = CastMode)
+        : mode(mode), slope(0.0), intercept(0.0) {}
+    
+    DataConverter (const float slope, const float intercept)
+        : mode(ScaleMode), slope(static_cast<double>(slope)), intercept(static_cast<double>(intercept))
+    {
+        if (slope == 0.0 || (slope == 1.0 && intercept == 0.0))
+            mode = CastMode;
+    }
+    
+    double getSlope () const { return slope; }
+    double getIntercept () const { return intercept; }
+    ConversionMode getMode () const { return mode; }
+    
+    DataConverter & setMode (const ConversionMode newMode)
+    {
+        mode = newMode;
+        return *this;
+    }
+    
+    template <typename SourceType>
+    DataConverter & calibrate (const SourceType *source, const size_t length)
+    {
+        if (std::numeric_limits<TargetType>::is_integer)
+        {
+            const double typeMin = static_cast<double>(std::numeric_limits<TargetType>::min());
+            const double typeMax = static_cast<double>(std::numeric_limits<TargetType>::max());
+            const double dataMin = static_cast<double>(*std::min_element(source, source + length, DataConverter::lessThan<SourceType>));
+            const double dataMax = static_cast<double>(*std::max_element(source, source + length, DataConverter::lessThan<SourceType>));
+            
+            // If the source type is floating-point but values are in range, we will just round them
+            if (dataMin < typeMin || dataMax > typeMax)
+            {
+                slope = (dataMax - dataMin) / (typeMax - typeMin);
+                intercept = dataMin - slope * typeMin;
+            }
+            else
+            {
+                slope = 1.0;
+                intercept = 0.0;
+            }
+        }
+        return *this;
+    }
+    
+    template <typename SourceType>
+    TargetType convertValue (const SourceType value) const
+    {
+        // If NaNs aren't going to make it across, treat them as zero
+        if (isNaN(value) && !std::numeric_limits<TargetType>::has_quiet_NaN)
+            return (mode == IndexMode ? static_cast<TargetType>(roundEven(-intercept / slope)) : TargetType(0));
+        else if (mode == CastMode)
+            return static_cast<TargetType>(value);
+        else if (mode == ScaleMode)
+            return static_cast<TargetType>(static_cast<double>(value) * slope + intercept);
+        else if (mode == IndexMode)
+            return static_cast<TargetType>(roundEven((static_cast<double>(value) - intercept) / slope));
+        else
+            return TargetType(0);
+    }
+    
+    template <typename SourceType>
+    TargetType operator() (const SourceType value) const
+    {
+        return convertValue(value);
     }
 };
 
-template <typename SourceType, typename TargetType>
-inline TargetType convertValue (SourceType value)
-{
-    if (std::numeric_limits<SourceType>::has_quiet_NaN && !std::numeric_limits<TargetType>::has_quiet_NaN && ISNAN(value))
-        return TargetType(0);
-    else
-        return static_cast<TargetType>(value);
-}
-
 template <typename TargetType, class OutputIterator>
-inline void convertData (void *source, const short datatype, const size_t length, OutputIterator target, const ptrdiff_t offset = 0)
+inline void convertData (void *source, const short datatype, const size_t length, OutputIterator target, const ptrdiff_t offset = 0, DataConverter<TargetType> *converter = NULL)
 {
     if (source == NULL)
         return;
+    
+    const bool willFreeConverter = (converter == NULL);
+    if (willFreeConverter)
+        converter = new DataConverter<TargetType>;
     
     switch (datatype)
     {
         case DT_UINT8:
         {
             uint8_t *castSource = static_cast<uint8_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<uint8_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_INT16:
         {
             int16_t *castSource = static_cast<int16_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<int16_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_INT32:
         {
             int32_t *castSource = static_cast<int32_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<int32_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_FLOAT32:
         {
             float *castSource = static_cast<float *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<float,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_FLOAT64:
         {
             double *castSource = static_cast<double *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<double,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_INT8:
         {
             int8_t *castSource = static_cast<int8_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<int8_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_UINT16:
         {
             uint16_t *castSource = static_cast<uint16_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<uint16_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_UINT32:
         {
             uint32_t *castSource = static_cast<uint32_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<uint32_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_INT64:
         {
             int64_t *castSource = static_cast<int64_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<int64_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         case DT_UINT64:
         {
             uint64_t *castSource = static_cast<uint64_t *>(source) + offset;
-            std::transform(castSource, castSource + length, target, convertValue<uint64_t,TargetType>);
+            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
+                converter->calibrate(castSource, length);
+            std::transform(castSource, castSource + length, target, *converter);
             break;
         }
         
         default:
         throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
     }
+    
+    if (willFreeConverter)
+        delete converter;
 }
 
 template <typename SourceType, class InputIterator>
@@ -118,43 +240,43 @@ inline void replaceData (InputIterator begin, InputIterator end, void *target, c
     switch (datatype)
     {
         case DT_UINT8:
-        std::transform(begin, end, static_cast<uint8_t *>(target), convertValue<SourceType,uint8_t>);
+        std::transform(begin, end, static_cast<uint8_t *>(target), DataConverter<uint8_t>());
         break;
         
         case DT_INT16:
-        std::transform(begin, end, static_cast<int16_t *>(target), convertValue<SourceType,int16_t>);
+        std::transform(begin, end, static_cast<int16_t *>(target), DataConverter<int16_t>());
         break;
         
         case DT_INT32:
-        std::transform(begin, end, static_cast<int32_t *>(target), convertValue<SourceType,int32_t>);
+        std::transform(begin, end, static_cast<int32_t *>(target), DataConverter<int32_t>());
         break;
         
         case DT_FLOAT32:
-        std::transform(begin, end, static_cast<float *>(target), convertValue<SourceType,float>);
+        std::transform(begin, end, static_cast<float *>(target), DataConverter<float>());
         break;
         
         case DT_FLOAT64:
-        std::transform(begin, end, static_cast<double *>(target), convertValue<SourceType,double>);
+        std::transform(begin, end, static_cast<double *>(target), DataConverter<double>());
         break;
         
         case DT_INT8:
-        std::transform(begin, end, static_cast<int8_t *>(target), convertValue<SourceType,int8_t>);
+        std::transform(begin, end, static_cast<int8_t *>(target), DataConverter<int8_t>());
         break;
         
         case DT_UINT16:
-        std::transform(begin, end, static_cast<uint16_t *>(target), convertValue<SourceType,uint16_t>);
+        std::transform(begin, end, static_cast<uint16_t *>(target), DataConverter<uint16_t>());
         break;
         
         case DT_UINT32:
-        std::transform(begin, end, static_cast<uint32_t *>(target), convertValue<SourceType,uint32_t>);
+        std::transform(begin, end, static_cast<uint32_t *>(target), DataConverter<uint32_t>());
         break;
         
         case DT_INT64:
-        std::transform(begin, end, static_cast<int64_t *>(target), convertValue<SourceType,int64_t>);
+        std::transform(begin, end, static_cast<int64_t *>(target), DataConverter<int64_t>());
         break;
         
         case DT_UINT64:
-        std::transform(begin, end, static_cast<uint64_t *>(target), convertValue<SourceType,uint64_t>);
+        std::transform(begin, end, static_cast<uint64_t *>(target), DataConverter<uint64_t>());
         break;
         
         default:
@@ -203,7 +325,7 @@ inline short stringToDatatype (const std::string &datatype)
         return datatypeCodes[lowerCaseDatatype];
 }
 
-#ifndef _NO_R__
+#ifdef USING_R
 
 template <typename TargetType>
 inline void copyIfPresent (const Rcpp::List &list, const std::set<std::string> names, const std::string &name, TargetType &target)
@@ -222,8 +344,8 @@ inline void copyIfPresent (const Rcpp::List &list, const std::set<std::string> n
 
 inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const bool ignoreDatatype = false)
 {
-    if (header == NULL)
-        header = nifti_make_new_header(NULL, DT_FLOAT64);
+    if (header == NULL || Rf_isNull(list.names()))
+        return;
     
     const Rcpp::CharacterVector _names = list.names();
     std::set<std::string> names;
@@ -308,22 +430,6 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
         strcpy(header->magic, Rcpp::as<std::string>(list["magic"]).substr(0,3).c_str());
 }
 
-#endif // _NO_R__
-
-inline mat33 topLeftCorner (const mat44 &matrix)
-{
-    mat33 newMatrix;
-    for (int i=0; i<3; i++)
-    {
-        for (int j=0; j<3; j++)
-            newMatrix.m[i][j] = matrix.m[i][j];
-    }
-    
-    return newMatrix;
-}
-
-#ifndef _NO_R__
-
 template <int SexpType>
 inline Rcpp::RObject imageDataToArray (const nifti_image *source)
 {
@@ -354,15 +460,7 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
     }
 }
 
-inline void finaliseNiftiImage (SEXP xptr)
-{
-    NiftiImage *object = (NiftiImage *) R_ExternalPtrAddr(xptr);
-    object->setPersistence(false);
-    delete object;
-    R_ClearExternalPtr(xptr);
-}
-
-inline void addAttributes (Rcpp::RObject &object, nifti_image *source, const bool realDim = true)
+inline void addAttributes (Rcpp::RObject &object, const NiftiImage &source, const bool realDim = true)
 {
     const int nDims = source->dim[0];
     Rcpp::IntegerVector dim(source->dim+1, source->dim+1+nDims);
@@ -372,7 +470,9 @@ inline void addAttributes (Rcpp::RObject &object, nifti_image *source, const boo
     else
         object.attr("imagedim") = dim;
     
-    Rcpp::DoubleVector pixdim(source->pixdim+1, source->pixdim+1+nDims);
+    Rcpp::DoubleVector pixdim(nDims);
+    for (int i=0; i<nDims; i++)
+        pixdim[i] = std::abs(static_cast<double>(source->pixdim[i+1]));
     object.attr("pixdim") = pixdim;
     
     if (source->xyz_units == NIFTI_UNITS_UNKNOWN && source->time_units == NIFTI_UNITS_UNKNOWN)
@@ -385,14 +485,11 @@ inline void addAttributes (Rcpp::RObject &object, nifti_image *source, const boo
         object.attr("pixunits") = pixunits;
     }
     
-    NiftiImage *wrappedSource = new NiftiImage(source, true);
-    wrappedSource->setPersistence(true);
-    Rcpp::XPtr<NiftiImage> xptr(wrappedSource);
-    R_RegisterCFinalizerEx(SEXP(xptr), &finaliseNiftiImage, FALSE);
+    Rcpp::XPtr<NiftiImage> xptr(new NiftiImage(source,false));
     object.attr(".nifti_image_ptr") = xptr;
 }
 
-#endif // _NO_R__
+#endif // USING_R
 
 } // namespace
 

@@ -6,6 +6,7 @@
 \alias{sform<-}
 \alias{orientation}
 \alias{orientation<-}
+\alias{rotation}
 \title{Obtain or replace the ``xform'' transforms for an image}
 \usage{
 xform(image, useQuaternionFirst = TRUE)
@@ -17,10 +18,12 @@ sform(x) <- value
 orientation(x, useQuaternionFirst = TRUE)
 
 orientation(x) <- value
+
+rotation(x, useQuaternionFirst = TRUE)
 }
 \arguments{
 \item{image, x}{An image, in any acceptable form (see
-\code{\link{retrieveNifti}}).}
+\code{\link{retrieveNifti}}), or a 4x4 numeric xform matrix.}
 
 \item{useQuaternionFirst}{A single logical value. If \code{TRUE}, the
 ``qform'' matrix will be used first, if it is defined; otherwise the
@@ -34,10 +37,7 @@ is also set.}
 For \code{xform}, an affine matrix corresponding to the ``qform''
   or ``sform'' information in the image header. For \code{orientation}, a
   string with three characters indicating the (approximate) orientation of
-  the image. Each character may be `R' for left-to-right, `L' for
-  right-to-left, `A' for posterior-to-anterior, `P' for
-  anterior-to-posterior, `S' for inferior-to-superior, or `I' for
-  superior-to-inferior. The replacement forms return the modified object.
+  the image. The replacement forms return the modified object.
 }
 \description{
 These functions convert the ``qform'' or ``sform'' information in a NIfTI
@@ -45,6 +45,26 @@ header to or from a corresponding affine matrix. These two ``xform''
 mechanisms are defined by the NIfTI standard, and may both be in use in a
 particular image header. They define the relationship between the storage
 order of the image and real space.
+}
+\details{
+Image orientation is indicated using a three-character string, with each
+character indicating the approximate world-space direction of the positive
+axes in the first, second and third dimensions, in order. Each character may
+be `R' for left-to-right, `L' for right-to-left, `A' for posterior-to-
+anterior, `P' for anterior-to-posterior, `S' for inferior-to-superior, or
+`I' for superior-to-inferior. The default for NIfTI is RAS, meaning that the
+first dimension points towards the right, the second towards the front and
+the third towards the top. An xform matrix is an affine transform relative
+to that default.
+
+The upper-left 3x3 matrix in a 3D affine transform governs scale, rotation
+and skew, while the last column is a translation. (The \code{rotation}
+function extracts the rotation part alone.) The final row is always
+(0,0,0,1). Reorienting an image involves permuting and possibly reversing
+some of the axes, both in the data and the metadata. The sense of the
+translation may also need to be reversed, but this is only possible if the
+image dimensions are known, which isn't the case when reorienting an xform
+alone.
 }
 \note{
 The qform and sform replacement functions are for advanced users only.
@@ -60,6 +80,9 @@ qform(im) <- structure(diag(4), code=0L)
 
 # The same as above, since the sform is unmodified
 xform(im)
+
+# The identity matrix corresponds to RAS orientation
+orientation(diag(4))
 
 }
 \references{

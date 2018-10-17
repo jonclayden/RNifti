@@ -4,7 +4,7 @@
 \alias{readNifti}
 \title{Read a NIfTI-1 format file}
 \usage{
-readNifti(file, internal = FALSE)
+readNifti(file, internal = FALSE, volumes = NULL)
 }
 \arguments{
 \item{file}{A character vector of file names.}
@@ -15,21 +15,27 @@ will be returned. If \code{TRUE}, the return value will be an object of
 class \code{"internalImage"}, which contains only minimal metadata about
 the image. Either way, the return value has an attribute which points to a
 C data structure containing the full image.}
+
+\item{volumes}{An integer vector giving the volumes to read (counting along
+all dimensions beyond the third jointly), or \code{NULL}, the default, in
+which case every volume is read. This cannot currently be set differently
+for each file read.}
 }
 \value{
-An array or internal image, with class \code{"niftiImage"}, and
-  possibly also \code{"internalImage"}.
+An array or internal image, with class \code{"niftiImage"} (and
+  possibly also \code{"internalImage"}), or a list of such objects if
+  \code{file} has length greater than one.
 }
 \description{
-This function reads one or more NIfTI-1 files into R, using the standard
-NIfTI-1 C library.
+This function reads one or more NIfTI-1 or ANALYZE-7.5 files into R, using
+the standard NIfTI-1 C library.
 }
 \note{
 If the \code{internal} argument is \code{FALSE} (the default), the
   data type of the image pointer will be set to match one of R's native
   numeric data types, i.e., 32-bit signed integer or 64-bit double-precision
   floating-point. In these circumstances the data type reported by the
-  \code{\link{dumpNifti}} function will therefore not, in general, match
+  \code{\link{niftiHeader}} function will therefore not, in general, match
   the storage type used in the file. See also the \code{datatype} argument
   to \code{\link{writeNifti}}.
 }

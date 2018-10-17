@@ -2,6 +2,62 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.9.0
+
+- When writing an image using an integer datatype, the scale and slope fields
+  will now be set if the original values are outside the representable range of
+  that datatype. This ensures that the voxel values are accurate when read back
+  from the file (although some precision may, necessarily, be lost). This makes
+  the datatype argument to writeNifti() more generally useful for file size
+  reduction.
+- The dumpNifti() function has been soft-deprecated in favour of niftiHeader(),
+  which works the same way. There is also a new analyzeHeader() function, which
+  returns a list giving the header elements when interpreted according to the
+  ANALYZE-7.5 format. Both functions now return a default header when given no
+  argument.
+- The $ operator can now be used on "niftiImage" objects as a shorthand way to
+  get or set individual header fields.
+- The qform and sform replacement functions now work on lists of class
+  "niftiHeader".
+- The new rotation() function extracts just a pure 3x3 rotation matrix from an
+  image xform or general affine.
+- Functions such as origin() and orientation() now also work directly on xform-
+  like numeric matrices.
+- The offset part of an image's xform matrix (the fourth column) is now
+  properly updated when the image is reoriented. Reorientation should also now
+  work correctly for all possible permutations.
+- NA and NaN values are no longer removed from images on reading.
+- The pixdim attribute should now always contain the absolute values of the
+  pixdim for each dimension.
+
+===============================================================================
+
+VERSION 0.8.1
+
+- A C-level namespace clash on certain platforms has been corrected.
+
+===============================================================================
+
+VERSION 0.8.0
+
+- The new niftiVersion() function identifies the NIfTI format variant used by
+  files on disk.
+- The readNifti() function gains an option which allows only certain volumes
+  to be read from disk.
+- The updateNifti() function gains an option to set the internal datatype, for
+  advanced usage only (issue #8).
+- Calling updateNifti() with a list containing only a few fields could
+  previously reset the remaining metadata to the defaults. This has been
+  corrected.
+- It is now possible to change the cal_min and cal_max fields with the
+  updateNifti() function (issue #9). The scl_slope and scl_inter fields cannot
+  be changed, but this is now documented.
+- R packages using the RNifti API must now ensure that the USING_R symbol is
+  defined (which it is by the main R header, R.h). Conversely, standalone use
+  of RNifti as a C++ library no longer requires _NO_R__ to be defined.
+
+===============================================================================
+
 VERSION 0.7.1
 
 - The package is now more careful about handling NaNs when converting to

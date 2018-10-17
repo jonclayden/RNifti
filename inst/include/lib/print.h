@@ -1,11 +1,13 @@
 #ifndef _PRINT_H_
 #define _PRINT_H_
 
-#ifndef _NO_R__
+#ifdef USING_R
 
+#define R_NO_REMAP
 #define R_USE_C99_IN_CXX
 
 #include <R_ext/Print.h>
+#include <R_ext/Error.h>
 
 #define Rc_printf Rprintf
 #define Rc_fprintf_stdout(...) Rprintf(__VA_ARGS__)
@@ -27,6 +29,6 @@
 #define Rf_warning(str) fprintf(stderr, "%s\n", str)
 #define Rprintf(...) fprintf(stderr, __VA_ARGS__)
 
-#endif// _NO_R__
+#endif // USING_R
 
-#endif// _PRINT_H_
+#endif // _PRINT_H_
