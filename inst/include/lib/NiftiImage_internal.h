@@ -460,9 +460,10 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
     }
 }
 
-inline void addAttributes (Rcpp::RObject &object, const NiftiImage &source, const bool realDim = true)
+inline void addAttributes (const SEXP pointer, const NiftiImage &source, const bool realDim = true)
 {
     const int nDims = source->dim[0];
+    Rcpp::RObject object(pointer);
     Rcpp::IntegerVector dim(source->dim+1, source->dim+1+nDims);
 
     if (realDim)

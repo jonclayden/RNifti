@@ -122,10 +122,14 @@ pixdim.default <- function (object)
 {
     if (!is.null(attr(object, "pixdim")))
         return (attr(object, "pixdim"))
-    else if (!is.null(dim(object)))
-        return (rep(1, length(dim(object))))
     else
-        return (1)
+    {
+        value <- try(attr(niftiHeader(object), "pixdim"), silent=TRUE)
+        if (inherits(value, "try-error"))
+            return (1)
+        else
+            return (value)
+    }
 }
 
 #' @rdname pixdim
@@ -166,7 +170,13 @@ pixunits.default <- function (object)
     if (!is.null(attr(object, "pixunits")))
         return (attr(object, "pixunits"))
     else
-        return ("Unknown")
+    {
+        value <- try(attr(niftiHeader(object), "pixunits"), silent=TRUE)
+        if (inherits(value, "try-error"))
+            return ("Unknown")
+        else
+            return (value)
+    }
 }
 
 #' @rdname pixdim
