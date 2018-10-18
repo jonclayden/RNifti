@@ -2,6 +2,28 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.10.0
+
+API changes
+
+- The `NiftiImage` class now uses a reference counting scheme, rather than
+  relying on a simple persistence flag. (See the doxygen documentation for more
+  details.) The `isPersistent` and `setPersistence` methods are therefore
+  deprecated, with the former replaced by `isShared`.
+- Images are no longer internally duplicated when being passed back to R. This
+  improves the package's memory footprint, but performing an explicit copy may
+  now be necessary in some circumstances, e.g., if the image's memory will be
+  freed elsewhere.
+- The `RNIFTI_VERSION` constant is now defined, as 100 * (major version) +
+  (minor version). Its current value is therefore 10.
+- The `niftilib` function `nifti_strdup` is now part of the package API.
+
+Bug fixes
+
+- Other, smaller memory leaks have been resolved.
+
+===============================================================================
+
 VERSION 0.9.0
 
 - When writing an image using an integer datatype, the scale and slope fields
