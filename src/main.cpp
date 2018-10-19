@@ -385,18 +385,15 @@ RcppExport SEXP getAddresses (SEXP _image)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, true, true);
-    std::ostringstream imageString, dataString;
     if (image.isNull())
-    {
-        imageString << NULL;
-        dataString << NULL;
-    }
+        return R_NilValue;
     else
     {
+        std::ostringstream imageString, dataString;
         imageString << (const nifti_image *) image;
         dataString << image->data;
+        return CharacterVector::create(Named("image")=imageString.str(), Named("data")=dataString.str());
     }
-    return CharacterVector::create(Named("image")=imageString.str(), Named("data")=dataString.str());
 END_RCPP
 }
 
