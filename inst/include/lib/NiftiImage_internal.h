@@ -460,7 +460,7 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
     }
 }
 
-inline void addAttributes (const SEXP pointer, const NiftiImage &source, const bool realDim = true)
+inline void addAttributes (const SEXP pointer, const NiftiImage &source, const bool realDim = true, const bool includeXptr = true)
 {
     const int nDims = source->dim[0];
     Rcpp::RObject object(pointer);
@@ -486,8 +486,11 @@ inline void addAttributes (const SEXP pointer, const NiftiImage &source, const b
         object.attr("pixunits") = pixunits;
     }
     
-    Rcpp::XPtr<NiftiImage> xptr(new NiftiImage(source,false));
-    object.attr(".nifti_image_ptr") = xptr;
+    if (includeXptr)
+    {
+        Rcpp::XPtr<NiftiImage> xptr(new NiftiImage(source,false));
+        object.attr(".nifti_image_ptr") = xptr;
+    }
 }
 
 #endif // USING_R
