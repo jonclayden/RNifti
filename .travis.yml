@@ -11,4 +11,4 @@ script:
 - cd standalone && make clean && make CC="$(R CMD config CC)" CXX="$(R CMD config CXX)" && ./nii_info ../inst/extdata/example.nii.gz
 
 after_success:
-  - Rscript -e 'covr::coveralls()'
+  - Rscript -e 'covr::coveralls(line_exclusions=as.list(list.files(file.path("src",c("zlib","znzlib")), full.names=TRUE)))'
