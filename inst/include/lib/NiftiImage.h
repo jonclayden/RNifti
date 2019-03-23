@@ -1145,8 +1145,10 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
             initFromList(imageObject);
         else if (imageObject.hasAttribute("dim"))
             initFromArray(imageObject, readData);
-        else
+        else if (imageObject.hasAttribute("class"))
             throw std::runtime_error("Cannot convert object of class \"" + Rcpp::as<std::string>(imageObject.attr("class")) + "\" to a nifti_image");
+        else
+            throw std::runtime_error("Cannot convert unclassed non-array object");
     }
     
     if (this->image != NULL)
@@ -1948,6 +1950,7 @@ inline Rcpp::RObject NiftiImage::headerToList () const
     result["intent_name"] = std::string(header.intent_name, 16);
     result["magic"] = std::string(header.magic, 4);
     
+    internal::addAttributes(result, *this, false);
     result.attr("class") = Rcpp::CharacterVector::create("niftiHeader");
     
     return result;
