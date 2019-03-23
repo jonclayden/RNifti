@@ -89,6 +89,37 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP writeNiftiRgb (SEXP _red, SEXP _green, SEXP _blue, SEXP _file, SEXP _reference)
+{
+BEGIN_RCPP
+    const NiftiImage reference(_reference, false, true);
+    NiftiImage image = reference;
+    NumericVector red(_red);
+    NumericVector green(_green);
+    NumericVector blue(_blue);
+    
+    image->datatype = DT_RGB24;
+    nifti_datatype_sizes(DT_RGB24, &image->nbyper, &image->swapsize);
+    
+    unsigned char *data = (unsigned char *) calloc(image->nvox, 3);
+    for (size_t i=0; i<image->nvox; i++)
+    {
+        data[3*i] = static_cast<unsigned char>(red[i] * 255.0);
+        data[3*i+1] = static_cast<unsigned char>(green[i] * 255.0);
+        data[3*i+2] = static_cast<unsigned char>(blue[i] * 255.0);
+    }
+    
+    image->data = (void *) data;
+    image->scl_slope = 0.0;
+    image->scl_inter = 0.0;
+    image->cal_min = 0.0;
+    image->cal_max = 0.0;
+    
+    image.toFile(as<std::string>(_file));
+    return R_NilValue;
+END_RCPP
+}
+
 RcppExport SEXP updateNifti (SEXP _image, SEXP _reference, SEXP _datatype)
 {
 BEGIN_RCPP
@@ -385,18 +416,15 @@ RcppExport SEXP getAddresses (SEXP _image)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, true, true);
-    std::ostringstream imageString, dataString;
     if (image.isNull())
-    {
-        imageString << NULL;
-        dataString << NULL;
-    }
+        return R_NilValue;
     else
     {
+        std::ostringstream imageString, dataString;
         imageString << (const nifti_image *) image;
         dataString << image->data;
+        return CharacterVector::create(Named("image")=imageString.str(), Named("data")=dataString.str());
     }
-    return CharacterVector::create(Named("image")=imageString.str(), Named("data")=dataString.str());
 END_RCPP
 }
 
@@ -432,6 +460,7 @@ static R_CallMethodDef callMethods[] = {
     { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      3 },
+    { "writeNiftiRgb",  (DL_FUNC) &writeNiftiRgb,   5 },
     { "updateNifti",    (DL_FUNC) &updateNifti,     3 },
     { "niftiHeader",    (DL_FUNC) &niftiHeader,     1 },
     { "analyzeHeader",  (DL_FUNC) &analyzeHeader,   1 },

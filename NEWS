@@ -4,6 +4,13 @@ Significant changes to the RNifti package are laid out below for each release.
 
 VERSION 0.10.0
 
+R interface
+
+- Objects of class `niftiHeader`, created by the function of the same name,
+  now also have core attributes such as `pixdim` and `pixunits`.
+- Passing objects without a `dim` or `class` attribute to functions expecting
+  an image will now produce a more informative error message.
+
 API changes
 
 - The `NiftiImage` class now uses a reference counting scheme, rather than
@@ -20,6 +27,9 @@ API changes
 
 Bug fixes
 
+- The `pixdim()` and `pixunits()` functions will now work properly for path
+  strings and other objects acceptable to `niftiHeader()`. (Reported by John
+  Muschelli.)
 - Other, smaller memory leaks have been resolved.
 
 ===============================================================================
