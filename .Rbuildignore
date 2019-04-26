@@ -1,5 +1,6 @@
 ^Doxyfile$
 ^\.travis\.yml$
 ^appveyor.yml$
+^\.covrignore$
 ^standalone$
 ^revdep$
