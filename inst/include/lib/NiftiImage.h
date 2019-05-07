@@ -896,8 +896,9 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
     
     header.vox_offset = object.slot("vox_offset");
     
-    header.scl_slope = object.slot("scl_slope");
-    header.scl_inter = object.slot("scl_inter");
+    // oro.nifti does its own data rescaling, so we ignore the slope and intercept fields
+    header.scl_slope = 0.0;
+    header.scl_inter = 0.0;
     header.toffset = object.slot("toffset");
     
     header.cal_max = object.slot("cal_max");
