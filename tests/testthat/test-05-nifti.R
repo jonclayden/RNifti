@@ -58,10 +58,14 @@ test_that("NIfTI files can be read and written", {
     expect_equal(round(compressedImage[40,40,30]), 363)
     
     image <- readNifti(imagePath, internal=TRUE)
+    array <- as.array(image)
     expect_s3_class(image, "internalImage")
     expect_s3_class(image, "niftiImage")
-    expect_equal(as.array(image)[40,40,30], 368)
+    expect_equal(array[40,40,30], 368)
+    expect_equal(image[40,40,30], 368)
+    expect_equal(array[40,,30], image[40,,30])
     expect_error(dim(image) <- c(60L,96L,96L))
+    expect_error(image[40,40,30] <- 400)
     
     image <- readNifti(volumeImagePath, volumes=1:2)
     expect_equal(dim(image), c(96L,96L,60L,2L))
