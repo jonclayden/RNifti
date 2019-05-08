@@ -7,9 +7,14 @@
 #' not be changed.
 #' 
 #' @param x An \code{"internalImage"} object.
-#' @param value Not used. Changing the dimensions of an internal image is
-#'   invalid, and will produce an error.
-#' @param ... Additional parameters to methods. Currently unused.
+#' @param value Not used. Changing the dimensions of (or data in) an internal
+#'   image is invalid, and will produce an error. Convert to an array first.
+#' @param i,j Index vectors. May be missing, which indicates that the whole of
+#'   the relevant dimension should be obtained.
+#' @param ... Additional parameters to methods. Only used for additional
+#'   indices.
+#' @param drop If \code{TRUE} (the default), unitary indices in the result will
+#'   be dropped. This mirrors the behaviour of standard array indexing.
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @aliases internalImage
@@ -32,6 +37,50 @@ dim.internalImage <- function (x)
 as.array.internalImage <- function (x, ...)
 {
     return (.Call("pointerToArray", x, PACKAGE="RNifti"))
+}
+
+#' @rdname internalImage
+#' @export
+"[.internalImage" <- function (x, i, j, ..., drop = TRUE)
+{
+    nArgs <- nargs() - as.integer(!missing(drop))
+    if (nArgs < 2)
+        return (as.array(x))
+    
+    # Evaluate the indices, replacing missing values with -1
+    indices <- substitute(list(i,j,...))
+    present <- (sapply(indices, as.character)[-1] != "")
+    if (any(!present))
+        indices[which(!present)+1] <- -1
+    indices <- eval(indices, parent.frame())
+    lengths <- rep(-1L, nArgs - 1)
+    lengths[present] <- sapply(indices[present], length)
+    
+    dims <- dim(x)
+    data <- NULL
+    
+    if (all(lengths == -1))
+        return (as.array(x))
+    else if (any(lengths == 0))
+        return (numeric(0))
+    else if (nArgs != length(dims) + 1)          # TODO: vector and matrix indexing, which only involve i
+        stop("Number of indices (", nArgs-1, ") not equal to the dimensionality of the image (", length(dims), ")")
+    else if (all(lengths %in% c(-1L,1L)))
+    {
+        data <- .Call("indexCollapsed", x, as.integer(indices), PACKAGE="RNifti")
+        dim(data) <- ifelse(present, 1L, dims)
+    }
+    
+    if (drop)
+        data <- drop(data)
+    return (data)
+}
+
+#' @rdname internalImage
+#' @export
+"[<-.internalImage" <- function (x, i, j, ..., value)
+{
+    stop("The data in an internal image cannot be changed - convert to array first")
 }
 
 #' @export

@@ -7,6 +7,7 @@
 using namespace Rcpp;
 using namespace RNifti;
 
+typedef std::vector<int> int_vector;
 typedef std::vector<float> float_vector;
 
 ::mat44 matrixToXform (const SEXP _matrix, bool *valid = NULL)
@@ -436,6 +437,45 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP indexCollapsed (SEXP _image, SEXP _indices)
+{
+BEGIN_RCPP
+    // Not const only because niftilib expects non-const
+    NiftiImage image(_image, true, true);
+    if (image.isNull())
+        Rf_error("Cannot index into a NULL image");
+    else if (image->data == NULL)
+        return LogicalVector(1, NA_LOGICAL);
+    else
+    {
+        int dim[8] = { 0, -1, -1, -1, -1, -1, -1, -1 };
+        int_vector indices = as<int_vector>(_indices);
+        for (size_t i=0; i<std::min(size_t(7),indices.size()); i++)
+            dim[i+1] = indices[i] == -1 ? -1 : indices[i] - 1;
+        
+        void *data = NULL;
+        const int bytesExtracted = nifti_read_collapsed_image(image, dim, &data);
+        const R_len_t length = bytesExtracted / image->nbyper;
+        
+        if (image->datatype == DT_FLOAT32 || image->datatype == DT_FLOAT64 || image.isDataScaled())
+        {
+            NumericVector result(length);
+            RNifti::internal::DataConverter<double> *converter = NULL;
+            if (image.isDataScaled())
+                converter = new RNifti::internal::DataConverter<double>(image->scl_slope, image->scl_inter);
+            RNifti::internal::convertData<double>(data, image->datatype, length, result.begin(), 0, converter);
+            return result;
+        }
+        else
+        {
+            IntegerVector result(length);
+            RNifti::internal::convertData<int>(data, image->datatype, length, result.begin());
+            return result;
+        }
+    }
+END_RCPP
+}
+
 RcppExport SEXP rescaleImage (SEXP _image, SEXP _scales)
 {
 BEGIN_RCPP
@@ -471,6 +511,7 @@ static R_CallMethodDef callMethods[] = {
     { "getRotation",    (DL_FUNC) &getRotation,     2 },
     { "getAddresses",   (DL_FUNC) &getAddresses,    1 },
     { "hasData",        (DL_FUNC) &hasData,         1 },
+    { "indexCollapsed", (DL_FUNC) &indexCollapsed,  2 },
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },
     { NULL, NULL, 0 }
