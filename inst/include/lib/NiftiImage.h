@@ -81,7 +81,168 @@ inline vec3 matrixVectorProduct (const mat33 &matrix, const vec3 &vector)
     return newVector;
 }
 
+// A poor man's NaN check, but should work whenever proper IEEE arithmetic is being used
+template <typename Type>
+inline bool isNaN (const Type x) { return (x != x); }
+
+#ifdef USING_R
+// R offers the portable ISNAN macro for doubles, which is more robust
+template <>
+inline bool isNaN<double> (const double x) { return bool(ISNAN(x)); }
+
+// For R specifically, we have to catch NA_INTEGER (aka INT_MIN)
+template <>
+inline bool isNaN<int> (const int x) { return (x == NA_INTEGER); }
+#endif
+
+template <typename Type>
+inline bool lessThan (Type a, Type b) { return (!isNaN(a) && !isNaN(b) && a < b); }
+
 } // internal namespace
+
+class NiftiImageData
+{
+protected:
+    struct TypeHandler
+    {
+        virtual ~TypeHandler() {}
+        virtual size_t size () const { return 0; }
+        virtual double doubleValue (void *ptr) const = 0;
+        virtual int intValue (void *ptr) const = 0;
+        virtual void minmax (void *ptr, const size_t length, double *min, double *max) const = 0;
+    };
+    
+    template <typename Type>
+    struct ConcreteTypeHandler : public TypeHandler
+    {
+        size_t size () const { return (sizeof(Type)); }
+        double doubleValue (void *ptr) const { return static_cast<double>(*static_cast<Type*>(ptr)); }
+        int intValue (void *ptr) const { return static_cast<int>(*static_cast<Type*>(ptr)); }
+        void minmax (void *ptr, const size_t length, double *min, double *max) const
+        {
+            if (length < 1)
+                return;
+            
+            Type *loc = static_cast<Type*>(ptr);
+            Type currentMin = *loc, currentMax = *loc;
+            for (size_t i=1; i<length; i++)
+            {
+                loc++;
+                if (internal::lessThan(*loc, currentMin))
+                    currentMin = *loc;
+                if (internal::lessThan(currentMax, *loc))
+                    currentMax = *loc;
+            }
+            
+            *min = static_cast<double>(currentMin);
+            *max = static_cast<double>(currentMax);
+        }
+    };
+    
+    void *dataptr;
+    int datatype;
+    TypeHandler *handler;
+    size_t length;
+    
+    template <typename ValueType>
+    class IteratorType : public std::iterator<std::input_iterator_tag, ValueType>
+    {
+    private:
+        void *ptr;
+        size_t step;
+        
+        // Hide default constructor
+        IteratorType () {}
+        
+    public:
+        IteratorType (void *p, const size_t step = 1)
+            : ptr(p), step(step) {}
+        IteratorType (const IteratorType<ValueType> &other)
+            : ptr(other.ptr), step(other.step) {}
+        
+        IteratorType<ValueType> & operator++ () { ptr = static_cast<char*>(ptr) + step; return *this; }
+        IteratorType<ValueType> operator+ (ptrdiff_t n) const
+        {
+            void *newptr = static_cast<char*>(ptr) + (n * step);
+            return IteratorType<ValueType>(newptr, step);
+        }
+        IteratorType<ValueType> & operator-- () { ptr = static_cast<char*>(ptr) - step; return *this; }
+        IteratorType<ValueType> operator- (ptrdiff_t n) const
+        {
+            void *newptr = static_cast<char*>(ptr) - (n * step);
+            return IteratorType<ValueType>(newptr, step);
+        }
+        
+        ptrdiff_t operator- (const IteratorType<ValueType> &other) const
+        {
+            const ptrdiff_t difference = static_cast<char*>(ptr) - static_cast<char*>(other.ptr);
+            return difference / step;
+        }
+        
+        bool operator== (const IteratorType<ValueType> &other) const { return (ptr==other.ptr && step==other.step); }
+        bool operator!= (const IteratorType<ValueType> &other) const { return (ptr!=other.ptr || step!=other.step); }
+        bool operator> (const IteratorType<ValueType> &other) const { return (ptr > other.ptr); }
+        bool operator< (const IteratorType<ValueType> &other) const { return (ptr < other.ptr); }
+        
+        ValueType operator* () const
+        {
+            if (std::numeric_limits<ValueType>::is_integer)
+            {
+                const int value = handler->intValue(ptr);
+                return static_cast<ValueType>(value);
+            }
+            else
+            {
+                const double value = handler->doubleValue(ptr);
+                return static_cast<ValueType>(value);
+            }
+        }
+    };
+    
+public:
+    NiftiImageData (void *dataptr, const short datatype, const size_t length, const ptrdiff_t offset = 0)
+        : dataptr(dataptr), datatype(datatype), length(length)
+    {
+        if (offset != 0)
+            this->dataptr = static_cast<char*>(dataptr) + offset;
+        
+        switch (datatype)
+        {
+            case DT_UINT8:      handler = new ConcreteTypeHandler<uint8_t>();   break;
+            case DT_INT16:      handler = new ConcreteTypeHandler<int16_t>();   break;
+            case DT_INT32:      handler = new ConcreteTypeHandler<int32_t>();   break;
+            case DT_FLOAT32:    handler = new ConcreteTypeHandler<float>();     break;
+            case DT_FLOAT64:    handler = new ConcreteTypeHandler<double>();    break;
+            case DT_INT8:       handler = new ConcreteTypeHandler<int8_t>();    break;
+            case DT_UINT16:     handler = new ConcreteTypeHandler<uint16_t>();  break;
+            case DT_UINT32:     handler = new ConcreteTypeHandler<uint32_t>();  break;
+            case DT_INT64:      handler = new ConcreteTypeHandler<int64_t>();   break;
+            case DT_UINT64:     handler = new ConcreteTypeHandler<uint64_t>();  break;
+            
+            default:
+            handler = NULL;
+            throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
+        }
+    }
+    
+    virtual ~NiftiImageData ()
+    {
+        delete handler;
+    }
+    
+    bool isComplex () const { return false; }
+    bool isFloatingPoint () const { return (datatype == DT_FLOAT32 || datatype == DT_FLOAT64); }
+    bool isInteger () const { return nifti_is_inttype(datatype); }
+    bool isRgb () const { return false; }
+    
+    IteratorType<double> dbegin () const { return IteratorType<double>(dataptr, handler->size()); }
+    IteratorType<double> dend () const { return IteratorType<double>(static_cast<char*>(dataptr) + length * handler->size(), handler->size()); }
+    IteratorType<int> ibegin () const { return IteratorType<int>(dataptr, handler->size()); }
+    IteratorType<int> iend () const { return IteratorType<int>(static_cast<char*>(dataptr) + length * handler->size(), handler->size()); }
+    
+    void minmax (double *min, double *max) const { handler->minmax(dataptr, length, min, max); }
+};
+
 
 /**
  * Thin wrapper around a C-style \c nifti_image struct that allows C++-style destruction. Reference
