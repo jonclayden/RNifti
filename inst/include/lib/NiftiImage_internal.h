@@ -22,24 +22,15 @@ inline double roundEven (const double value)
         return whole + sign;
 }
 
+enum DataConversionMode { CastMode, ScaleMode, IndexMode };
+
 template <typename TargetType>
-class DataConverter
+struct DataConverter
 {
-public:
-    enum ConversionMode { CastMode, ScaleMode, IndexMode };
-    
-protected:
-    ConversionMode mode;
+    DataConversionMode mode;
     double slope, intercept;
     
-    template <typename Type>
-    static bool lessThan (Type a, Type b)
-    {
-        return (!isNaN(a) && !isNaN(b) && a < b);
-    }
-    
-public:
-    DataConverter (const ConversionMode mode = CastMode)
+    DataConverter (const DataConversionMode mode = CastMode)
         : mode(mode), slope(0.0), intercept(0.0) {}
     
     DataConverter (const float slope, const float intercept)
@@ -49,25 +40,14 @@ public:
             mode = CastMode;
     }
     
-    double getSlope () const { return slope; }
-    double getIntercept () const { return intercept; }
-    ConversionMode getMode () const { return mode; }
-    
-    DataConverter & setMode (const ConversionMode newMode)
-    {
-        mode = newMode;
-        return *this;
-    }
-    
-    template <typename SourceType>
-    DataConverter & calibrate (const SourceType *source, const size_t length)
+    DataConverter & calibrate (const NiftiImageData &data)
     {
         if (std::numeric_limits<TargetType>::is_integer)
         {
+            double dataMin, dataMax;
+            data.minmax(&dataMin, &dataMax);
             const double typeMin = static_cast<double>(std::numeric_limits<TargetType>::min());
             const double typeMax = static_cast<double>(std::numeric_limits<TargetType>::max());
-            const double dataMin = static_cast<double>(*std::min_element(source, source + length, DataConverter::lessThan<SourceType>));
-            const double dataMax = static_cast<double>(*std::max_element(source, source + length, DataConverter::lessThan<SourceType>));
             
             // If the source type is floating-point but values are in range, we will just round them
             if (dataMin < typeMin || dataMax > typeMax)
@@ -108,113 +88,55 @@ public:
 };
 
 template <typename TargetType, class OutputIterator>
-inline void convertData (void *source, const short datatype, const size_t length, OutputIterator target, const ptrdiff_t offset = 0, DataConverter<TargetType> *converter = NULL)
+inline void convertData (const NiftiImageData &source, OutputIterator target, const DataConversionMode mode)
 {
-    if (source == NULL)
-        return;
+    DataConverter<TargetType> converter(mode);
+    if (mode == IndexMode)
+        converter.calibrate(source);
+    else if (mode == ScaleMode && source.isScaled())
+    {
+        converter.slope = source.slope;
+        converter.intercept = source.intercept;
+    }
     
-    const bool willFreeConverter = (converter == NULL);
-    if (willFreeConverter)
-        converter = new DataConverter<TargetType>;
+    const size_t length = source.length;
+    void *bytes = source.blob();
     
+    switch (source.typeCode())
+    {
+        case DT_UINT8:      std::transform(static_cast<uint8_t*>(bytes), static_cast<uint8_t*>(bytes) + length, target, converter);     break;
+        case DT_INT16:      std::transform(static_cast<int16_t*>(bytes), static_cast<int16_t*>(bytes) + length, target, converter);     break;
+        case DT_INT32:      std::transform(static_cast<int32_t*>(bytes), static_cast<int32_t*>(bytes) + length, target, converter);     break;
+        case DT_FLOAT32:    std::transform(static_cast<float*>(bytes), static_cast<float*>(bytes) + length, target, converter);         break;
+        case DT_FLOAT64:    std::transform(static_cast<double*>(bytes), static_cast<double*>(bytes) + length, target, converter);       break;
+        case DT_INT8:       std::transform(static_cast<int8_t*>(bytes), static_cast<int8_t*>(bytes) + length, target, converter);       break;
+        case DT_UINT16:     std::transform(static_cast<uint16_t*>(bytes), static_cast<uint16_t*>(bytes) + length, target, converter);   break;
+        case DT_UINT32:     std::transform(static_cast<uint32_t*>(bytes), static_cast<uint32_t*>(bytes) + length, target, converter);   break;
+        case DT_INT64:      std::transform(static_cast<int64_t*>(bytes), static_cast<int64_t*>(bytes) + length, target, converter);     break;
+        case DT_UINT64:     std::transform(static_cast<uint64_t*>(bytes), static_cast<uint64_t*>(bytes) + length, target, converter);   break;
+    }
+}
+
+inline NiftiImageData convertData (const NiftiImageData &source, const short datatype, const DataConversionMode mode)
+{
+    NiftiImageData target(NULL, datatype, source.length);
     switch (datatype)
     {
-        case DT_UINT8:
-        {
-            uint8_t *castSource = static_cast<uint8_t *>(source) + offset;
-            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
-                converter->calibrate(castSource, length);
-            std::transform(castSource, castSource + length, target, *converter);
-            break;
-        }
-        
-        case DT_INT16:
-        {
-            int16_t *castSource = static_cast<int16_t *>(source) + offset;
-            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
-                converter->calibrate(castSource, length);
-            std::transform(castSource, castSource + length, target, *converter);
-            break;
-        }
-        
-        case DT_INT32:
-        {
-            int32_t *castSource = static_cast<int32_t *>(source) + offset;
-            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
-                converter->calibrate(castSource, length);
-            std::transform(castSource, castSource + length, target, *converter);
-            break;
-        }
-        
-        case DT_FLOAT32:
-        {
-            float *castSource = static_cast<float *>(source) + offset;
-            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
-                converter->calibrate(castSource, length);
-            std::transform(castSource, castSource + length, target, *converter);
-            break;
-        }
-        
-        case DT_FLOAT64:
-        {
-            double *castSource = static_cast<double *>(source) + offset;
-            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
-                converter->calibrate(castSource, length);
-            std::transform(castSource, castSource + length, target, *converter);
-            break;
-        }
-        
-        case DT_INT8:
-        {
-            int8_t *castSource = static_cast<int8_t *>(source) + offset;
-            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
-                converter->calibrate(castSource, length);
-            std::transform(castSource, castSource + length, target, *converter);
-            break;
-        }
-        
-        case DT_UINT16:
-        {
-            uint16_t *castSource = static_cast<uint16_t *>(source) + offset;
-            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
-                converter->calibrate(castSource, length);
-            std::transform(castSource, castSource + length, target, *converter);
-            break;
-        }
-        
-        case DT_UINT32:
-        {
-            uint32_t *castSource = static_cast<uint32_t *>(source) + offset;
-            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
-                converter->calibrate(castSource, length);
-            std::transform(castSource, castSource + length, target, *converter);
-            break;
-        }
-        
-        case DT_INT64:
-        {
-            int64_t *castSource = static_cast<int64_t *>(source) + offset;
-            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
-                converter->calibrate(castSource, length);
-            std::transform(castSource, castSource + length, target, *converter);
-            break;
-        }
-        
-        case DT_UINT64:
-        {
-            uint64_t *castSource = static_cast<uint64_t *>(source) + offset;
-            if (converter->getMode() == DataConverter<TargetType>::IndexMode)
-                converter->calibrate(castSource, length);
-            std::transform(castSource, castSource + length, target, *converter);
-            break;
-        }
+        case DT_UINT8:      convertData<uint8_t>(source, static_cast<uint8_t*>(target.blob()), mode);       break;
+        case DT_INT16:      convertData<int16_t>(source, static_cast<int16_t*>(target.blob()), mode);       break;
+        case DT_INT32:      convertData<int32_t>(source, static_cast<int32_t*>(target.blob()), mode);       break;
+        case DT_FLOAT32:    convertData<float>(source, static_cast<float*>(target.blob()), mode);           break;
+        case DT_FLOAT64:    convertData<double>(source, static_cast<double*>(target.blob()), mode);         break;
+        case DT_INT8:       convertData<int8_t>(source, static_cast<int8_t*>(target.blob()), mode);         break;
+        case DT_UINT16:     convertData<uint16_t>(source, static_cast<uint16_t*>(target.blob()), mode);     break;
+        case DT_UINT32:     convertData<uint32_t>(source, static_cast<uint32_t*>(target.blob()), mode);     break;
+        case DT_INT64:      convertData<int64_t>(source, static_cast<int64_t*>(target.blob()), mode);       break;
+        case DT_UINT64:     convertData<uint64_t>(source, static_cast<uint64_t*>(target.blob()), mode);     break;
         
         default:
         throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
     }
-    
-    if (willFreeConverter)
-        delete converter;
+    return target;
 }
 
 template <typename SourceType, class InputIterator>
@@ -435,11 +357,12 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
     }
     else
     {
+        NiftiImageData data(source->data, source->datatype, source->nvox);
         Rcpp::Vector<SexpType> array(static_cast<int>(source->nvox));
         if (SexpType == INTSXP || SexpType == LGLSXP)
-            convertData<int>(source->data, source->datatype, source->nvox, array.begin());
+            convertData<int>(data, array.begin(), CastMode);
         else if (SexpType == REALSXP)
-            convertData<double>(source->data, source->datatype, source->nvox, array.begin());
+            convertData<double>(data, array.begin(), CastMode);
         else
             throw std::runtime_error("Only numeric arrays can be created");
         return array;

@@ -437,21 +437,19 @@ BEGIN_RCPP
 END_RCPP
 }
 
-SEXP imageDataToVector (const NiftiImage &image, void *data, const R_len_t length)
+SEXP imageDataToVector (const NiftiImage &image)
 {
-    if (image->datatype == DT_FLOAT32 || image->datatype == DT_FLOAT64 || image.isDataScaled())
+    NiftiImageData data = image.data();
+    if (data.isFloatingPoint() || image.isDataScaled())
     {
-        NumericVector result(length);
-        RNifti::internal::DataConverter<double> *converter = NULL;
-        if (image.isDataScaled())
-            converter = new RNifti::internal::DataConverter<double>(image->scl_slope, image->scl_inter);
-        RNifti::internal::convertData<double>(data, image->datatype, length, result.begin(), 0, converter);
+        NumericVector result(data.length);
+        RNifti::internal::convertData<double>(data, result.begin(), RNifti::internal::ScaleMode);
         return result;
     }
     else
     {
-        IntegerVector result(length);
-        RNifti::internal::convertData<int>(data, image->datatype, length, result.begin());
+        IntegerVector result(data.length);
+        RNifti::internal::convertData<int>(data, result.begin(), RNifti::internal::CastMode);
         return result;
     }
 }
@@ -476,7 +474,7 @@ BEGIN_RCPP
         const int bytesExtracted = nifti_read_collapsed_image(image, dim, &data);
         const R_len_t length = bytesExtracted / image->nbyper;
         
-        return imageDataToVector(image, data, length);
+        return imageDataToVector(image);
     }
 END_RCPP
 }
@@ -506,7 +504,7 @@ BEGIN_RCPP
         const int bytesExtracted = nifti_read_subregion_image(image, startIndices, regionSizes, &data);
         const R_len_t length = bytesExtracted / image->nbyper;
         
-        return imageDataToVector(image, data, length);
+        return imageDataToVector(image);
     }
 END_RCPP
 }

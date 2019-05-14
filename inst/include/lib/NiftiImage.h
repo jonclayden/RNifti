@@ -142,7 +142,27 @@ protected:
     void *dataptr;
     int datatype;
     TypeHandler *handler;
-    size_t length;
+    
+    void createHandler ()
+    {
+        switch (datatype)
+        {
+            case DT_UINT8:      handler = new ConcreteTypeHandler<uint8_t>();   break;
+            case DT_INT16:      handler = new ConcreteTypeHandler<int16_t>();   break;
+            case DT_INT32:      handler = new ConcreteTypeHandler<int32_t>();   break;
+            case DT_FLOAT32:    handler = new ConcreteTypeHandler<float>();     break;
+            case DT_FLOAT64:    handler = new ConcreteTypeHandler<double>();    break;
+            case DT_INT8:       handler = new ConcreteTypeHandler<int8_t>();    break;
+            case DT_UINT16:     handler = new ConcreteTypeHandler<uint16_t>();  break;
+            case DT_UINT32:     handler = new ConcreteTypeHandler<uint32_t>();  break;
+            case DT_INT64:      handler = new ConcreteTypeHandler<int64_t>();   break;
+            case DT_UINT64:     handler = new ConcreteTypeHandler<uint64_t>();  break;
+            
+            default:
+            handler = NULL;
+            throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
+        }
+    }
     
     template <typename ValueType>
     class IteratorType : public std::iterator<std::input_iterator_tag, ValueType>
@@ -200,29 +220,21 @@ protected:
     };
     
 public:
-    NiftiImageData (void *dataptr, const short datatype, const size_t length, const ptrdiff_t offset = 0)
-        : dataptr(dataptr), datatype(datatype), length(length)
+    size_t length;
+    double slope, intercept;
+    
+    NiftiImageData ()
+        : dataptr(NULL), datatype(DT_NONE), length(0), handler(NULL), slope(0.0), intercept(0.0) {}
+    
+    NiftiImageData (void *dataptr, const short datatype, const size_t length, const ptrdiff_t offset = 0, const double slope = 0.0, const double intercept = 0.0)
+        : dataptr(dataptr), datatype(datatype), length(length), slope(slope), intercept(intercept)
     {
-        if (offset != 0)
-            this->dataptr = static_cast<char*>(dataptr) + offset;
+        createHandler();
         
-        switch (datatype)
-        {
-            case DT_UINT8:      handler = new ConcreteTypeHandler<uint8_t>();   break;
-            case DT_INT16:      handler = new ConcreteTypeHandler<int16_t>();   break;
-            case DT_INT32:      handler = new ConcreteTypeHandler<int32_t>();   break;
-            case DT_FLOAT32:    handler = new ConcreteTypeHandler<float>();     break;
-            case DT_FLOAT64:    handler = new ConcreteTypeHandler<double>();    break;
-            case DT_INT8:       handler = new ConcreteTypeHandler<int8_t>();    break;
-            case DT_UINT16:     handler = new ConcreteTypeHandler<uint16_t>();  break;
-            case DT_UINT32:     handler = new ConcreteTypeHandler<uint32_t>();  break;
-            case DT_INT64:      handler = new ConcreteTypeHandler<int64_t>();   break;
-            case DT_UINT64:     handler = new ConcreteTypeHandler<uint64_t>();  break;
-            
-            default:
-            handler = NULL;
-            throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
-        }
+        if (dataptr == NULL)
+            this->dataptr = calloc(length, handler->size());
+        else if (offset != 0)
+            this->dataptr = static_cast<char*>(dataptr) + (handler->size() * offset);
     }
     
     virtual ~NiftiImageData ()
@@ -230,6 +242,23 @@ public:
         delete handler;
     }
     
+    NiftiImageData & operator= (const NiftiImageData &source)
+    {
+        dataptr = source.dataptr;
+        datatype = source.datatype;
+        length = source.length;
+        slope = source.slope;
+        intercept = source.intercept;
+        createHandler();
+        return *this;
+    }
+    
+    void * blob () const { return dataptr; }
+    char * bytes () const { return static_cast<char*>(dataptr); }
+    int typeCode () const { return datatype; }
+    
+    bool isEmpty () const { return (dataptr == NULL); }
+    bool isScaled () const { return (slope != 0.0 && (slope != 1.0 || intercept != 0.0)); }
     bool isComplex () const { return false; }
     bool isFloatingPoint () const { return (datatype == DT_FLOAT32 || datatype == DT_FLOAT64); }
     bool isInteger () const { return nifti_is_inttype(datatype); }
@@ -302,6 +331,19 @@ public:
             blockSize *= image->nbyper;
             memcpy(static_cast<char*>(image->data) + blockSize*index, source->data, blockSize);
             return *this;
+        }
+        
+        NiftiImageData data () const
+        {
+            if (image.isNull())
+                return NiftiImageData();
+            else
+            {
+                size_t blockSize = 1;
+                for (int i=1; i<dimension; i++)
+                    blockSize *= image->dim[i];
+                return NiftiImageData(image->data, image->datatype, blockSize, blockSize*index, image->scl_slope, image->scl_inter);
+            }
         }
         
         /**
@@ -733,6 +775,14 @@ public:
         image->dim[0] = image->ndim = ndim;
         
         return *this;
+    }
+    
+    NiftiImageData data () const
+    {
+        if (image == NULL)
+            return NiftiImageData();
+        else
+            return NiftiImageData(image->data, image->datatype, image->nvox, 0, image->scl_slope, image->scl_inter);
     }
     
     /**
@@ -1792,39 +1842,31 @@ inline mat44 NiftiImage::xform (const bool preferQuaternion) const
 template <typename TargetType>
 inline std::vector<TargetType> NiftiImage::Block::getData (const bool useSlope) const
 {
-    if (image.isNull())
+    NiftiImageData data = this->data();
+    
+    if (image.isNull() || data.isEmpty())
         return std::vector<TargetType>();
-    
-    size_t blockSize = 1;
-    for (int i=1; i<dimension; i++)
-        blockSize *= image->dim[i];
-
-    std::vector<TargetType> data(blockSize);
-    internal::DataConverter<TargetType> *converter = NULL;
-    if (useSlope && image.isDataScaled())
-        converter = new internal::DataConverter<TargetType>(image->scl_slope, image->scl_inter);
-    
-    internal::convertData<TargetType>(image->data, image->datatype, blockSize, data.begin(), blockSize*index, converter);
-    
-    delete converter;
-    return data;
+    else
+    {
+        std::vector<TargetType> result(data.length);
+        internal::convertData<TargetType>(data, result.begin(), useSlope ? internal::ScaleMode : internal::CastMode);
+        return result;
+    }
 }
 
 template <typename TargetType>
 inline std::vector<TargetType> NiftiImage::getData (const bool useSlope) const
 {
-    if (this->isNull())
+    NiftiImageData data = this->data();
+    
+    if (this->isNull() || data.isEmpty())
         return std::vector<TargetType>();
-    
-    std::vector<TargetType> data(image->nvox);
-    internal::DataConverter<TargetType> *converter = NULL;
-    if (useSlope && this->isDataScaled())
-        converter = new internal::DataConverter<TargetType>(image->scl_slope, image->scl_inter);
-    
-    internal::convertData<TargetType>(image->data, image->datatype, image->nvox, data.begin(), 0, converter);
-    
-    delete converter;
-    return data;
+    else
+    {
+        std::vector<TargetType> result(data.length);
+        internal::convertData<TargetType>(data, result.begin(), useSlope ? internal::ScaleMode : internal::CastMode);
+        return result;
+    }
 }
 
 inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool useSlope)
@@ -1835,114 +1877,17 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
     if (useSlope && this->isDataScaled())
         throw std::runtime_error("Resetting the slope and intercept for an image with them already set is not supported");
     
-    if (image->data != NULL)
+    NiftiImageData data = this->data();
+    if (!data.isEmpty())
     {
-        int bytesPerPixel;
-        nifti_datatype_sizes(datatype, &bytesPerPixel, NULL);
-        void *data = calloc(image->nvox, bytesPerPixel);
-        
-        switch (datatype)
-        {
-            case DT_UINT8:
-            {
-                internal::DataConverter<uint8_t> converter(useSlope ? internal::DataConverter<uint8_t>::IndexMode : internal::DataConverter<uint8_t>::CastMode);
-                internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint8_t *>(data), 0, &converter);
-                image->scl_slope = static_cast<float>(converter.getSlope());
-                image->scl_inter = static_cast<float>(converter.getIntercept());
-                break;
-            }
-        
-            case DT_INT16:
-            {
-                internal::DataConverter<int16_t> converter(useSlope ? internal::DataConverter<int16_t>::IndexMode : internal::DataConverter<int16_t>::CastMode);
-                internal::convertData(image->data, image->datatype, image->nvox, static_cast<int16_t *>(data), 0, &converter);
-                image->scl_slope = static_cast<float>(converter.getSlope());
-                image->scl_inter = static_cast<float>(converter.getIntercept());
-                break;
-            }
-        
-            case DT_INT32:
-            {
-                internal::DataConverter<int32_t> converter(useSlope ? internal::DataConverter<int32_t>::IndexMode : internal::DataConverter<int32_t>::CastMode);
-                internal::convertData(image->data, image->datatype, image->nvox, static_cast<int32_t *>(data), 0, &converter);
-                image->scl_slope = static_cast<float>(converter.getSlope());
-                image->scl_inter = static_cast<float>(converter.getIntercept());
-                break;
-            }
-        
-            case DT_FLOAT32:
-            {
-                internal::DataConverter<float> converter(useSlope ? internal::DataConverter<float>::IndexMode : internal::DataConverter<float>::CastMode);
-                internal::convertData(image->data, image->datatype, image->nvox, static_cast<float *>(data), 0, &converter);
-                image->scl_slope = static_cast<float>(converter.getSlope());
-                image->scl_inter = static_cast<float>(converter.getIntercept());
-                break;
-            }
-        
-            case DT_FLOAT64:
-            {
-                internal::DataConverter<double> converter(useSlope ? internal::DataConverter<double>::IndexMode : internal::DataConverter<double>::CastMode);
-                internal::convertData(image->data, image->datatype, image->nvox, static_cast<double *>(data), 0, &converter);
-                image->scl_slope = static_cast<float>(converter.getSlope());
-                image->scl_inter = static_cast<float>(converter.getIntercept());
-                break;
-            }
-        
-            case DT_INT8:
-            {
-                internal::DataConverter<int8_t> converter(useSlope ? internal::DataConverter<int8_t>::IndexMode : internal::DataConverter<int8_t>::CastMode);
-                internal::convertData(image->data, image->datatype, image->nvox, static_cast<int8_t *>(data), 0, &converter);
-                image->scl_slope = static_cast<float>(converter.getSlope());
-                image->scl_inter = static_cast<float>(converter.getIntercept());
-                break;
-            }
-        
-            case DT_UINT16:
-            {
-                internal::DataConverter<uint16_t> converter(useSlope ? internal::DataConverter<uint16_t>::IndexMode : internal::DataConverter<uint16_t>::CastMode);
-                internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint16_t *>(data), 0, &converter);
-                image->scl_slope = static_cast<float>(converter.getSlope());
-                image->scl_inter = static_cast<float>(converter.getIntercept());
-                break;
-            }
-        
-            case DT_UINT32:
-            {
-                internal::DataConverter<uint32_t> converter(useSlope ? internal::DataConverter<uint32_t>::IndexMode : internal::DataConverter<uint32_t>::CastMode);
-                internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint32_t *>(data), 0, &converter);
-                image->scl_slope = static_cast<float>(converter.getSlope());
-                image->scl_inter = static_cast<float>(converter.getIntercept());
-                break;
-            }
-        
-            case DT_INT64:
-            {
-                internal::DataConverter<int64_t> converter(useSlope ? internal::DataConverter<int64_t>::IndexMode : internal::DataConverter<int64_t>::CastMode);
-                internal::convertData(image->data, image->datatype, image->nvox, static_cast<int64_t *>(data), 0, &converter);
-                image->scl_slope = static_cast<float>(converter.getSlope());
-                image->scl_inter = static_cast<float>(converter.getIntercept());
-                break;
-            }
-        
-            case DT_UINT64:
-            {
-                internal::DataConverter<uint64_t> converter(useSlope ? internal::DataConverter<uint64_t>::IndexMode : internal::DataConverter<uint64_t>::CastMode);
-                internal::convertData(image->data, image->datatype, image->nvox, static_cast<uint64_t *>(data), 0, &converter);
-                image->scl_slope = static_cast<float>(converter.getSlope());
-                image->scl_inter = static_cast<float>(converter.getIntercept());
-                break;
-            }
-        
-            default:
-            throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
-        }
-    
+        data = internal::convertData(data, datatype, useSlope ? internal::IndexMode : internal::CastMode);
         nifti_image_unload(image);
-        image->data = data;
+        image->data = data.blob();
+        image->scl_slope = data.slope;
+        image->scl_inter = data.intercept;
+        image->datatype = datatype;
+        nifti_datatype_sizes(datatype, &image->nbyper, &image->swapsize);
     }
-    
-    image->datatype = datatype;
-    nifti_datatype_sizes(datatype, &image->nbyper, &image->swapsize);
     
     return *this;
 }
