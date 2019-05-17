@@ -22,8 +22,6 @@ inline double roundEven (const double value)
         return whole + sign;
 }
 
-enum DataConversionMode { CastMode, ScaleMode, IndexMode };
-
 template <typename TargetType>
 struct DataConverter
 {
@@ -86,58 +84,6 @@ struct DataConverter
         return convertValue(value);
     }
 };
-
-template <typename TargetType, class OutputIterator>
-inline void convertData (const NiftiImageData &source, OutputIterator target, const DataConversionMode mode)
-{
-    DataConverter<TargetType> converter(mode);
-    if (mode == IndexMode)
-        converter.calibrate(source);
-    else if (mode == ScaleMode && source.isScaled())
-    {
-        converter.slope = source.slope;
-        converter.intercept = source.intercept;
-    }
-    
-    const size_t length = source.length;
-    void *bytes = source.blob();
-    
-    switch (source.typeCode())
-    {
-        case DT_UINT8:      std::transform(static_cast<uint8_t*>(bytes), static_cast<uint8_t*>(bytes) + length, target, converter);     break;
-        case DT_INT16:      std::transform(static_cast<int16_t*>(bytes), static_cast<int16_t*>(bytes) + length, target, converter);     break;
-        case DT_INT32:      std::transform(static_cast<int32_t*>(bytes), static_cast<int32_t*>(bytes) + length, target, converter);     break;
-        case DT_FLOAT32:    std::transform(static_cast<float*>(bytes), static_cast<float*>(bytes) + length, target, converter);         break;
-        case DT_FLOAT64:    std::transform(static_cast<double*>(bytes), static_cast<double*>(bytes) + length, target, converter);       break;
-        case DT_INT8:       std::transform(static_cast<int8_t*>(bytes), static_cast<int8_t*>(bytes) + length, target, converter);       break;
-        case DT_UINT16:     std::transform(static_cast<uint16_t*>(bytes), static_cast<uint16_t*>(bytes) + length, target, converter);   break;
-        case DT_UINT32:     std::transform(static_cast<uint32_t*>(bytes), static_cast<uint32_t*>(bytes) + length, target, converter);   break;
-        case DT_INT64:      std::transform(static_cast<int64_t*>(bytes), static_cast<int64_t*>(bytes) + length, target, converter);     break;
-        case DT_UINT64:     std::transform(static_cast<uint64_t*>(bytes), static_cast<uint64_t*>(bytes) + length, target, converter);   break;
-    }
-}
-
-inline NiftiImageData convertData (const NiftiImageData &source, const short datatype, const DataConversionMode mode)
-{
-    NiftiImageData target(NULL, datatype, source.length);
-    switch (datatype)
-    {
-        case DT_UINT8:      convertData<uint8_t>(source, static_cast<uint8_t*>(target.blob()), mode);       break;
-        case DT_INT16:      convertData<int16_t>(source, static_cast<int16_t*>(target.blob()), mode);       break;
-        case DT_INT32:      convertData<int32_t>(source, static_cast<int32_t*>(target.blob()), mode);       break;
-        case DT_FLOAT32:    convertData<float>(source, static_cast<float*>(target.blob()), mode);           break;
-        case DT_FLOAT64:    convertData<double>(source, static_cast<double*>(target.blob()), mode);         break;
-        case DT_INT8:       convertData<int8_t>(source, static_cast<int8_t*>(target.blob()), mode);         break;
-        case DT_UINT16:     convertData<uint16_t>(source, static_cast<uint16_t*>(target.blob()), mode);     break;
-        case DT_UINT32:     convertData<uint32_t>(source, static_cast<uint32_t*>(target.blob()), mode);     break;
-        case DT_INT64:      convertData<int64_t>(source, static_cast<int64_t*>(target.blob()), mode);       break;
-        case DT_UINT64:     convertData<uint64_t>(source, static_cast<uint64_t*>(target.blob()), mode);     break;
-        
-        default:
-        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
-    }
-    return target;
-}
 
 template <typename SourceType, class InputIterator>
 inline void replaceData (InputIterator begin, InputIterator end, void *target, const short datatype)
@@ -360,9 +306,9 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
         NiftiImageData data(source->data, source->datatype, source->nvox);
         Rcpp::Vector<SexpType> array(static_cast<int>(source->nvox));
         if (SexpType == INTSXP || SexpType == LGLSXP)
-            convertData<int>(data, array.begin(), CastMode);
+            data.transform<int>(array.begin(), CastMode);
         else if (SexpType == REALSXP)
-            convertData<double>(data, array.begin(), CastMode);
+            data.transform<double>(array.begin(), CastMode);
         else
             throw std::runtime_error("Only numeric arrays can be created");
         return array;

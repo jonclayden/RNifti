@@ -98,7 +98,12 @@ inline bool isNaN<int> (const int x) { return (x == NA_INTEGER); }
 template <typename Type>
 inline bool lessThan (Type a, Type b) { return (!isNaN(a) && !isNaN(b) && a < b); }
 
+// Forward declaration
+template <typename TargetType> struct DataConverter;
+
 } // internal namespace
+
+enum DataConversionMode { CastMode, ScaleMode, IndexMode };
 
 class NiftiImageData
 {
@@ -270,6 +275,57 @@ public:
     IteratorType<int> iend () const { return IteratorType<int>(static_cast<char*>(dataptr) + length * handler->size(), handler->size()); }
     
     void minmax (double *min, double *max) const { handler->minmax(dataptr, length, min, max); }
+    
+    template <typename TargetType, class OutputIterator>
+    OutputIterator transform (OutputIterator target, const DataConversionMode mode) const
+    {
+        internal::DataConverter<TargetType> converter(mode);
+        if (mode == IndexMode)
+            converter.calibrate(*this);
+        else if (mode == ScaleMode && this->isScaled())
+        {
+            converter.slope = slope;
+            converter.intercept = intercept;
+        }
+        
+        switch (datatype)
+        {
+            case DT_UINT8:   return std::transform(static_cast<uint8_t*>(dataptr), static_cast<uint8_t*>(dataptr) + length, target, converter);
+            case DT_INT16:   return std::transform(static_cast<int16_t*>(dataptr), static_cast<int16_t*>(dataptr) + length, target, converter);
+            case DT_INT32:   return std::transform(static_cast<int32_t*>(dataptr), static_cast<int32_t*>(dataptr) + length, target, converter);
+            case DT_FLOAT32: return std::transform(static_cast<float*>(dataptr), static_cast<float*>(dataptr) + length, target, converter);
+            case DT_FLOAT64: return std::transform(static_cast<double*>(dataptr), static_cast<double*>(dataptr) + length, target, converter);
+            case DT_INT8:    return std::transform(static_cast<int8_t*>(dataptr), static_cast<int8_t*>(dataptr) + length, target, converter);
+            case DT_UINT16:  return std::transform(static_cast<uint16_t*>(dataptr), static_cast<uint16_t*>(dataptr) + length, target, converter);
+            case DT_UINT32:  return std::transform(static_cast<uint32_t*>(dataptr), static_cast<uint32_t*>(dataptr) + length, target, converter);
+            case DT_INT64:   return std::transform(static_cast<int64_t*>(dataptr), static_cast<int64_t*>(dataptr) + length, target, converter);
+            case DT_UINT64:  return std::transform(static_cast<uint64_t*>(dataptr), static_cast<uint64_t*>(dataptr) + length, target, converter);
+        }
+        
+        return OutputIterator();
+    }
+    
+    NiftiImageData convert (const short newDatatype, const DataConversionMode mode) const
+    {
+        NiftiImageData target(NULL, newDatatype, length);
+        switch (newDatatype)
+        {
+            case DT_UINT8:   transform<uint8_t>(static_cast<uint8_t*>(target.blob()), mode);   break;
+            case DT_INT16:   transform<int16_t>(static_cast<int16_t*>(target.blob()), mode);   break;
+            case DT_INT32:   transform<int32_t>(static_cast<int32_t*>(target.blob()), mode);   break;
+            case DT_FLOAT32: transform<float>(static_cast<float*>(target.blob()), mode);       break;
+            case DT_FLOAT64: transform<double>(static_cast<double*>(target.blob()), mode);     break;
+            case DT_INT8:    transform<int8_t>(static_cast<int8_t*>(target.blob()), mode);     break;
+            case DT_UINT16:  transform<uint16_t>(static_cast<uint16_t*>(target.blob()), mode); break;
+            case DT_UINT32:  transform<uint32_t>(static_cast<uint32_t*>(target.blob()), mode); break;
+            case DT_INT64:   transform<int64_t>(static_cast<int64_t*>(target.blob()), mode);   break;
+            case DT_UINT64:  transform<uint64_t>(static_cast<uint64_t*>(target.blob()), mode); break;
+        
+            default:
+            throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
+        }
+        return target;
+    }
 };
 
 
@@ -1849,7 +1905,7 @@ inline std::vector<TargetType> NiftiImage::Block::getData (const bool useSlope) 
     else
     {
         std::vector<TargetType> result(data.length);
-        internal::convertData<TargetType>(data, result.begin(), useSlope ? internal::ScaleMode : internal::CastMode);
+        data.transform<TargetType>(result.begin(), useSlope ? ScaleMode : CastMode);
         return result;
     }
 }
@@ -1864,7 +1920,7 @@ inline std::vector<TargetType> NiftiImage::getData (const bool useSlope) const
     else
     {
         std::vector<TargetType> result(data.length);
-        internal::convertData<TargetType>(data, result.begin(), useSlope ? internal::ScaleMode : internal::CastMode);
+        data.transform<TargetType>(result.begin(), useSlope ? ScaleMode : CastMode);
         return result;
     }
 }
@@ -1880,7 +1936,7 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
     NiftiImageData data = this->data();
     if (!data.isEmpty())
     {
-        data = internal::convertData(data, datatype, useSlope ? internal::IndexMode : internal::CastMode);
+        data = data.convert(datatype, useSlope ? IndexMode : CastMode);
         nifti_image_unload(image);
         image->data = data.blob();
         image->scl_slope = data.slope;

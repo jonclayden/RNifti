@@ -443,13 +443,13 @@ SEXP imageDataToVector (const NiftiImage &image)
     if (data.isFloatingPoint() || image.isDataScaled())
     {
         NumericVector result(data.length);
-        RNifti::internal::convertData<double>(data, result.begin(), RNifti::internal::ScaleMode);
+        data.transform<double>(result.begin(), ScaleMode);
         return result;
     }
     else
     {
         IntegerVector result(data.length);
-        RNifti::internal::convertData<int>(data, result.begin(), RNifti::internal::CastMode);
+        data.transform<int>(result.begin(), CastMode);
         return result;
     }
 }
