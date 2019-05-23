@@ -218,45 +218,51 @@ protected:
         }
     }
     
+public:
     template <typename ValueType>
-    class IteratorType : public std::iterator<std::input_iterator_tag, ValueType>
+    class Iterator : public std::iterator<std::input_iterator_tag, ValueType>
     {
     private:
         void *ptr;
         size_t step;
+        TypeHandler *handler;
         
         // Hide default constructor
-        IteratorType () {}
+        Iterator () {}
         
     public:
-        IteratorType (void *p, const size_t step = 1)
-            : ptr(p), step(step) {}
-        IteratorType (const IteratorType<ValueType> &other)
-            : ptr(other.ptr), step(other.step) {}
+        Iterator (void *p, TypeHandler *handler, const size_t step = 0)
+            : ptr(p), handler(handler)
+        {
+            this->step = (step == 0 ? handler->size() : step);
+        }
         
-        IteratorType<ValueType> & operator++ () { ptr = static_cast<char*>(ptr) + step; return *this; }
-        IteratorType<ValueType> operator+ (ptrdiff_t n) const
+        Iterator (const Iterator<ValueType> &other)
+            : ptr(other.ptr), step(other.step), handler(other.handler) {}
+        
+        Iterator<ValueType> & operator++ () { ptr = static_cast<char*>(ptr) + step; return *this; }
+        Iterator<ValueType> operator+ (ptrdiff_t n) const
         {
             void *newptr = static_cast<char*>(ptr) + (n * step);
-            return IteratorType<ValueType>(newptr, step);
+            return Iterator<ValueType>(newptr, handler, step);
         }
-        IteratorType<ValueType> & operator-- () { ptr = static_cast<char*>(ptr) - step; return *this; }
-        IteratorType<ValueType> operator- (ptrdiff_t n) const
+        Iterator<ValueType> & operator-- () { ptr = static_cast<char*>(ptr) - step; return *this; }
+        Iterator<ValueType> operator- (ptrdiff_t n) const
         {
             void *newptr = static_cast<char*>(ptr) - (n * step);
-            return IteratorType<ValueType>(newptr, step);
+            return Iterator<ValueType>(newptr, handler, step);
         }
         
-        ptrdiff_t operator- (const IteratorType<ValueType> &other) const
+        ptrdiff_t operator- (const Iterator<ValueType> &other) const
         {
             const ptrdiff_t difference = static_cast<char*>(ptr) - static_cast<char*>(other.ptr);
             return difference / step;
         }
         
-        bool operator== (const IteratorType<ValueType> &other) const { return (ptr==other.ptr && step==other.step); }
-        bool operator!= (const IteratorType<ValueType> &other) const { return (ptr!=other.ptr || step!=other.step); }
-        bool operator> (const IteratorType<ValueType> &other) const { return (ptr > other.ptr); }
-        bool operator< (const IteratorType<ValueType> &other) const { return (ptr < other.ptr); }
+        bool operator== (const Iterator<ValueType> &other) const { return (ptr==other.ptr && step==other.step); }
+        bool operator!= (const Iterator<ValueType> &other) const { return (ptr!=other.ptr || step!=other.step); }
+        bool operator> (const Iterator<ValueType> &other) const { return (ptr > other.ptr); }
+        bool operator< (const Iterator<ValueType> &other) const { return (ptr < other.ptr); }
         
         ValueType operator* () const
         {
@@ -273,7 +279,6 @@ protected:
         }
     };
     
-public:
     size_t length;
     double slope, intercept;
     
@@ -372,10 +377,10 @@ public:
     bool isInteger () const { return nifti_is_inttype(datatype); }
     bool isRgb () const { return false; }
     
-    IteratorType<double> dbegin () const { return IteratorType<double>(dataptr, handler->size()); }
-    IteratorType<double> dend () const { return IteratorType<double>(static_cast<char*>(dataptr) + length * handler->size(), handler->size()); }
-    IteratorType<int> ibegin () const { return IteratorType<int>(dataptr, handler->size()); }
-    IteratorType<int> iend () const { return IteratorType<int>(static_cast<char*>(dataptr) + length * handler->size(), handler->size()); }
+    Iterator<double> dbegin () const { return Iterator<double>(dataptr, handler); }
+    Iterator<double> dend () const { return Iterator<double>(static_cast<char*>(dataptr) + length * handler->size(), handler); }
+    Iterator<int> ibegin () const { return Iterator<int>(dataptr, handler); }
+    Iterator<int> iend () const { return Iterator<int>(static_cast<char*>(dataptr) + length * handler->size(), handler); }
     
     void minmax (double *min, double *max) const { handler->minmax(dataptr, length, min, max); }
     

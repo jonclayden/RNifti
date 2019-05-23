@@ -454,6 +454,38 @@ SEXP imageDataToVector (const NiftiImage &image, void *blob, const size_t length
     }
 }
 
+RcppExport SEXP indexVector (SEXP _image, SEXP _indices)
+{
+BEGIN_RCPP
+    const NiftiImage image(_image, true, true);
+    if (image.isNull())
+        Rf_error("Cannot index into a NULL image");
+    else if (image->data == NULL)
+        return LogicalVector(Rf_length(_indices), NA_LOGICAL);
+    else
+    {
+        const IntegerVector indices(_indices);
+        const NiftiImageData data = image.data();
+        if (data.isFloatingPoint() || data.isScaled())
+        {
+            NumericVector result(indices.length());
+            NiftiImageData::Iterator<double> start = data.dbegin();
+            for (size_t i=0; i<indices.length(); i++)
+                result[i] = *(start + indices[i] - 1);
+            return result;
+        }
+        else
+        {
+            IntegerVector result(indices.length());
+            NiftiImageData::Iterator<int> start = data.ibegin();
+            for (size_t i=0; i<indices.length(); i++)
+                result[i] = *(start + indices[i] - 1);
+            return result;
+        }
+    }
+END_RCPP
+}
+
 RcppExport SEXP indexCollapsed (SEXP _image, SEXP _indices)
 {
 BEGIN_RCPP
@@ -509,6 +541,53 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP indexList (SEXP _image, SEXP _indices)
+{
+BEGIN_RCPP
+    const NiftiImage image(_image, true, true);
+    if (image.isNull())
+        Rf_error("Cannot index into a NULL image");
+    else if (image->data == NULL)
+        return LogicalVector(1, NA_LOGICAL);
+    else
+    {
+        const List indices(_indices);
+        const std::vector<int> dim = image.dim();
+        std::vector<size_t> strides(indices.length());
+        std::vector<int_vector> locs(indices.length());
+        int_vector sizes(indices.length());
+        std::vector<size_t> cumulativeSizes(indices.length());
+        size_t count = 1;
+        for (int i=0; i<indices.length(); i++)
+        {
+            strides[i] = (i == 0 ? 1 : strides[i-1] * dim[i-1]);
+            locs[i] = as<int_vector>(indices[i]);
+            sizes[i] = locs[i].size();
+            cumulativeSizes = (i == 0 ? 1 : cumulativeSizes[i-1] * sizes[i-1]);
+            count *= sizes[i];
+        }
+        
+        const NiftiImageData data = image.data();
+        if (data.isFloatingPoint() || data.isScaled())
+        {
+            NumericVector result(count);
+            NiftiImageData::Iterator<double> start = data.dbegin();
+            for (size_t i=0; i<count; i++)
+                result[i] = *(start + indices[i]);
+            return result;
+        }
+        else
+        {
+            IntegerVector result(indices.length());
+            NiftiImageData::Iterator<int> start = data.ibegin();
+            for (size_t i=0; i<indices.length(); i++)
+                result[i] = *(start + indices[i]);
+            return result;
+        }
+    }
+END_RCPP
+}
+
 RcppExport SEXP rescaleImage (SEXP _image, SEXP _scales)
 {
 BEGIN_RCPP
@@ -544,8 +623,10 @@ static R_CallMethodDef callMethods[] = {
     { "getRotation",    (DL_FUNC) &getRotation,     2 },
     { "getAddresses",   (DL_FUNC) &getAddresses,    1 },
     { "hasData",        (DL_FUNC) &hasData,         1 },
+    { "indexVector",    (DL_FUNC) &indexVector      2 },
     { "indexCollapsed", (DL_FUNC) &indexCollapsed,  2 },
     { "indexBlock",     (DL_FUNC) &indexBlock,      3 },
+    { "indexList",      (DL_FUNC) &indexList,       2 },
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },
     { NULL, NULL, 0 }

@@ -63,9 +63,23 @@ as.array.internalImage <- function (x, ...)
         return (as.array(x))
     else if (any(lengths == 0))
         return (numeric(0))
-    # else if (nArgs != length(dims) + 1)          # TODO: vector and matrix indexing, which only involve i
-        # stop("Number of indices (", nArgs-1, ") not equal to the dimensionality of the image (", length(dims), ")")
-    else if (nArgs == length(dims) + 1)
+    else if (nArgs == 2 && present[1])
+    {
+        if (is.matrix(i))
+        {
+            if (ncol(i) != length(dims))
+                stop("Index matrix should have as many columns as the image has dimensions")
+            strides <- c(1, cumprod(dims))[-length(dims)]
+            locs <- apply(i, 1, function(n) sum((n-1)*strides) + 1)
+        }
+        else
+            locs <- as.integer(i)
+        
+        return (.Call("indexVector", x, locs, PACKAGE="RNifti"))
+    }
+    else if (nArgs != length(dims) + 1)
+        stop("Number of indices (", nArgs-1, ") not equal to the dimensionality of the image (", length(dims), ")")
+    else
     {
         if (all(lengths %in% c(-1L,1L)))
         {
@@ -78,6 +92,18 @@ as.array.internalImage <- function (x, ...)
             sizes <- ifelse(present, lengths, dims)
             data <- .Call("indexBlock", x, starts, sizes, PACKAGE="RNifti")
             dim(data) <- sizes
+        }
+        else
+        {
+            data <- .Call("indexList", x, lapply(seq_along(indices), function(l) {
+                if (indices[[l]] == -1)
+                    seq_len(dims[l])
+                else if (is.logical(indices[[l]]))
+                    which(indices[[l]])
+                else
+                    indices[[l]]
+            }), PACKAGE="RNifti")
+            dim(data) <- ifelse(present, lengths, dims)
         }
     }
     
