@@ -3,141 +3,6 @@
 
 namespace internal {
 
-inline double roundEven (const double value)
-{
-    if (isNaN(value))
-        return value;
-    
-    double whole;
-    double frac = std::fabs(std::modf(value, &whole));
-    double sign = (value < 0.0 ? -1.0 : 1.0);
-    
-    if (frac < 0.5)
-        return whole;
-    else if (frac > 0.5)
-        return whole + sign;
-    else if (std::fmod(whole, 2.0) < 0.0001)
-        return whole;
-    else
-        return whole + sign;
-}
-
-template <typename TargetType>
-struct DataConverter
-{
-    DataConversionMode mode;
-    double slope, intercept;
-    
-    DataConverter (const DataConversionMode mode = CastMode)
-        : mode(mode), slope(0.0), intercept(0.0) {}
-    
-    DataConverter (const float slope, const float intercept)
-        : mode(ScaleMode), slope(static_cast<double>(slope)), intercept(static_cast<double>(intercept))
-    {
-        if (slope == 0.0 || (slope == 1.0 && intercept == 0.0))
-            mode = CastMode;
-    }
-    
-    DataConverter & calibrate (const NiftiImageData &data)
-    {
-        if (std::numeric_limits<TargetType>::is_integer)
-        {
-            double dataMin, dataMax;
-            data.minmax(&dataMin, &dataMax);
-            const double typeMin = static_cast<double>(std::numeric_limits<TargetType>::min());
-            const double typeMax = static_cast<double>(std::numeric_limits<TargetType>::max());
-            
-            // If the source type is floating-point but values are in range, we will just round them
-            if (dataMin < typeMin || dataMax > typeMax)
-            {
-                slope = (dataMax - dataMin) / (typeMax - typeMin);
-                intercept = dataMin - slope * typeMin;
-            }
-            else
-            {
-                slope = 1.0;
-                intercept = 0.0;
-            }
-        }
-        return *this;
-    }
-    
-    template <typename SourceType>
-    TargetType convertValue (const SourceType value) const
-    {
-        // If NaNs aren't going to make it across, treat them as zero
-        if (isNaN(value) && !std::numeric_limits<TargetType>::has_quiet_NaN)
-            return (mode == IndexMode ? static_cast<TargetType>(roundEven(-intercept / slope)) : TargetType(0));
-        else if (mode == CastMode)
-            return static_cast<TargetType>(value);
-        else if (mode == ScaleMode)
-            return static_cast<TargetType>(static_cast<double>(value) * slope + intercept);
-        else if (mode == IndexMode)
-            return static_cast<TargetType>(roundEven((static_cast<double>(value) - intercept) / slope));
-        else
-            return TargetType(0);
-    }
-    
-    template <typename SourceType>
-    TargetType operator() (const SourceType value) const
-    {
-        return convertValue(value);
-    }
-};
-
-template <typename SourceType, class InputIterator>
-inline void replaceData (InputIterator begin, InputIterator end, void *target, const short datatype)
-{
-    if (target == NULL)
-        return;
-    
-    switch (datatype)
-    {
-        case DT_UINT8:
-        std::transform(begin, end, static_cast<uint8_t *>(target), DataConverter<uint8_t>());
-        break;
-        
-        case DT_INT16:
-        std::transform(begin, end, static_cast<int16_t *>(target), DataConverter<int16_t>());
-        break;
-        
-        case DT_INT32:
-        std::transform(begin, end, static_cast<int32_t *>(target), DataConverter<int32_t>());
-        break;
-        
-        case DT_FLOAT32:
-        std::transform(begin, end, static_cast<float *>(target), DataConverter<float>());
-        break;
-        
-        case DT_FLOAT64:
-        std::transform(begin, end, static_cast<double *>(target), DataConverter<double>());
-        break;
-        
-        case DT_INT8:
-        std::transform(begin, end, static_cast<int8_t *>(target), DataConverter<int8_t>());
-        break;
-        
-        case DT_UINT16:
-        std::transform(begin, end, static_cast<uint16_t *>(target), DataConverter<uint16_t>());
-        break;
-        
-        case DT_UINT32:
-        std::transform(begin, end, static_cast<uint32_t *>(target), DataConverter<uint32_t>());
-        break;
-        
-        case DT_INT64:
-        std::transform(begin, end, static_cast<int64_t *>(target), DataConverter<int64_t>());
-        break;
-        
-        case DT_UINT64:
-        std::transform(begin, end, static_cast<uint64_t *>(target), DataConverter<uint64_t>());
-        break;
-        
-        default:
-        throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
-    }
-}
-
 inline short stringToDatatype (const std::string &datatype)
 {
     static std::map<std::string,short> datatypeCodes;
@@ -306,9 +171,9 @@ inline Rcpp::RObject imageDataToArray (const nifti_image *source)
         NiftiImageData data(source->data, source->datatype, source->nvox);
         Rcpp::Vector<SexpType> array(static_cast<int>(source->nvox));
         if (SexpType == INTSXP || SexpType == LGLSXP)
-            data.transform<int>(array.begin(), CastMode);
+            data.convert<int>(array.begin(), CastMode);
         else if (SexpType == REALSXP)
-            data.transform<double>(array.begin(), CastMode);
+            data.convert<double>(array.begin(), CastMode);
         else
             throw std::runtime_error("Only numeric arrays can be created");
         return array;
