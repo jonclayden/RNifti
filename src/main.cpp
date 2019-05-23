@@ -553,17 +553,18 @@ BEGIN_RCPP
     {
         const List indices(_indices);
         const std::vector<int> dim = image.dim();
-        std::vector<size_t> strides(indices.length());
-        std::vector<int_vector> locs(indices.length());
-        int_vector sizes(indices.length());
-        std::vector<size_t> cumulativeSizes(indices.length());
+        const int nDims = indices.length();
+        std::vector<size_t> strides(nDims);
+        std::vector<int_vector> locs(nDims);
+        int_vector sizes(nDims);
+        std::vector<size_t> cumulativeSizes(nDims);
         size_t count = 1;
-        for (int i=0; i<indices.length(); i++)
+        for (int i=0; i<nDims; i++)
         {
             strides[i] = (i == 0 ? 1 : strides[i-1] * dim[i-1]);
             locs[i] = as<int_vector>(indices[i]);
             sizes[i] = locs[i].size();
-            cumulativeSizes = (i == 0 ? 1 : cumulativeSizes[i-1] * sizes[i-1]);
+            cumulativeSizes[i] = (i == 0 ? sizes[i] : sizes[i] * sizes[i-1]);
             count *= sizes[i];
         }
         
@@ -572,16 +573,26 @@ BEGIN_RCPP
         {
             NumericVector result(count);
             NiftiImageData::Iterator<double> start = data.dbegin();
-            for (size_t i=0; i<count; i++)
-                result[i] = *(start + indices[i]);
+            for (size_t j=0; j<count; j++)
+            {
+                size_t loc = 0;
+                for (int i=0; i<nDims; i++)
+                    loc += (locs[i][j % cumulativeSizes[i]] - 1) * strides[i];
+                result[j] = *(start + loc);
+            }
             return result;
         }
         else
         {
             IntegerVector result(indices.length());
             NiftiImageData::Iterator<int> start = data.ibegin();
-            for (size_t i=0; i<indices.length(); i++)
-                result[i] = *(start + indices[i]);
+            for (size_t j=0; j<count; j++)
+            {
+                size_t loc = 0;
+                for (int i=0; i<nDims; i++)
+                    loc += (locs[i][j % cumulativeSizes[i]] - 1) * strides[i];
+                result[j] = *(start + loc);
+            }
             return result;
         }
     }
@@ -623,7 +634,7 @@ static R_CallMethodDef callMethods[] = {
     { "getRotation",    (DL_FUNC) &getRotation,     2 },
     { "getAddresses",   (DL_FUNC) &getAddresses,    1 },
     { "hasData",        (DL_FUNC) &hasData,         1 },
-    { "indexVector",    (DL_FUNC) &indexVector      2 },
+    { "indexVector",    (DL_FUNC) &indexVector,     2 },
     { "indexCollapsed", (DL_FUNC) &indexCollapsed,  2 },
     { "indexBlock",     (DL_FUNC) &indexBlock,      3 },
     { "indexList",      (DL_FUNC) &indexList,       2 },

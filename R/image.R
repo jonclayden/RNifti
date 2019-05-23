@@ -48,7 +48,10 @@ as.array.internalImage <- function (x, ...)
         return (as.array(x))
     
     # Evaluate the indices, replacing missing values with -1
-    indices <- substitute(list(i,j,...))
+    if (nArgs == 2)
+        indices <- substitute(list(i))
+    else
+        indices <- substitute(list(i,j,...))
     present <- (sapply(indices, as.character)[-1] != "")
     if (any(!present))
         indices[which(!present)+1] <- -1
@@ -69,7 +72,7 @@ as.array.internalImage <- function (x, ...)
         {
             if (ncol(i) != length(dims))
                 stop("Index matrix should have as many columns as the image has dimensions")
-            strides <- c(1, cumprod(dims))[-length(dims)]
+            strides <- c(1, cumprod(dims)[-length(dims)])
             locs <- apply(i, 1, function(n) sum((n-1)*strides) + 1)
         }
         else
