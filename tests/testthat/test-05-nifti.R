@@ -61,6 +61,8 @@ test_that("NIfTI files can be read and written", {
     array <- as.array(image)
     expect_s3_class(image, "internalImage")
     expect_s3_class(image, "niftiImage")
+    expect_equal(image[], array)
+    expect_equal(image[,,], array)
     expect_equal(array[40,40,30], 368)
     expect_equal(image[40,40,30], 368)
     expect_equal(image[271048], 368)
@@ -68,7 +70,9 @@ test_that("NIfTI files can be read and written", {
     expect_equal(array[40:42,,30:32], image[40:42,,30:32])
     m <- matrix(c(40,40,30,42,30,32), byrow=TRUE, ncol=3)
     expect_equal(array[m], image[m])
+    expect_equal(array[c(40,42),,c(30,32)], image[c(40,42),,c(30,32)])
     expect_error(dim(image) <- c(60L,96L,96L))
+    expect_error(pixdim(image) <- c(1,1,1))
     expect_error(image[40,40,30] <- 400)
     
     image <- readNifti(volumeImagePath, volumes=1:2)

@@ -99,7 +99,7 @@ as.array.internalImage <- function (x, ...)
         else
         {
             data <- .Call("indexList", x, lapply(seq_along(indices), function(l) {
-                if (indices[[l]] == -1)
+                if (length(indices[[l]]) == 1 && indices[[l]] == -1)
                     seq_len(dims[l])
                 else if (is.logical(indices[[l]]))
                     which(indices[[l]])
