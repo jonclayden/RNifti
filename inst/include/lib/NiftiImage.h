@@ -130,6 +130,8 @@ protected:
         virtual size_t size () const { return 0; }
         virtual double doubleValue (void *ptr) const = 0;
         virtual int intValue (void *ptr) const = 0;
+        virtual void doubleValue (void *ptr, double value) const = 0;
+        virtual void intValue (void *ptr, int value) const = 0;
         virtual void minmax (void *ptr, const size_t length, double *min, double *max) const = 0;
     };
     
@@ -139,6 +141,8 @@ protected:
         size_t size () const { return (sizeof(Type)); }
         double doubleValue (void *ptr) const { return static_cast<double>(*static_cast<Type*>(ptr)); }
         int intValue (void *ptr) const { return static_cast<int>(*static_cast<Type*>(ptr)); }
+        void doubleValue (void *ptr, double value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
+        void intValue (void *ptr, int value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
         void minmax (void *ptr, const size_t length, double *min, double *max) const
         {
             if (length < 1)
@@ -161,6 +165,41 @@ protected:
     };
     
 public:
+    struct ElementProxy
+    {
+    private:
+        const NiftiImageData &parent;
+        void *ptr;
+        
+    public:
+        ElementProxy (const NiftiImageData &parent, void *ptr = NULL)
+            : parent(parent)
+        {
+            this->ptr = (ptr == NULL ? parent.dataptr : ptr);
+        }
+        
+        template <typename SourceType>
+        ElementProxy & operator= (const SourceType &value)
+        {
+            if (std::numeric_limits<SourceType>::is_integer)
+                parent.handler->intValue(ptr, static_cast<int>(value));
+            else
+                parent.handler->doubleValue(ptr, static_cast<double>(value));
+            return *this;
+        }
+        
+        template <typename TargetType>
+        operator TargetType() const
+        {
+            if (parent.isScaled())
+                return TargetType(parent.handler->doubleValue(ptr) * parent.slope + parent.intercept);
+            else if (std::numeric_limits<TargetType>::is_integer)
+                return TargetType(parent.handler->intValue(ptr));
+            else
+                return TargetType(parent.handler->doubleValue(ptr));
+        }
+    };
+    
     template <typename TargetType>
     struct Converter
     {
@@ -219,64 +258,50 @@ protected:
     }
     
 public:
-    template <typename ValueType>
-    class Iterator : public std::iterator<std::input_iterator_tag, ValueType>
+    class Iterator : public std::iterator<std::random_access_iterator_tag, ElementProxy>
     {
     private:
+        const NiftiImageData &parent;
         void *ptr;
         size_t step;
-        TypeHandler *handler;
-        
-        // Hide default constructor
-        Iterator () {}
         
     public:
-        Iterator (void *p, TypeHandler *handler, const size_t step = 0)
-            : ptr(p), handler(handler)
+        Iterator (const NiftiImageData &parent, void *ptr = NULL, const size_t step = 0)
+            : parent(parent)
         {
-            this->step = (step == 0 ? handler->size() : step);
+            this->ptr = (ptr == NULL ? parent.dataptr : ptr);
+            this->step = (step == 0 ? parent.handler->size() : step);
         }
         
-        Iterator (const Iterator<ValueType> &other)
-            : ptr(other.ptr), step(other.step), handler(other.handler) {}
+        Iterator (const Iterator &other)
+            : parent(other.parent), ptr(other.ptr), step(other.step) {}
         
-        Iterator<ValueType> & operator++ () { ptr = static_cast<char*>(ptr) + step; return *this; }
-        Iterator<ValueType> operator+ (ptrdiff_t n) const
+        Iterator & operator++ () { ptr = static_cast<char*>(ptr) + step; return *this; }
+        Iterator operator+ (ptrdiff_t n) const
         {
             void *newptr = static_cast<char*>(ptr) + (n * step);
-            return Iterator<ValueType>(newptr, handler, step);
+            return Iterator(parent, newptr, step);
         }
-        Iterator<ValueType> & operator-- () { ptr = static_cast<char*>(ptr) - step; return *this; }
-        Iterator<ValueType> operator- (ptrdiff_t n) const
+        Iterator & operator-- () { ptr = static_cast<char*>(ptr) - step; return *this; }
+        Iterator operator- (ptrdiff_t n) const
         {
             void *newptr = static_cast<char*>(ptr) - (n * step);
-            return Iterator<ValueType>(newptr, handler, step);
+            return Iterator(parent, newptr, step);
         }
         
-        ptrdiff_t operator- (const Iterator<ValueType> &other) const
+        ptrdiff_t operator- (const Iterator &other) const
         {
             const ptrdiff_t difference = static_cast<char*>(ptr) - static_cast<char*>(other.ptr);
             return difference / step;
         }
         
-        bool operator== (const Iterator<ValueType> &other) const { return (ptr==other.ptr && step==other.step); }
-        bool operator!= (const Iterator<ValueType> &other) const { return (ptr!=other.ptr || step!=other.step); }
-        bool operator> (const Iterator<ValueType> &other) const { return (ptr > other.ptr); }
-        bool operator< (const Iterator<ValueType> &other) const { return (ptr < other.ptr); }
+        bool operator== (const Iterator &other) const { return (ptr==other.ptr && step==other.step); }
+        bool operator!= (const Iterator &other) const { return (ptr!=other.ptr || step!=other.step); }
+        bool operator> (const Iterator &other) const { return (ptr > other.ptr); }
+        bool operator< (const Iterator &other) const { return (ptr < other.ptr); }
         
-        ValueType operator* () const
-        {
-            if (std::numeric_limits<ValueType>::is_integer)
-            {
-                const int value = handler->intValue(ptr);
-                return static_cast<ValueType>(value);
-            }
-            else
-            {
-                const double value = handler->doubleValue(ptr);
-                return static_cast<ValueType>(value);
-            }
-        }
+        const ElementProxy operator* () const { return ElementProxy(parent, ptr); }
+        ElementProxy operator* () { return ElementProxy(parent, ptr); }
     };
     
     size_t length;
@@ -377,10 +402,10 @@ public:
     bool isInteger () const { return nifti_is_inttype(datatype); }
     bool isRgb () const { return false; }
     
-    Iterator<double> dbegin () const { return Iterator<double>(dataptr, handler); }
-    Iterator<double> dend () const { return Iterator<double>(static_cast<char*>(dataptr) + length * handler->size(), handler); }
-    Iterator<int> ibegin () const { return Iterator<int>(dataptr, handler); }
-    Iterator<int> iend () const { return Iterator<int>(static_cast<char*>(dataptr) + length * handler->size(), handler); }
+    const Iterator begin () const { return Iterator(*this); }
+    const Iterator end () const { return Iterator(*this, static_cast<char*>(dataptr) + length * handler->size()); }
+    Iterator begin () { return Iterator(*this); }
+    Iterator end () { return Iterator(*this, static_cast<char*>(dataptr) + length * handler->size()); }
     
     void minmax (double *min, double *max) const { handler->minmax(dataptr, length, min, max); }
     

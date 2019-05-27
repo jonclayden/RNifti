@@ -469,7 +469,7 @@ BEGIN_RCPP
         if (data.isFloatingPoint() || data.isScaled())
         {
             NumericVector result(indices.length());
-            NiftiImageData::Iterator<double> start = data.dbegin();
+            NiftiImageData::Iterator start = data.begin();
             for (size_t i=0; i<indices.length(); i++)
                 result[i] = *(start + indices[i] - 1);
             return result;
@@ -477,7 +477,7 @@ BEGIN_RCPP
         else
         {
             IntegerVector result(indices.length());
-            NiftiImageData::Iterator<int> start = data.ibegin();
+            NiftiImageData::Iterator start = data.begin();
             for (size_t i=0; i<indices.length(); i++)
                 result[i] = *(start + indices[i] - 1);
             return result;
@@ -572,7 +572,7 @@ BEGIN_RCPP
         if (data.isFloatingPoint() || data.isScaled())
         {
             NumericVector result(count);
-            NiftiImageData::Iterator<double> start = data.dbegin();
+            NiftiImageData::Iterator start = data.begin();
             for (size_t j=0; j<count; j++)
             {
                 size_t loc = 0;
@@ -585,7 +585,7 @@ BEGIN_RCPP
         else
         {
             IntegerVector result(count);
-            NiftiImageData::Iterator<int> start = data.ibegin();
+            NiftiImageData::Iterator start = data.begin();
             for (size_t j=0; j<count; j++)
             {
                 size_t loc = 0;
