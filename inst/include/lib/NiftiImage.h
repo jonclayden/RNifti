@@ -119,8 +119,6 @@ inline double roundEven (const double value)
 
 } // internal namespace
 
-enum DataConversionMode { CastMode, ScaleMode, IndexMode };
-
 class NiftiImageData
 {
 protected:
@@ -128,6 +126,8 @@ protected:
     {
         virtual ~TypeHandler() {}
         virtual size_t size () const { return 0; }
+        virtual double typeMin () const = 0;
+        virtual double typeMax () const = 0;
         virtual double doubleValue (void *ptr) const = 0;
         virtual int intValue (void *ptr) const = 0;
         virtual void doubleValue (void *ptr, double value) const = 0;
@@ -139,6 +139,8 @@ protected:
     struct ConcreteTypeHandler : public TypeHandler
     {
         size_t size () const { return (sizeof(Type)); }
+        double typeMin () const { return std::numeric_limits<Type>::min(); }
+        double typeMax () const { return std::numeric_limits<Type>::max(); }
         double doubleValue (void *ptr) const { return static_cast<double>(*static_cast<Type*>(ptr)); }
         int intValue (void *ptr) const { return static_cast<int>(*static_cast<Type*>(ptr)); }
         void doubleValue (void *ptr, double value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
@@ -164,73 +166,6 @@ protected:
         }
     };
     
-public:
-    struct ElementProxy
-    {
-    private:
-        const NiftiImageData &parent;
-        void *ptr;
-        
-    public:
-        ElementProxy (const NiftiImageData &parent, void *ptr = NULL)
-            : parent(parent)
-        {
-            this->ptr = (ptr == NULL ? parent.dataptr : ptr);
-        }
-        
-        template <typename SourceType>
-        ElementProxy & operator= (const SourceType &value)
-        {
-            if (std::numeric_limits<SourceType>::is_integer)
-                parent.handler->intValue(ptr, static_cast<int>(value));
-            else
-                parent.handler->doubleValue(ptr, static_cast<double>(value));
-            return *this;
-        }
-        
-        template <typename TargetType>
-        operator TargetType() const
-        {
-            if (parent.isScaled())
-                return TargetType(parent.handler->doubleValue(ptr) * parent.slope + parent.intercept);
-            else if (std::numeric_limits<TargetType>::is_integer)
-                return TargetType(parent.handler->intValue(ptr));
-            else
-                return TargetType(parent.handler->doubleValue(ptr));
-        }
-    };
-    
-    template <typename TargetType>
-    struct Converter
-    {
-        DataConversionMode mode;
-        double slope, intercept;
-        
-        Converter (const double slope, const double intercept, const DataConversionMode mode = CastMode)
-            : slope(slope), intercept(intercept), mode(mode)
-        {
-            if (slope == 0.0 || (slope == 1.0 && intercept == 0.0))
-                this->mode = CastMode;
-        }
-        
-        template <typename SourceType>
-        TargetType operator() (const SourceType value) const
-        {
-            // If NaNs aren't going to make it across, treat them as zero
-            if (internal::isNaN(value) && !std::numeric_limits<TargetType>::has_quiet_NaN)
-                return (mode == IndexMode ? static_cast<TargetType>(internal::roundEven(-intercept / slope)) : TargetType(0));
-            else if (mode == CastMode)
-                return static_cast<TargetType>(value);
-            else if (mode == ScaleMode)
-                return static_cast<TargetType>(static_cast<double>(value) * slope + intercept);
-            else if (mode == IndexMode)
-                return static_cast<TargetType>(internal::roundEven((static_cast<double>(value) - intercept) / slope));
-            else
-                return TargetType(0);
-        }
-    };
-    
-protected:
     void *dataptr;
     int datatype;
     TypeHandler *handler;
@@ -257,20 +192,76 @@ protected:
         }
     }
     
+    void calibrateFrom (const NiftiImageData &data)
+    {
+        slope = 1.0;
+        intercept = 0.0;
+        
+        if (this->isInteger())
+        {
+            double dataMin, dataMax;
+            data.minmax(&dataMin, &dataMax);
+            const double typeMin = data.handler->typeMin();
+            const double typeMax = data.handler->typeMax();
+            
+            // If the source type is floating-point but values are in range, we will just round them
+            if (dataMin < typeMin || dataMax > typeMax)
+            {
+                slope = (dataMax - dataMin) / (typeMax - typeMin);
+                intercept = dataMin - slope * typeMin;
+            }
+        }
+    }
+    
 public:
+    struct ElementProxy
+    {
+    private:
+        const NiftiImageData *parent;
+        void *ptr;
+        
+    public:
+        ElementProxy (const NiftiImageData *parent, void *ptr = NULL)
+            : parent(parent)
+        {
+            this->ptr = (ptr == NULL ? parent->dataptr : ptr);
+        }
+        
+        template <typename SourceType>
+        ElementProxy & operator= (const SourceType &value)
+        {
+            if (std::numeric_limits<SourceType>::is_integer)
+                parent->handler->intValue(ptr, static_cast<int>(value));
+            else
+                parent->handler->doubleValue(ptr, static_cast<double>(value));
+            return *this;
+        }
+        
+        template <typename TargetType>
+        operator TargetType() const
+        {
+            if (parent->isScaled())
+                return TargetType(parent->handler->doubleValue(ptr) * parent->slope + parent->intercept);
+            else if (std::numeric_limits<TargetType>::is_integer)
+                return TargetType(parent->handler->intValue(ptr));
+            else
+                return TargetType(parent->handler->doubleValue(ptr));
+        }
+    };
+    
     class Iterator : public std::iterator<std::random_access_iterator_tag, ElementProxy>
     {
     private:
-        const NiftiImageData &parent;
+        const NiftiImageData *parent;
         void *ptr;
         size_t step;
         
     public:
-        Iterator (const NiftiImageData &parent, void *ptr = NULL, const size_t step = 0)
+        Iterator (const NiftiImageData *parent, void *ptr = NULL, const size_t step = 0)
             : parent(parent)
         {
-            this->ptr = (ptr == NULL ? parent.dataptr : ptr);
-            this->step = (step == 0 ? parent.handler->size() : step);
+            this->ptr = (ptr == NULL ? parent->dataptr : ptr);
+            this->step = (step == 0 ? parent->handler->size() : step);
         }
         
         Iterator (const Iterator &other)
@@ -307,33 +298,6 @@ public:
     size_t length;
     double slope, intercept;
     
-protected:
-    template <typename TargetType>
-    void calibrate (const NiftiImageData &data, const DataConversionMode mode)
-    {
-        if (mode != IndexMode)
-            return;
-        
-        slope = 1.0;
-        intercept = 0.0;
-        
-        if (std::numeric_limits<TargetType>::is_integer)
-        {
-            double dataMin, dataMax;
-            data.minmax(&dataMin, &dataMax);
-            const double typeMin = static_cast<double>(std::numeric_limits<TargetType>::min());
-            const double typeMax = static_cast<double>(std::numeric_limits<TargetType>::max());
-            
-            // If the source type is floating-point but values are in range, we will just round them
-            if (dataMin < typeMin || dataMax > typeMax)
-            {
-                slope = (dataMax - dataMin) / (typeMax - typeMin);
-                intercept = dataMin - slope * typeMin;
-            }
-        }
-    }
-    
-public:
     NiftiImageData ()
         : dataptr(NULL), datatype(DT_NONE), length(0), handler(NULL), slope(0.0), intercept(0.0) {}
     
@@ -348,7 +312,7 @@ public:
             this->dataptr = static_cast<char*>(dataptr) + (handler->size() * offset);
     }
     
-    NiftiImageData (const NiftiImageData &source, const short datatype = DT_NONE, const DataConversionMode mode = CastMode)
+    NiftiImageData (const NiftiImageData &source, const short datatype = DT_NONE)
         : length(source.length), handler(NULL), slope(source.slope), intercept(source.intercept)
     {
         setDatatype(datatype == DT_NONE ? source.datatype : datatype);
@@ -358,22 +322,8 @@ public:
             memcpy(dataptr, source.dataptr, length * handler->size());
         else
         {
-            switch (datatype)
-            {
-                case DT_UINT8:   calibrate<uint8_t>(source, mode);  source.transform<uint8_t>(static_cast<uint8_t*>(dataptr), Converter<uint8_t>(slope,intercept,mode));  break;
-                case DT_INT16:   calibrate<int16_t>(source, mode);  source.transform<int16_t>(static_cast<int16_t*>(dataptr), Converter<int16_t>(slope,intercept,mode));  break;
-                case DT_INT32:   calibrate<int32_t>(source, mode);  source.transform<int32_t>(static_cast<int32_t*>(dataptr), Converter<int32_t>(slope,intercept,mode));  break;
-                case DT_FLOAT32: calibrate<float>(source, mode);    source.transform<float>(static_cast<float*>(dataptr), Converter<float>(slope,intercept,mode));    break;
-                case DT_FLOAT64: calibrate<double>(source, mode);   source.transform<double>(static_cast<double*>(dataptr), Converter<double>(slope,intercept,mode));   break;
-                case DT_INT8:    calibrate<int8_t>(source, mode);   source.transform<int8_t>(static_cast<int8_t*>(dataptr), Converter<int8_t>(slope,intercept,mode));   break;
-                case DT_UINT16:  calibrate<uint16_t>(source, mode); source.transform<uint16_t>(static_cast<uint16_t*>(dataptr), Converter<uint16_t>(slope,intercept,mode)); break;
-                case DT_UINT32:  calibrate<uint32_t>(source, mode); source.transform<uint32_t>(static_cast<uint32_t*>(dataptr), Converter<uint32_t>(slope,intercept,mode)); break;
-                case DT_INT64:   calibrate<int64_t>(source, mode);  source.transform<int64_t>(static_cast<int64_t*>(dataptr), Converter<int64_t>(slope,intercept,mode));  break;
-                case DT_UINT64:  calibrate<uint64_t>(source, mode); source.transform<uint64_t>(static_cast<uint64_t*>(dataptr), Converter<uint64_t>(slope,intercept,mode)); break;
-                
-                default:
-                throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
-            }
+            calibrateFrom(source);
+            std::copy(source.begin(), source.end(), this->begin());
         }
     }
     
@@ -382,15 +332,15 @@ public:
         delete handler;
     }
     
-    // NiftiImageData & operator= (const NiftiImageData &source)
-    // {
-    //     dataptr = source.dataptr;
-    //     setDatatype(source.datatype);
-    //     length = source.length;
-    //     slope = source.slope;
-    //     intercept = source.intercept;
-    //     return *this;
-    // }
+    NiftiImageData & operator= (const NiftiImageData &source)
+    {
+        dataptr = source.dataptr;
+        setDatatype(source.datatype);
+        length = source.length;
+        slope = source.slope;
+        intercept = source.intercept;
+        return *this;
+    }
     
     void * blob () const { return dataptr; }
     int typeCode () const { return datatype; }
@@ -402,59 +352,14 @@ public:
     bool isInteger () const { return nifti_is_inttype(datatype); }
     bool isRgb () const { return false; }
     
-    const Iterator begin () const { return Iterator(*this); }
-    const Iterator end () const { return Iterator(*this, static_cast<char*>(dataptr) + length * handler->size()); }
-    Iterator begin () { return Iterator(*this); }
-    Iterator end () { return Iterator(*this, static_cast<char*>(dataptr) + length * handler->size()); }
+    NiftiImageData unscaled () const { return NiftiImageData(dataptr, datatype, length); }
+    
+    const Iterator begin () const { return Iterator(this); }
+    const Iterator end () const { return Iterator(this, static_cast<char*>(dataptr) + length * handler->size()); }
+    Iterator begin () { return Iterator(this); }
+    Iterator end () { return Iterator(this, static_cast<char*>(dataptr) + length * handler->size()); }
     
     void minmax (double *min, double *max) const { handler->minmax(dataptr, length, min, max); }
-    
-    template <typename SourceType, class InputIterator>
-    void convert (InputIterator first, InputIterator last, const DataConversionMode mode = CastMode)
-    {
-        const ptrdiff_t distance = std::min(last-first, ptrdiff_t(length));
-        
-        switch (datatype)
-        {
-            case DT_UINT8:   std::transform(first, first + distance, static_cast<uint8_t*>(dataptr), Converter<uint8_t>(slope,intercept));   break;
-            case DT_INT16:   std::transform(first, first + distance, static_cast<int16_t*>(dataptr), Converter<int16_t>(slope,intercept));   break;
-            case DT_INT32:   std::transform(first, first + distance, static_cast<int32_t*>(dataptr), Converter<int32_t>(slope,intercept));   break;
-            case DT_FLOAT32: std::transform(first, first + distance, static_cast<float*>(dataptr), Converter<float>(slope,intercept));       break;
-            case DT_FLOAT64: std::transform(first, first + distance, static_cast<double*>(dataptr), Converter<double>(slope,intercept));     break;
-            case DT_INT8:    std::transform(first, first + distance, static_cast<int8_t*>(dataptr), Converter<int8_t>(slope,intercept));     break;
-            case DT_UINT16:  std::transform(first, first + distance, static_cast<uint16_t*>(dataptr), Converter<uint16_t>(slope,intercept)); break;
-            case DT_UINT32:  std::transform(first, first + distance, static_cast<uint32_t*>(dataptr), Converter<uint32_t>(slope,intercept)); break;
-            case DT_INT64:   std::transform(first, first + distance, static_cast<int64_t*>(dataptr), Converter<int64_t>(slope,intercept));   break;
-            case DT_UINT64:  std::transform(first, first + distance, static_cast<uint64_t*>(dataptr), Converter<uint64_t>(slope,intercept)); break;
-        }
-    }
-    
-    template <typename TargetType, class OutputIterator, class Operation>
-    OutputIterator transform (OutputIterator target, Operation operation) const
-    {
-        switch (datatype)
-        {
-            case DT_UINT8:   return std::transform(static_cast<uint8_t*>(dataptr), static_cast<uint8_t*>(dataptr) + length, target, operation);
-            case DT_INT16:   return std::transform(static_cast<int16_t*>(dataptr), static_cast<int16_t*>(dataptr) + length, target, operation);
-            case DT_INT32:   return std::transform(static_cast<int32_t*>(dataptr), static_cast<int32_t*>(dataptr) + length, target, operation);
-            case DT_FLOAT32: return std::transform(static_cast<float*>(dataptr), static_cast<float*>(dataptr) + length, target, operation);
-            case DT_FLOAT64: return std::transform(static_cast<double*>(dataptr), static_cast<double*>(dataptr) + length, target, operation);
-            case DT_INT8:    return std::transform(static_cast<int8_t*>(dataptr), static_cast<int8_t*>(dataptr) + length, target, operation);
-            case DT_UINT16:  return std::transform(static_cast<uint16_t*>(dataptr), static_cast<uint16_t*>(dataptr) + length, target, operation);
-            case DT_UINT32:  return std::transform(static_cast<uint32_t*>(dataptr), static_cast<uint32_t*>(dataptr) + length, target, operation);
-            case DT_INT64:   return std::transform(static_cast<int64_t*>(dataptr), static_cast<int64_t*>(dataptr) + length, target, operation);
-            case DT_UINT64:  return std::transform(static_cast<uint64_t*>(dataptr), static_cast<uint64_t*>(dataptr) + length, target, operation);
-        }
-        
-        return OutputIterator();
-    }
-    
-    template <typename TargetType, class OutputIterator>
-    OutputIterator convert (OutputIterator target, const DataConversionMode mode = CastMode) const
-    {
-        Converter<TargetType> converter(slope, intercept, mode);
-        return transform<TargetType>(target, converter);
-    }
 };
 
 
@@ -2028,13 +1933,15 @@ template <typename TargetType>
 inline std::vector<TargetType> NiftiImage::Block::getData (const bool useSlope) const
 {
     NiftiImageData data = this->data();
+    if (!useSlope)
+        data = data.unscaled();
     
     if (image.isNull() || data.isEmpty())
         return std::vector<TargetType>();
     else
     {
         std::vector<TargetType> result(data.length);
-        data.convert<TargetType>(result.begin(), useSlope ? ScaleMode : CastMode);
+        std::copy(data.begin(), data.end(), result.begin());
         return result;
     }
 }
@@ -2043,13 +1950,15 @@ template <typename TargetType>
 inline std::vector<TargetType> NiftiImage::getData (const bool useSlope) const
 {
     NiftiImageData data = this->data();
+    if (!useSlope)
+        data = data.unscaled();
     
     if (this->isNull() || data.isEmpty())
         return std::vector<TargetType>();
     else
     {
         std::vector<TargetType> result(data.length);
-        data.convert<TargetType>(result.begin(), useSlope ? ScaleMode : CastMode);
+        std::copy(data.begin(), data.end(), result.begin());
         return result;
     }
 }
@@ -2063,9 +1972,12 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
         throw std::runtime_error("Resetting the slope and intercept for an image with them already set is not supported");
     
     NiftiImageData data = this->data();
+    if (!useSlope)
+        data = data.unscaled();
+    
     if (!data.isEmpty())
     {
-        NiftiImageData newData(data, datatype, useSlope ? IndexMode : CastMode);
+        NiftiImageData newData(data, datatype);
         nifti_image_unload(image);
         image->data = newData.blob();
         image->scl_slope = newData.slope;
@@ -2099,9 +2011,8 @@ inline NiftiImage & NiftiImage::replaceData (const std::vector<SourceType> &data
     
     double min, max;
     NiftiImageData imageData = this->data();
-    imageData.convert<SourceType>(data.begin(), data.end());
+    std::copy(data.begin(), data.end(), imageData.begin());
     imageData.minmax(&min, &max);
-    image->data = imageData.blob();
     image->scl_slope = 0.0;
     image->scl_inter = 0.0;
     image->cal_min = static_cast<float>(min);
@@ -2139,39 +2050,23 @@ inline Rcpp::RObject NiftiImage::toArray () const
     
     if (this->isNull())
         return array;
-    else if (this->isDataScaled())
-    {
-        array = internal::imageDataToArray<REALSXP>(image);
-        std::transform(REAL(array), REAL(array)+Rf_length(array), REAL(array), NiftiImageData::Converter<double>(image->scl_slope, image->scl_inter, ScaleMode));
-    }
     else
     {
-        switch (image->datatype)
+        NiftiImageData data = this->data();
+        if (data.isEmpty())
         {
-            case DT_UINT8:
-            case DT_INT16:
-            case DT_INT32:
-            case DT_INT8:
-            case DT_UINT16:
-            case DT_UINT32:
-            case DT_INT64:
-            case DT_UINT64:
-            array = internal::imageDataToArray<INTSXP>(image);
-            break;
-        
-            case DT_FLOAT32:
-            case DT_FLOAT64:
-            array = internal::imageDataToArray<REALSXP>(image);
-            break;
-        
-            default:
-            throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(image->datatype)) + ")");
+            Rf_warning("Internal image contains no data - filling array with NAs");
+            array = Rcpp::LogicalVector(image->nvox, NA_LOGICAL);
         }
-    }
+        else if (data.isFloatingPoint() || data.isScaled())
+            array = Rcpp::NumericVector(data.begin(), data.end());
+        else
+            array = Rcpp::IntegerVector(data.begin(), data.end());
     
-    internal::addAttributes(array, *this);
-    array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "array");
-    return array;
+        internal::addAttributes(array, *this);
+        array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "array");
+        return array;
+    }
 }
 
 inline Rcpp::RObject NiftiImage::toPointer (const std::string label) const

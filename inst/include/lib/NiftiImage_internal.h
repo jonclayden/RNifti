@@ -149,37 +149,6 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
         strcpy(header->magic, Rcpp::as<std::string>(list["magic"]).substr(0,3).c_str());
 }
 
-template <int SexpType>
-inline Rcpp::RObject imageDataToArray (const nifti_image *source)
-{
-    if (source == NULL)
-        return Rcpp::RObject();
-    else if (source->data == NULL)
-    {
-        Rf_warning("Internal image contains no data - filling array with NAs");
-        Rcpp::Vector<SexpType> array(static_cast<int>(source->nvox));
-        if (SexpType == INTSXP || SexpType == LGLSXP)
-            std::fill(array.begin(), array.end(), NA_INTEGER);
-        else if (SexpType == REALSXP)
-            std::fill(array.begin(), array.end(), NA_REAL);
-        else
-            throw std::runtime_error("Only numeric arrays can be created");
-        return array;
-    }
-    else
-    {
-        NiftiImageData data(source->data, source->datatype, source->nvox);
-        Rcpp::Vector<SexpType> array(static_cast<int>(source->nvox));
-        if (SexpType == INTSXP || SexpType == LGLSXP)
-            data.convert<int>(array.begin(), CastMode);
-        else if (SexpType == REALSXP)
-            data.convert<double>(array.begin(), CastMode);
-        else
-            throw std::runtime_error("Only numeric arrays can be created");
-        return array;
-    }
-}
-
 inline void addAttributes (const SEXP pointer, const NiftiImage &source, const bool realDim = true, const bool includeXptr = true)
 {
     const int nDims = source->dim[0];

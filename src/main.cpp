@@ -441,17 +441,9 @@ SEXP imageDataToVector (const NiftiImage &image, void *blob, const size_t length
 {
     NiftiImageData data(blob, image->datatype, length, 0, image->scl_slope, image->scl_inter);
     if (data.isFloatingPoint() || data.isScaled())
-    {
-        NumericVector result(length);
-        data.convert<double>(result.begin(), ScaleMode);
-        return result;
-    }
+        return NumericVector(data.begin(), data.end());
     else
-    {
-        IntegerVector result(data.length);
-        data.convert<int>(result.begin(), CastMode);
-        return result;
-    }
+        return IntegerVector(data.begin(), data.end());
 }
 
 RcppExport SEXP indexVector (SEXP _image, SEXP _indices)
