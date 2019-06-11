@@ -461,9 +461,8 @@ BEGIN_RCPP
         if (data.isFloatingPoint() || data.isScaled())
         {
             NumericVector result(indices.length());
-            NiftiImageData::Iterator start = data.begin();
             for (size_t i=0; i<indices.length(); i++)
-                result[i] = *(start + indices[i] - 1);
+                result[i] = (indices[i] > data.size() ? NA_REAL : data[indices[i] - 1]);
             return result;
         }
         else
@@ -471,7 +470,7 @@ BEGIN_RCPP
             IntegerVector result(indices.length());
             NiftiImageData::Iterator start = data.begin();
             for (size_t i=0; i<indices.length(); i++)
-                result[i] = *(start + indices[i] - 1);
+                result[i] = (indices[i] > data.size() ? NA_INTEGER : data[indices[i] - 1]);
             return result;
         }
     }
@@ -564,26 +563,24 @@ BEGIN_RCPP
         if (data.isFloatingPoint() || data.isScaled())
         {
             NumericVector result(count);
-            NiftiImageData::Iterator start = data.begin();
             for (size_t j=0; j<count; j++)
             {
                 size_t loc = 0;
                 for (int i=0; i<nDims; i++)
                     loc += (locs[i][(j / cumulativeSizes[i]) % sizes[i]] - 1) * strides[i];
-                result[j] = *(start + loc);
+                result[j] = (loc >= data.size() ? NA_REAL : data[loc]);
             }
             return result;
         }
         else
         {
             IntegerVector result(count);
-            NiftiImageData::Iterator start = data.begin();
             for (size_t j=0; j<count; j++)
             {
                 size_t loc = 0;
                 for (int i=0; i<nDims; i++)
                     loc += (locs[i][(j / cumulativeSizes[i]) % sizes[i]] - 1) * strides[i];
-                result[j] = *(start + loc);
+                result[j] = (loc >= data.size() ? NA_INTEGER : data[loc]);
             }
             return result;
         }

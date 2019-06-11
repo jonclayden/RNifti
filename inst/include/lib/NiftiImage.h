@@ -344,6 +344,8 @@ public:
         
         const ElementProxy operator* () const { return ElementProxy(parent, ptr); }
         ElementProxy operator* () { return ElementProxy(parent, ptr); }
+        const ElementProxy operator[] (const size_t i) const { return ElementProxy(parent, static_cast<char*>(ptr) + (i * step)); }
+        ElementProxy operator[] (const size_t i) { return ElementProxy(parent, static_cast<char*>(ptr) + (i * step)); }
     };
     
     NiftiImageData ()
@@ -437,6 +439,9 @@ public:
     const Iterator end () const { return Iterator(this, static_cast<char*>(dataPtr) + length * handler->size()); }
     Iterator begin () { return Iterator(this); }
     Iterator end () { return Iterator(this, static_cast<char*>(dataPtr) + length * handler->size()); }
+    
+    const ElementProxy operator[] (const size_t i) const { return ElementProxy(this, static_cast<char*>(dataPtr) + (i * handler->size())); }
+    ElementProxy operator[] (const size_t i) { return ElementProxy(this, static_cast<char*>(dataPtr) + (i * handler->size())); }
     
     void minmax (double *min, double *max) const { handler->minmax(dataPtr, length, min, max); }
 };

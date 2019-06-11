@@ -66,6 +66,7 @@ test_that("NIfTI files can be read and written", {
     expect_equal(array[40,40,30], 368)
     expect_equal(image[40,40,30], 368)
     expect_equal(image[271048], 368)
+    expect_identical(image[552961], NA_integer_)
     expect_equal(array[40,,30], image[40,,30])
     expect_equal(array[40:42,,30:32], image[40:42,,30:32])
     m <- matrix(c(40,40,30,42,30,32), byrow=TRUE, ncol=3)
