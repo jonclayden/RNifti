@@ -90,7 +90,7 @@ inline bool isNaN (const Type x) { return (x != x); }
 template <>
 inline bool isNaN<double> (const double x) { return bool(ISNAN(x)); }
 
-// For R specifically, we have to catch NA_INTEGER (aka INT_MIN)
+// For R specifically, we have to catch NA_INTEGER (a.k.a. INT_MIN)
 template <>
 inline bool isNaN<int> (const int x) { return (x == NA_INTEGER); }
 #endif
@@ -126,6 +126,7 @@ protected:
     {
         virtual ~TypeHandler() {}
         virtual size_t size () const { return 0; }
+        virtual bool hasNaN () const { return false; }
         virtual double typeMin () const = 0;
         virtual double typeMax () const = 0;
         virtual double doubleValue (void *ptr) const = 0;
@@ -139,8 +140,9 @@ protected:
     struct ConcreteTypeHandler : public TypeHandler
     {
         size_t size () const { return (sizeof(Type)); }
-        double typeMin () const { return std::numeric_limits<Type>::min(); }
-        double typeMax () const { return std::numeric_limits<Type>::max(); }
+        bool hasNaN () const { return std::numeric_limits<Type>::has_quiet_NaN; }
+        double typeMin () const { return static_cast<double>(std::numeric_limits<Type>::min()); }
+        double typeMax () const { return static_cast<double>(std::numeric_limits<Type>::max()); }
         double doubleValue (void *ptr) const { return static_cast<double>(*static_cast<Type*>(ptr)); }
         int intValue (void *ptr) const { return static_cast<int>(*static_cast<Type*>(ptr)); }
         void doubleValue (void *ptr, double value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
@@ -166,49 +168,75 @@ protected:
         }
     };
     
-    void *dataptr;
-    int datatype;
+    void *dataPtr;
+    int *datatypePtr;
     TypeHandler *handler;
+    float *slopePtr, *interceptPtr;
+    size_t length;
+    bool owner;
     
-    void setDatatype (const short datatype)
+    TypeHandler * createHandler ()
     {
-        this->datatype = datatype;
-        switch (datatype)
+        if (datatypePtr == NULL)
+            return NULL;
+        
+        switch (*datatypePtr)
         {
-            case DT_UINT8:      handler = new ConcreteTypeHandler<uint8_t>();   break;
-            case DT_INT16:      handler = new ConcreteTypeHandler<int16_t>();   break;
-            case DT_INT32:      handler = new ConcreteTypeHandler<int32_t>();   break;
-            case DT_FLOAT32:    handler = new ConcreteTypeHandler<float>();     break;
-            case DT_FLOAT64:    handler = new ConcreteTypeHandler<double>();    break;
-            case DT_INT8:       handler = new ConcreteTypeHandler<int8_t>();    break;
-            case DT_UINT16:     handler = new ConcreteTypeHandler<uint16_t>();  break;
-            case DT_UINT32:     handler = new ConcreteTypeHandler<uint32_t>();  break;
-            case DT_INT64:      handler = new ConcreteTypeHandler<int64_t>();   break;
-            case DT_UINT64:     handler = new ConcreteTypeHandler<uint64_t>();  break;
+            case DT_UINT8:   return new ConcreteTypeHandler<uint8_t>();  break;
+            case DT_INT16:   return new ConcreteTypeHandler<int16_t>();  break;
+            case DT_INT32:   return new ConcreteTypeHandler<int32_t>();  break;
+            case DT_FLOAT32: return new ConcreteTypeHandler<float>();    break;
+            case DT_FLOAT64: return new ConcreteTypeHandler<double>();   break;
+            case DT_INT8:    return new ConcreteTypeHandler<int8_t>();   break;
+            case DT_UINT16:  return new ConcreteTypeHandler<uint16_t>(); break;
+            case DT_UINT32:  return new ConcreteTypeHandler<uint32_t>(); break;
+            case DT_INT64:   return new ConcreteTypeHandler<int64_t>();  break;
+            case DT_UINT64:  return new ConcreteTypeHandler<uint64_t>(); break;
             
             default:
-            handler = NULL;
-            throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(datatype)) + ")");
+            throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(*datatypePtr)) + ")");
         }
+    }
+    
+    void adopt (void *data, const size_t length, int *datatype, float *slope, float *intercept)
+    {
+        this->length = length;
+        this->dataPtr = data;
+        this->datatypePtr = datatype;
+        this->handler = createHandler();
+        this->slopePtr = slope;
+        this->interceptPtr = intercept;
+        owner = false;
+    }
+    
+    void allocate (const size_t length, const int datatype, const float slope, const float intercept)
+    {
+        this->length = length;
+        this->datatypePtr = new int(datatype);
+        this->handler = createHandler();
+        this->dataPtr = calloc(length, handler->size());
+        this->slopePtr = new float(slope);
+        this->interceptPtr = new float(intercept);
+        owner = true;
     }
     
     void calibrateFrom (const NiftiImageData &data)
     {
-        slope = 1.0;
-        intercept = 0.0;
+        *slopePtr = 1.0;
+        *interceptPtr = 0.0;
         
         if (this->isInteger())
         {
             double dataMin, dataMax;
             data.minmax(&dataMin, &dataMax);
-            const double typeMin = data.handler->typeMin();
-            const double typeMax = data.handler->typeMax();
+            const double typeMin = this->handler->typeMin();
+            const double typeMax = this->handler->typeMax();
             
             // If the source type is floating-point but values are in range, we will just round them
             if (dataMin < typeMin || dataMax > typeMax)
             {
-                slope = (dataMax - dataMin) / (typeMax - typeMin);
-                intercept = dataMin - slope * typeMin;
+                *slopePtr = (dataMax - dataMin) / (typeMax - typeMin);
+                *interceptPtr = dataMin - (*slopePtr) * typeMin;
             }
         }
     }
@@ -224,13 +252,21 @@ public:
         ElementProxy (const NiftiImageData *parent, void *ptr = NULL)
             : parent(parent)
         {
-            this->ptr = (ptr == NULL ? parent->dataptr : ptr);
+            this->ptr = (ptr == NULL ? parent->dataPtr : ptr);
         }
         
         template <typename SourceType>
         ElementProxy & operator= (const SourceType &value)
         {
-            if (std::numeric_limits<SourceType>::is_integer)
+            if (parent->isScaled())
+            {
+                double reverseScaledValue = (static_cast<double>(value) - parent->intercept()) / parent->slope();
+                if (parent->isFloatingPoint())
+                    parent->handler->doubleValue(ptr, reverseScaledValue);
+                else
+                    parent->handler->intValue(ptr, static_cast<int>(internal::roundEven(reverseScaledValue)));
+            }
+            else if (std::numeric_limits<SourceType>::is_integer)
                 parent->handler->intValue(ptr, static_cast<int>(value));
             else
                 parent->handler->doubleValue(ptr, static_cast<double>(value));
@@ -241,11 +277,26 @@ public:
         operator TargetType() const
         {
             if (parent->isScaled())
-                return TargetType(parent->handler->doubleValue(ptr) * parent->slope + parent->intercept);
+                return TargetType(parent->handler->doubleValue(ptr) * parent->slope() + parent->intercept());
             else if (std::numeric_limits<TargetType>::is_integer)
                 return TargetType(parent->handler->intValue(ptr));
             else
                 return TargetType(parent->handler->doubleValue(ptr));
+        }
+        
+        ElementProxy & operator= (const ElementProxy &other)
+        {
+            if (other.parent->isScaled() || other.parent->isFloatingPoint())
+            {
+                const double value = other;
+                *this = value;
+            }
+            else
+            {
+                const int value = other;
+                *this = value;
+            }
+            return *this;
         }
     };
     
@@ -260,7 +311,7 @@ public:
         Iterator (const NiftiImageData *parent, void *ptr = NULL, const size_t step = 0)
             : parent(parent)
         {
-            this->ptr = (ptr == NULL ? parent->dataptr : ptr);
+            this->ptr = (ptr == NULL ? parent->dataPtr : ptr);
             this->step = (step == 0 ? parent->handler->size() : step);
         }
         
@@ -295,31 +346,40 @@ public:
         ElementProxy operator* () { return ElementProxy(parent, ptr); }
     };
     
-    size_t length;
-    double slope, intercept;
-    
     NiftiImageData ()
-        : dataptr(NULL), datatype(DT_NONE), length(0), handler(NULL), slope(0.0), intercept(0.0) {}
+        : dataPtr(NULL), datatypePtr(NULL), length(0), handler(NULL), slopePtr(NULL), interceptPtr(NULL), owner(false) {}
     
-    NiftiImageData (void *dataptr, const short datatype, const size_t length, const ptrdiff_t offset = 0, const double slope = 0.0, const double intercept = 0.0)
-        : dataptr(dataptr), length(length), slope(slope), intercept(intercept)
+    NiftiImageData (const size_t length, const int datatype, const float slope = 1.0, const float intercept = 0.0)
     {
-        setDatatype(datatype);
-        
-        if (dataptr == NULL)
-            this->dataptr = calloc(length, handler->size());
-        else if (offset != 0)
-            this->dataptr = static_cast<char*>(dataptr) + (handler->size() * offset);
+        allocate(length, datatype, slope, intercept);
     }
     
-    NiftiImageData (const NiftiImageData &source, const short datatype = DT_NONE)
-        : length(source.length), handler(NULL), slope(source.slope), intercept(source.intercept)
+    NiftiImageData (nifti_image *image, const ptrdiff_t offset = 0)
     {
-        setDatatype(datatype == DT_NONE ? source.datatype : datatype);
-        dataptr = calloc(length, handler->size());
+        if (image == NULL)
+            adopt(NULL, 0, NULL, NULL, NULL);
+        else
+        {
+            adopt(image->data, image->nvox, &image->datatype, &image->scl_slope, &image->scl_inter);
+            if (offset != 0)
+                dataPtr = static_cast<char*>(image->data) + (handler->size() * offset);
+        }
+    }
+    
+    NiftiImageData (void *data, const size_t length, int *datatype, float *slope = NULL, float *intercept = NULL, const ptrdiff_t offset = 0)
+    {
+        adopt(data, length, datatype, slope, intercept);
+        if (offset != 0)
+            dataPtr = static_cast<char*>(data) + (handler->size() * offset);
+    }
+    
+    NiftiImageData (const NiftiImageData &source, const int datatype = DT_NONE)
+        : length(source.length), handler(NULL), slopePtr(source.slopePtr), interceptPtr(source.interceptPtr), owner(false)
+    {
+        allocate(source.length, datatype == DT_NONE ? source.datatype() : datatype, source.slope(), source.intercept());
         
-        if (datatype == DT_NONE || datatype == source.datatype)
-            memcpy(dataptr, source.dataptr, length * handler->size());
+        if (datatype == DT_NONE || datatype == source.datatype())
+            memcpy(dataPtr, source.dataPtr, length * handler->size());
         else
         {
             calibrateFrom(source);
@@ -330,36 +390,55 @@ public:
     virtual ~NiftiImageData ()
     {
         delete handler;
+        if (owner)
+        {
+            free(dataPtr);
+            delete datatypePtr;
+            delete slopePtr;
+            delete interceptPtr;
+        }
     }
     
     NiftiImageData & operator= (const NiftiImageData &source)
     {
-        dataptr = source.dataptr;
-        setDatatype(source.datatype);
-        length = source.length;
-        slope = source.slope;
-        intercept = source.intercept;
+        adopt(source.dataPtr, source.length, source.datatypePtr, source.slopePtr, source.interceptPtr);
         return *this;
     }
     
-    void * blob () const { return dataptr; }
-    int typeCode () const { return datatype; }
+    void * blob () const     { return dataPtr; }
+    int datatype () const    { return (datatypePtr == NULL ? DT_NONE : *datatypePtr); }
+    float slope () const     { return (slopePtr == NULL ? 1.0 : *slopePtr); }
+    float intercept () const { return (interceptPtr == NULL ? 0.0 : *interceptPtr); }
+    size_t size () const     { return length; }
     
-    bool isEmpty () const { return (dataptr == NULL); }
-    bool isScaled () const { return (slope != 0.0 && (slope != 1.0 || intercept != 0.0)); }
-    bool isComplex () const { return false; }
-    bool isFloatingPoint () const { return (datatype == DT_FLOAT32 || datatype == DT_FLOAT64); }
-    bool isInteger () const { return nifti_is_inttype(datatype); }
-    bool isRgb () const { return false; }
+    bool isEmpty () const    { return (dataPtr == NULL); }
+    bool isScaled () const
+    {
+        if (slopePtr == NULL || interceptPtr == NULL)
+            return false;
+        else
+            return (*slopePtr != 0.0 && (*slopePtr != 1.0 || *interceptPtr != 0.0));
+    }
+    bool isComplex () const  { return false; }
+    bool isFloatingPoint () const
+    {
+        if (datatypePtr == NULL)
+            return false;
+        else
+            return (*datatypePtr == DT_FLOAT32 || *datatypePtr == DT_FLOAT64);
+    }
+    bool isInteger () const  { return (datatypePtr == NULL ? false : nifti_is_inttype(*datatypePtr)); }
+    bool isRgb () const      { return false; }
     
-    NiftiImageData unscaled () const { return NiftiImageData(dataptr, datatype, length); }
+    void disown () { this->owner = false; }
+    NiftiImageData unscaled () const { return NiftiImageData(dataPtr, length, datatypePtr); }
     
     const Iterator begin () const { return Iterator(this); }
-    const Iterator end () const { return Iterator(this, static_cast<char*>(dataptr) + length * handler->size()); }
+    const Iterator end () const { return Iterator(this, static_cast<char*>(dataPtr) + length * handler->size()); }
     Iterator begin () { return Iterator(this); }
-    Iterator end () { return Iterator(this, static_cast<char*>(dataptr) + length * handler->size()); }
+    Iterator end () { return Iterator(this, static_cast<char*>(dataPtr) + length * handler->size()); }
     
-    void minmax (double *min, double *max) const { handler->minmax(dataptr, length, min, max); }
+    void minmax (double *min, double *max) const { handler->minmax(dataPtr, length, min, max); }
 };
 
 
@@ -432,7 +511,7 @@ public:
                 size_t blockSize = 1;
                 for (int i=1; i<dimension; i++)
                     blockSize *= image->dim[i];
-                return NiftiImageData(image->data, image->datatype, blockSize, blockSize*index, image->scl_slope, image->scl_inter);
+                return NiftiImageData(image->data, blockSize, const_cast<int*>(&image->datatype), const_cast<float*>(&image->scl_slope), const_cast<float*>(&image->scl_inter), blockSize*index);
             }
         }
         
@@ -867,13 +946,9 @@ public:
         return *this;
     }
     
-    NiftiImageData data () const
-    {
-        if (image == NULL)
-            return NiftiImageData();
-        else
-            return NiftiImageData(image->data, image->datatype, image->nvox, 0, image->scl_slope, image->scl_inter);
-    }
+    const NiftiImageData data () const { return NiftiImageData(image); }
+    
+    NiftiImageData data () { return NiftiImageData(image); }
     
     /**
      * Extract a vector of data from the image, casting it to any required element type
@@ -1940,7 +2015,7 @@ inline std::vector<TargetType> NiftiImage::Block::getData (const bool useSlope) 
         return std::vector<TargetType>();
     else
     {
-        std::vector<TargetType> result(data.length);
+        std::vector<TargetType> result(data.size());
         std::copy(data.begin(), data.end(), result.begin());
         return result;
     }
@@ -1957,7 +2032,7 @@ inline std::vector<TargetType> NiftiImage::getData (const bool useSlope) const
         return std::vector<TargetType>();
     else
     {
-        std::vector<TargetType> result(data.length);
+        std::vector<TargetType> result(data.size());
         std::copy(data.begin(), data.end(), result.begin());
         return result;
     }
@@ -1980,10 +2055,11 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
         NiftiImageData newData(data, datatype);
         nifti_image_unload(image);
         image->data = newData.blob();
-        image->scl_slope = newData.slope;
-        image->scl_inter = newData.intercept;
+        image->scl_slope = newData.slope();
+        image->scl_inter = newData.intercept();
         image->datatype = datatype;
         nifti_datatype_sizes(datatype, &image->nbyper, &image->swapsize);
+        newData.disown();
     }
     
     return *this;
