@@ -1862,7 +1862,7 @@ inline NiftiImage & NiftiImage::reorient (const std::string &orientation)
     int codes[3];
     for (int i=0; i<3; i++)
     {
-        switch(orientation[i])
+        switch (orientation[i])
         {
             case 'r': case 'R': codes[i] = NIFTI_L2R; break;
             case 'l': case 'L': codes[i] = NIFTI_R2L; break;
