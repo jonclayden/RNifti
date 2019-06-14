@@ -127,8 +127,6 @@ protected:
         virtual ~TypeHandler() {}
         virtual size_t size () const { return 0; }
         virtual bool hasNaN () const { return false; }
-        virtual double typeMin () const = 0;
-        virtual double typeMax () const = 0;
         virtual double doubleValue (void *ptr) const = 0;
         virtual int intValue (void *ptr) const = 0;
         virtual void doubleValue (void *ptr, double value) const = 0;
@@ -141,30 +139,32 @@ protected:
     {
         size_t size () const { return (sizeof(Type)); }
         bool hasNaN () const { return std::numeric_limits<Type>::has_quiet_NaN; }
-        double typeMin () const { return static_cast<double>(std::numeric_limits<Type>::min()); }
-        double typeMax () const { return static_cast<double>(std::numeric_limits<Type>::max()); }
         double doubleValue (void *ptr) const { return static_cast<double>(*static_cast<Type*>(ptr)); }
         int intValue (void *ptr) const { return static_cast<int>(*static_cast<Type*>(ptr)); }
         void doubleValue (void *ptr, double value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
         void intValue (void *ptr, int value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
         void minmax (void *ptr, const size_t length, double *min, double *max) const
         {
-            if (length < 1)
-                return;
-            
-            Type *loc = static_cast<Type*>(ptr);
-            Type currentMin = *loc, currentMax = *loc;
-            for (size_t i=1; i<length; i++)
+            if (ptr == NULL || length < 1)
             {
-                loc++;
-                if (internal::lessThan(*loc, currentMin))
-                    currentMin = *loc;
-                if (internal::lessThan(currentMax, *loc))
-                    currentMax = *loc;
+                *min = static_cast<double>(std::numeric_limits<Type>::min());
+                *max = static_cast<double>(std::numeric_limits<Type>::max());
             }
-            
-            *min = static_cast<double>(currentMin);
-            *max = static_cast<double>(currentMax);
+            else
+            {
+                Type *loc = static_cast<Type*>(ptr);
+                Type currentMin = *loc, currentMax = *loc;
+                for (size_t i=1; i<length; i++)
+                {
+                    loc++;
+                    if (internal::lessThan(*loc, currentMin))
+                        currentMin = *loc;
+                    if (internal::lessThan(currentMax, *loc))
+                        currentMax = *loc;
+                }
+                *min = static_cast<double>(currentMin);
+                *max = static_cast<double>(currentMax);
+            }
         }
     };
     
@@ -227,10 +227,9 @@ protected:
         
         if (this->isInteger())
         {
-            double dataMin, dataMax;
+            double dataMin, dataMax, typeMin, typeMax;
             data.minmax(&dataMin, &dataMax);
-            const double typeMin = this->handler->typeMin();
-            const double typeMax = this->handler->typeMax();
+            handler->minmax(NULL, 0, &typeMin, &typeMax);
             
             // If the source type is floating-point but values are in range, we will just round them
             if (dataMin < typeMin || dataMax > typeMax)
@@ -403,7 +402,21 @@ public:
     
     NiftiImageData & operator= (const NiftiImageData &source)
     {
-        adopt(source.dataPtr, source.length, source.datatypePtr, source.slopePtr, source.interceptPtr);
+        if (source.dataPtr != NULL)
+        {
+            if (source.size() != this->size())
+                throw std::runtime_error("Assigned data source does not have the same length as the target");
+            else if (this->dataPtr == NULL)
+                allocate(source.length, source.datatype(), source.slope(), source.intercept());
+            else
+            {
+                *datatypePtr = source.datatype();
+                handler = createHandler();
+                *slopePtr = source.slope();
+                *interceptPtr = source.intercept();
+            }
+            memcpy(dataPtr, source.dataPtr, length * handler->size());
+        }
         return *this;
     }
     
@@ -432,7 +445,6 @@ public:
     bool isInteger () const  { return (datatypePtr == NULL ? false : nifti_is_inttype(*datatypePtr)); }
     bool isRgb () const      { return false; }
     
-    void disown () { this->owner = false; }
     NiftiImageData unscaled () const { return NiftiImageData(dataPtr, length, datatypePtr); }
     
     const Iterator begin () const { return Iterator(this); }
@@ -2052,19 +2064,10 @@ inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool
         throw std::runtime_error("Resetting the slope and intercept for an image with them already set is not supported");
     
     NiftiImageData data = this->data();
-    if (!useSlope)
-        data = data.unscaled();
-    
     if (!data.isEmpty())
     {
-        NiftiImageData newData(data, datatype);
-        nifti_image_unload(image);
-        image->data = newData.blob();
-        image->scl_slope = newData.slope();
-        image->scl_inter = newData.intercept();
-        image->datatype = datatype;
+        data = NiftiImageData(useSlope ? data : data.unscaled(), datatype);
         nifti_datatype_sizes(datatype, &image->nbyper, &image->swapsize);
-        newData.disown();
     }
     
     return *this;
