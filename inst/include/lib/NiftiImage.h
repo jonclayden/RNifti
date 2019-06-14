@@ -200,7 +200,7 @@ protected:
     size_t _length;
     bool owner;
     
-    void init (void *data, const size_t length, const int datatype, const double slope, const double intercept)
+    void init (void *data, const size_t length, const int datatype, const double slope, const double intercept, const bool alloc = true)
     {
         this->_length = length;
         this->_datatype = datatype;
@@ -211,7 +211,7 @@ protected:
         handler = createHandler();
         if (handler == NULL)
             dataPtr = NULL;
-        else if (data == NULL)
+        else if (alloc && data == NULL)
         {
             dataPtr = calloc(length, handler->size());
             owner = true;
@@ -355,13 +355,13 @@ public:
         init(data, length, datatype, slope, intercept);
     }
     
-    // NiftiImageData (nifti_image *image)
-    // {
-    //     if (image == NULL)
-    //         init(NULL, 0, DT_NONE, 0.0, 0.0);
-    //     else
-    //         init(image->data, image->nvox, image->datatype, static_cast<double>(image->scl_slope), static_cast<double>(image->scl_inter));
-    // }
+    NiftiImageData (nifti_image *image)
+    {
+        if (image == NULL)
+            init(NULL, 0, DT_NONE, 0.0, 0.0, false);
+        else
+            init(image->data, image->nvox, image->datatype, static_cast<double>(image->scl_slope), static_cast<double>(image->scl_inter), false);
+    }
     
     NiftiImageData (const NiftiImageData &source, const int datatype = DT_NONE)
     {
@@ -944,9 +944,9 @@ public:
         return *this;
     }
     
-    const NiftiImageData data () const { return NiftiImageData(image->data, image->nvox, image->datatype, static_cast<double>(image->scl_slope), static_cast<double>(image->scl_inter)); }
+    const NiftiImageData data () const { return NiftiImageData(image); }
     
-    NiftiImageData data () { return NiftiImageData(image->data, image->nvox, image->datatype, static_cast<double>(image->scl_slope), static_cast<double>(image->scl_inter)); }
+    NiftiImageData data () { return NiftiImageData(image); }
     
     /**
      * Extract a vector of data from the image, casting it to any required element type
@@ -2101,6 +2101,7 @@ inline NiftiImage & NiftiImage::replaceData (const NiftiImageData &data)
     image->datatype = copy.datatype();
     image->scl_slope = static_cast<float>(copy.slope);
     image->scl_inter = static_cast<float>(copy.intercept);
+    nifti_datatype_sizes(image->datatype, &image->nbyper, &image->swapsize);
     
     double min, max;
     copy.minmax(&min, &max);
