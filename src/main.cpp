@@ -439,7 +439,7 @@ END_RCPP
 
 SEXP imageDataToVector (const NiftiImage &image, void *blob, const size_t length)
 {
-    const NiftiImageData data(blob, length, const_cast<int*>(&image->datatype), const_cast<float*>(&image->scl_slope), const_cast<float*>(&image->scl_inter));
+    const NiftiImageData data(blob, length, image->datatype, static_cast<double>(image->scl_slope), static_cast<double>(image->scl_inter));
     if (data.isFloatingPoint() || data.isScaled())
         return NumericVector(data.begin(), data.end());
     else
