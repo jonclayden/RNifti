@@ -257,7 +257,28 @@ public:
         template <typename SourceType>
         ElementProxy & operator= (const SourceType &value)
         {
-            if (parent.isScaled())
+            if (internal::isNaN(value))
+            {
+                if (!parent.handler->hasNaN())
+                {
+                    const double zeroValue = parent.isScaled() ? (-parent.intercept / parent.slope) : 0.0;
+                    if (parent.isFloatingPoint())
+                        parent.handler->doubleValue(ptr, zeroValue);
+                    else
+                        parent.handler->intValue(ptr, static_cast<int>(internal::roundEven(zeroValue)));
+                }
+#ifdef USING_R
+                // Only happens for integer types that admit an NaN/NA value.
+                // In practice this means int specifically for R, so we don't
+                // need to worry about the effect of casting INT_MIN to a wider
+                // or narrower type
+                else if (parent.isInteger())
+                    parent.handler->intValue(ptr, NA_INTEGER);
+#endif
+                else
+                    parent.handler->doubleValue(ptr, std::numeric_limits<double>::quiet_NaN());
+            }
+            else if (parent.isScaled())
             {
                 double reverseScaledValue = (static_cast<double>(value) - parent.intercept) / parent.slope;
                 if (parent.isFloatingPoint())
@@ -438,6 +459,12 @@ public:
             handler->minmax(dataPtr, _length, min, max);
     }
 };
+
+
+#ifdef USING_R
+template <>
+bool NiftiImageData::ConcreteTypeHandler<int>::hasNaN () const { return true; }
+#endif
 
 
 /**

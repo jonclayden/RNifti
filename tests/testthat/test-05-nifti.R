@@ -123,3 +123,21 @@ test_that("NIfTI objects have the expected copying semantics", {
     im1$intent_code <- 1000L
     expect_false(all(RNifti:::addresses(im1) == RNifti:::addresses(im2)))
 })
+
+test_that("NAs are preserved across datatypes", {
+    # Original datatype is int16/short
+    image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+    tempPath <- paste(tempfile(), "nii.gz", sep=".")
+    
+    image[40,40,30] <- NA
+    writeNifti(image, tempPath, datatype="int")
+    expect_equal(readNifti(tempPath)[40,40,30], NA_integer_)
+    writeNifti(image, tempPath, datatype="double")
+    image <- readNifti(tempPath)
+    expect_equal(image[40,40,30], NA_real_)
+    image[42,42,32] <- NA
+    writeNifti(image, tempPath, datatype="int")
+    expect_equal(readNifti(tempPath)[42,42,32], NA_integer_)
+    writeNifti(image, tempPath, datatype="short")
+    expect_equal(readNifti(tempPath)[42,42,32], 0)
+})
