@@ -463,7 +463,7 @@ public:
 
 #ifdef USING_R
 template <>
-bool NiftiImageData::ConcreteTypeHandler<int>::hasNaN () const { return true; }
+inline bool NiftiImageData::ConcreteTypeHandler<int>::hasNaN () const { return true; }
 #endif
 
 
