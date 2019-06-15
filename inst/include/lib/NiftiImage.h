@@ -442,8 +442,8 @@ public:
 
 /**
  * Thin wrapper around a C-style \c nifti_image struct that allows C++-style destruction. Reference
- * counting is used to allow multiple \c NifiImage objects to wrap the same \c nifti_image pointer,
- * akin to a \c std::shared_ptr (but without requiring C++11).
+ * counting is used to allow multiple \c NiftiImage objects to wrap the same \c nifti_image
+ * pointer, akin to a \c std::shared_ptr (but without requiring C++11).
  * @author Jon Clayden (<code@clayden.org>)
 **/
 class NiftiImage
