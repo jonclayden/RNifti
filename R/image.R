@@ -84,30 +84,15 @@ as.array.internalImage <- function (x, ...)
         stop("Number of indices (", nArgs-1, ") not equal to the dimensionality of the image (", length(dims), ")")
     else
     {
-        if (all(lengths %in% c(-1L,1L)))
-        {
-            data <- .Call("indexCollapsed", x, as.integer(indices), PACKAGE="RNifti")
-            dim(data) <- ifelse(present, 1L, dims)
-        }
-        else if (all(sapply(indices, function(n) all(diff(as.integer(n))==1L))))
-        {
-            starts <- ifelse(present, sapply(indices,min,na.rm=TRUE), 1L)
-            sizes <- ifelse(present, lengths, dims)
-            data <- .Call("indexBlock", x, starts, sizes, PACKAGE="RNifti")
-            dim(data) <- sizes
-        }
-        else
-        {
-            data <- .Call("indexList", x, lapply(seq_along(indices), function(l) {
-                if (length(indices[[l]]) == 1 && indices[[l]] == -1)
-                    seq_len(dims[l])
-                else if (is.logical(indices[[l]]))
-                    which(indices[[l]])
-                else
-                    indices[[l]]
-            }), PACKAGE="RNifti")
-            dim(data) <- ifelse(present, lengths, dims)
-        }
+        data <- .Call("indexList", x, lapply(seq_along(indices), function(l) {
+            if (length(indices[[l]]) == 1 && indices[[l]] == -1)
+                seq_len(dims[l])
+            else if (is.logical(indices[[l]]))
+                which(indices[[l]])
+            else
+                indices[[l]]
+        }), PACKAGE="RNifti")
+        dim(data) <- ifelse(present, lengths, dims)
     }
     
     if (drop)
