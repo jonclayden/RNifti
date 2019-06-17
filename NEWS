@@ -2,6 +2,33 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.11.0
+
+R interface
+
+- It is now possible to index directly into objects of class `internalImage`,
+  meaning that individual elements or arbitrary blocks may be converted to R
+  vectors or arrays, without needing to convert everything. This can save
+  significant amounts of memory for large images.
+
+API changes
+
+- This release introduces the `NiftiImageData` C++ class as the main way to
+  encapsulate the data in a NIfTI image. This class handles datatypes and data
+  scaling, and provides indexing, iterators and other niceties. The doxygen
+  documentation has full details.
+- As a result of this new introduction, the templated `getData()` method within
+  `NiftiImage` is deprecated in favour of `data()`, which returns a (constant
+  or mutable) object of class `NiftiImageData` rather than a standard `vector`.
+
+Bug fixes
+
+- The slope and intercept fields in `nifti` objects (from the `oro.nifti`
+  package) are now ignored, since that package does its own scaling. (Reported
+  by John Muschelli, issue #13.)
+
+===============================================================================
+
 VERSION 0.10.0
 
 R interface
