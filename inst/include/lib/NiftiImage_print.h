@@ -1,5 +1,5 @@
-#ifndef _PRINT_H_
-#define _PRINT_H_
+#ifndef _NIFTI_IMAGE_PRINT_H_
+#define _NIFTI_IMAGE_PRINT_H_
 
 #ifdef USING_R
 

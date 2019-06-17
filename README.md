@@ -254,7 +254,7 @@ Thanks to contributions from [@soolijoo](https://github.com/soolijoo), it is pos
 | `src/znzlib/znzlib.c`           | Source for I/O functions from the NIfTI-1 reference implementation                                  |
 | `src/zlib/*`                    | `zlib` source files for reading and writing gzipped files (optional, as above)                      |
 
-Note that the `NiftiImage` class is header-only, but C code from the NIfTI-1 reference implementation will need to be compiled and linked into the project. The `print.h` header should be included before including `NiftiImage.h`, so that the R API is not used for printing error messages. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example.
+Note that the `NiftiImage` class is header-only, but C code from the NIfTI-1 reference implementation will need to be compiled and linked into the project. The `NiftiImage_print.h` header should be included before including `NiftiImage.h`, so that the R API is not used for printing error messages. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example.
 
 ## The NIfTI-2 format
 

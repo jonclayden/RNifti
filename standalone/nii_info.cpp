@@ -1,8 +1,8 @@
-// The print.h header should be included first. The niftilib header nifti1_io.h
-// contains prototypes for niftilib functions like nifti_convert_nim2nhdr and
-// disp_nifti_1_header, but it is included by lib/NiftiImage.h, so is only here
-// for explicitness
-#include "lib/print.h"
+// The NiftiImage_print.h header should be included first. The niftilib header
+// nifti1_io.h contains prototypes for niftilib functions like
+// nifti_convert_nim2nhdr and disp_nifti_1_header, but it is included by
+// lib/NiftiImage.h, so is only here for explicitness
+#include "lib/NiftiImage_print.h"
 #include "niftilib/nifti1_io.h"
 #include "lib/NiftiImage.h"
 
@@ -11,7 +11,7 @@ int main (int argc, char* argv[])
     // The program requires an image as an argument
     if (argc < 2)
     {
-        // This macro is defined in print.h. There is no obligation to use it
+        // This macro is defined in NiftiImage_print.h. There is no obligation to use it
         Rc_fputs_stderr("Error: A NIfTI-1 image file must be specified\n");
         return 1;
     }
