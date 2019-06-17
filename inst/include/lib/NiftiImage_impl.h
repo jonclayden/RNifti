@@ -338,7 +338,7 @@ inline NiftiImageData::Element & NiftiImageData::Element::operator= (const Nifti
     return *this;
 }
 
-mat33 NiftiImage::xformToRotation (const mat44 matrix)
+inline mat33 NiftiImage::xformToRotation (const mat44 matrix)
 {
     float qb, qc, qd, qfac;
     nifti_mat44_to_quatern(matrix, &qb, &qc, &qd, NULL, NULL, NULL, NULL, NULL, NULL, &qfac);
@@ -346,7 +346,7 @@ mat33 NiftiImage::xformToRotation (const mat44 matrix)
     return internal::topLeftCorner(rotationMatrix);
 }
 
-std::string NiftiImage::xformToString (const mat44 matrix)
+inline std::string NiftiImage::xformToString (const mat44 matrix)
 {
     int icode, jcode, kcode;
     nifti_mat44_to_orientation(matrix, &icode, &jcode, &kcode);
@@ -368,7 +368,7 @@ std::string NiftiImage::xformToString (const mat44 matrix)
     return result;
 }
 
-int NiftiImage::fileVersion (const std::string &path)
+inline int NiftiImage::fileVersion (const std::string &path)
 {
     nifti_1_header *header = nifti_read_header(path.c_str(), NULL, false);
     if (header == NULL)
