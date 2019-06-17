@@ -8,6 +8,7 @@ test_that("image objects from oro.nifti can be read", {
     # The oro.nifti package warns about nonzero slope, which is nothing to worry about
     image <- suppressWarnings(oro.nifti::readNIfTI(imagePath))
     expect_equal(niftiHeader(image)$bitpix, 32L)
+    expect_equal(retrieveNifti(image)[40,40,30], 368)
 })
 
 test_that("image objects from tractor.base can be read", {
@@ -20,7 +21,9 @@ test_that("image objects from tractor.base can be read", {
     # NB: the $ operator shortcut can't be used since "image" isn't a niftiImage
     image <- tractor.base::readImageFile(imagePath)
     expect_equal(niftiHeader(image)$bitpix, 32L)
+    expect_equal(retrieveNifti(image)[40,40,30], 368)
     
     image <- tractor.base::readImageFile(imagePath, sparse=TRUE)
     expect_equal(niftiHeader(image)$bitpix, 32L)
+    expect_equal(retrieveNifti(image)[40,40,30], 368)
 })
