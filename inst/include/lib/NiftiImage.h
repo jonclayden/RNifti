@@ -64,10 +64,10 @@ protected:
         virtual ~TypeHandler() {}
         virtual size_t size () const { return 0; }
         virtual bool hasNaN () const { return false; }
-        virtual double doubleValue (void *ptr) const = 0;
-        virtual int intValue (void *ptr) const = 0;
-        virtual void doubleValue (void *ptr, double value) const = 0;
-        virtual void intValue (void *ptr, int value) const = 0;
+        virtual double getDouble (void *ptr) const = 0;
+        virtual int getInt (void *ptr) const = 0;
+        virtual void setDouble (void *ptr, const double value) const = 0;
+        virtual void setInt (void *ptr, const int value) const = 0;
         virtual void minmax (void *ptr, const size_t length, double *min, double *max) const = 0;
     };
     
@@ -79,10 +79,10 @@ protected:
     {
         size_t size () const { return (sizeof(Type)); }
         bool hasNaN () const { return std::numeric_limits<Type>::has_quiet_NaN; }
-        double doubleValue (void *ptr) const { return static_cast<double>(*static_cast<Type*>(ptr)); }
-        int intValue (void *ptr) const { return static_cast<int>(*static_cast<Type*>(ptr)); }
-        void doubleValue (void *ptr, double value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
-        void intValue (void *ptr, int value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
+        double getDouble (void *ptr) const { return static_cast<double>(*static_cast<Type*>(ptr)); }
+        int getInt (void *ptr) const { return static_cast<int>(*static_cast<Type*>(ptr)); }
+        void setDouble (void *ptr, const double value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
+        void setInt (void *ptr, const int value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
         void minmax (void *ptr, const size_t length, double *min, double *max) const;
     };
     
@@ -180,7 +180,7 @@ public:
     /**
      * Inner class representing a single element in the data blob
     **/
-    struct ElementProxy
+    struct Element
     {
     private:
         const NiftiImageData &parent;
@@ -193,7 +193,7 @@ public:
          * @param ptr An opaque pointer to the element. If \c NULL, the start of the data blob
          *   encapsulated by the parent will be used
         **/
-        ElementProxy (const NiftiImageData &parent, void *ptr = NULL)
+        Element (const NiftiImageData &parent, void *ptr = NULL)
             : parent(parent)
         {
             this->ptr = (ptr == NULL ? parent.dataPtr : ptr);
@@ -207,14 +207,14 @@ public:
          * @return A reference to the callee
         **/
         template <typename SourceType>
-        ElementProxy & operator= (const SourceType &value);
+        Element & operator= (const SourceType &value);
         
         /**
          * Copy assignment operator
          * @param other Another data element
          * @return A reference to the callee
         **/
-        ElementProxy & operator= (const ElementProxy &other);
+        Element & operator= (const Element &other);
         
         /**
          * Implicit type-cast operator, suitable for implicit conversion to basic numeric types
@@ -223,18 +223,18 @@ public:
         operator TargetType() const
         {
             if (parent.isScaled())
-                return TargetType(parent.handler->doubleValue(ptr) * parent.slope + parent.intercept);
+                return TargetType(parent.handler->getDouble(ptr) * parent.slope + parent.intercept);
             else if (std::numeric_limits<TargetType>::is_integer)
-                return TargetType(parent.handler->intValue(ptr));
+                return TargetType(parent.handler->getInt(ptr));
             else
-                return TargetType(parent.handler->doubleValue(ptr));
+                return TargetType(parent.handler->getDouble(ptr));
         }
     };
     
     /**
-     * Iterator type for \c NiftiImageData, with \c ElementProxy as its value type
+     * Iterator type for \c NiftiImageData, with \c Element as its value type
     **/
-    class Iterator : public std::iterator<std::random_access_iterator_tag, ElementProxy>
+    class Iterator : public std::iterator<std::random_access_iterator_tag, Element>
     {
     private:
         const NiftiImageData &parent;
@@ -289,10 +289,10 @@ public:
         bool operator> (const Iterator &other) const { return (ptr > other.ptr); }
         bool operator< (const Iterator &other) const { return (ptr < other.ptr); }
         
-        const ElementProxy operator* () const { return ElementProxy(parent, ptr); }
-        ElementProxy operator* () { return ElementProxy(parent, ptr); }
-        const ElementProxy operator[] (const size_t i) const { return ElementProxy(parent, static_cast<char*>(ptr) + (i * step)); }
-        ElementProxy operator[] (const size_t i) { return ElementProxy(parent, static_cast<char*>(ptr) + (i * step)); }
+        const Element operator* () const { return Element(parent, ptr); }
+        Element operator* () { return Element(parent, ptr); }
+        const Element operator[] (const size_t i) const { return Element(parent, static_cast<char*>(ptr) + (i * step)); }
+        Element operator[] (const size_t i) { return Element(parent, static_cast<char*>(ptr) + (i * step)); }
     };
     
     /**
@@ -467,14 +467,14 @@ public:
      * @param i Index value, where the first dimension moves fastest
      * @return Constant element proxy type
     **/
-    const ElementProxy operator[] (const size_t i) const { return ElementProxy(*this, static_cast<char*>(dataPtr) + (i * bytesPerPixel())); }
+    const Element operator[] (const size_t i) const { return Element(*this, static_cast<char*>(dataPtr) + (i * bytesPerPixel())); }
     
     /**
      * Indexing operator, returning a mutable element
      * @param i Index value, where the first dimension moves fastest
      * @return Mutable element proxy type
     **/
-    ElementProxy operator[] (const size_t i) { return ElementProxy(*this, static_cast<char*>(dataPtr) + (i * bytesPerPixel())); }
+    Element operator[] (const size_t i) { return Element(*this, static_cast<char*>(dataPtr) + (i * bytesPerPixel())); }
     
     /**
      * Calculate the minimum and maximum values in the blob, as doubles

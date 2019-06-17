@@ -285,7 +285,7 @@ inline void NiftiImageData::ConcreteTypeHandler<Type>::minmax (void *ptr, const 
 }
 
 template <typename SourceType>
-inline NiftiImageData::ElementProxy & NiftiImageData::ElementProxy::operator= (const SourceType &value)
+inline NiftiImageData::Element & NiftiImageData::Element::operator= (const SourceType &value)
 {
     if (internal::isNaN(value))
     {
@@ -293,9 +293,9 @@ inline NiftiImageData::ElementProxy & NiftiImageData::ElementProxy::operator= (c
         {
             const double zeroValue = parent.isScaled() ? (-parent.intercept / parent.slope) : 0.0;
             if (parent.isFloatingPoint())
-                parent.handler->doubleValue(ptr, zeroValue);
+                parent.handler->setDouble(ptr, zeroValue);
             else
-                parent.handler->intValue(ptr, static_cast<int>(internal::roundEven(zeroValue)));
+                parent.handler->setInt(ptr, static_cast<int>(internal::roundEven(zeroValue)));
         }
 #ifdef USING_R
         // Only happens for integer types that admit an NaN/NA value.
@@ -303,27 +303,27 @@ inline NiftiImageData::ElementProxy & NiftiImageData::ElementProxy::operator= (c
         // need to worry about the effect of casting INT_MIN to a wider
         // or narrower type
         else if (parent.isInteger())
-            parent.handler->intValue(ptr, NA_INTEGER);
+            parent.handler->setInt(ptr, NA_INTEGER);
 #endif
         else
-            parent.handler->doubleValue(ptr, std::numeric_limits<double>::quiet_NaN());
+            parent.handler->setDouble(ptr, std::numeric_limits<double>::quiet_NaN());
     }
     else if (parent.isScaled())
     {
         double reverseScaledValue = (static_cast<double>(value) - parent.intercept) / parent.slope;
         if (parent.isFloatingPoint())
-            parent.handler->doubleValue(ptr, reverseScaledValue);
+            parent.handler->setDouble(ptr, reverseScaledValue);
         else
-            parent.handler->intValue(ptr, static_cast<int>(internal::roundEven(reverseScaledValue)));
+            parent.handler->setInt(ptr, static_cast<int>(internal::roundEven(reverseScaledValue)));
     }
     else if (std::numeric_limits<SourceType>::is_integer)
-        parent.handler->intValue(ptr, static_cast<int>(value));
+        parent.handler->setInt(ptr, static_cast<int>(value));
     else
-        parent.handler->doubleValue(ptr, static_cast<double>(value));
+        parent.handler->setDouble(ptr, static_cast<double>(value));
     return *this;
 }
 
-inline NiftiImageData::ElementProxy & NiftiImageData::ElementProxy::operator= (const NiftiImageData::ElementProxy &other)
+inline NiftiImageData::Element & NiftiImageData::Element::operator= (const NiftiImageData::Element &other)
 {
     if (other.parent.isScaled() || other.parent.isFloatingPoint())
     {
