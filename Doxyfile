@@ -6,3 +6,4 @@ FILE_PATTERNS       = "NiftiImage.h"
 RECURSIVE           = NO
 GENERATE_LATEX      = NO
 JAVADOC_AUTOBRIEF   = YES
+EXCLUDE_SYMBOLS     = internal

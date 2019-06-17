@@ -125,6 +125,7 @@ inline double roundEven (const double value)
  * and polymorphism. This class provides read/write data access, iterators, etc., which internally
  * handle conversion to and from the data's native type. It can be linked to the data in a
  * \c nifti_image or used independently.
+ * @author Jon Clayden (<code@clayden.org>)
 **/
 class NiftiImageData
 {
@@ -253,7 +254,7 @@ protected:
      * Update the slope and intercept to cover the range of another data object. If the current
      * object's datatype can capture the required range without scaling, the slope and intercept
      * are simply reset
-     * @param source Another data object
+     * @param data Another data object
     **/
     void calibrateFrom (const NiftiImageData &data)
     {
@@ -694,6 +695,10 @@ public:
             return *this;
         }
         
+        /**
+         * Obtain the data within the block
+         * @return A \c NiftiImageData object encapsulating the data
+        **/
         NiftiImageData data () const
         {
             if (image.isNull())
@@ -1138,8 +1143,16 @@ public:
         return *this;
     }
     
+    /**
+     * Obtain the pixel data within the image
+     * @return A constant \c NiftiImageData object encapsulating the data
+    **/
     const NiftiImageData data () const { return NiftiImageData(image); }
     
+    /**
+     * Obtain the pixel data within the image
+     * @return A mutable \c NiftiImageData object encapsulating the data
+    **/
     NiftiImageData data () { return NiftiImageData(image); }
     
     /**
@@ -1173,15 +1186,21 @@ public:
     
     /**
      * Replace the pixel data in the image with the contents of a vector
-     * @param data A data vector, whose elements will be cast to match the datatype of the image.
-     * An exception will be raised if this does not have a length matching the image
+     * @param data A data vector, whose elements will be used to replace the image data
      * @param datatype The final datatype required. By default the existing datatype of the image
      * is used
+     * @exception runtime_error If the length of the new data does not match the image
      * @return Self, after replacing the data
     **/
     template <typename SourceType>
     NiftiImage & replaceData (const std::vector<SourceType> &data, const short datatype = DT_NONE);
     
+    /**
+     * Replace the pixel data in the image with the contents of a \c NiftiImageData object
+     * @param data A data object, whose elements will be case to match the datatype of the image
+     * @exception runtime_error If the length of the new data does not match the image
+     * @return Self, after replacing the data
+    **/
     NiftiImage & replaceData (const NiftiImageData &data);
     
     /**
