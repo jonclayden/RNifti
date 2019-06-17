@@ -119,12 +119,23 @@ inline double roundEven (const double value)
 
 } // internal namespace
 
+
+/**
+ * Wrapper class encapsulating a NIfTI data blob, with responsibility for handling data scaling
+ * and polymorphism. This class provides read/write data access, iterators, etc., which internally
+ * handle conversion to and from the data's native type. It can be linked to the data in a
+ * \c nifti_image or used independently.
+**/
 class NiftiImageData
 {
 public:
-    double slope, intercept;
+    double slope;                       /**< The slope term used to scale data values. Ignored if zero. */
+    double intercept;                   /**< The intercept term used to scale data values */
     
 protected:
+    /**
+     * Abstract inner class defining the type-specific functions required in concrete subclasses
+    **/
     struct TypeHandler
     {
         virtual ~TypeHandler() {}
@@ -137,6 +148,9 @@ protected:
         virtual void minmax (void *ptr, const size_t length, double *min, double *max) const = 0;
     };
     
+    /**
+     * Concrete inner class template defining behaviour specific to individual data types
+    **/
     template <typename Type>
     struct ConcreteTypeHandler : public TypeHandler
     {
@@ -171,6 +185,11 @@ protected:
         }
     };
     
+    /**
+     * Create a concrete type handler appropriate to the datatype code stored with the data
+     * @return The newly allocated type handler, or \c NULL
+     * @exception runtime_error If the current datatype is unsupported
+    **/
     TypeHandler * createHandler ()
     {
         if (_datatype == DT_NONE)
@@ -194,12 +213,22 @@ protected:
         }
     }
     
-    void *dataPtr;
-    int _datatype;
-    TypeHandler *handler;
-    size_t _length;
-    bool owner;
+    void *dataPtr;                      /**< Opaque pointer to the underlying data blob */
+    int _datatype;                      /**< Datatype code indicating the actual type of the elements */
+    TypeHandler *handler;               /**< Type handler, which is created to match the datatype */
+    size_t _length;                     /**< The number of data elements in the blob */
+    bool owner;                         /**< An indicator of whether this object is responsible for cleaning up the data */
     
+    /**
+     * Initialiser method, used by constructors
+     * @param data Pointer to a preallocated data blob, or \c NULL
+     * @param length Number of elements in the blob
+     * @param datatype NIfTI datatype code appropriate to the blob
+     * @param slope Slope parameter for scaling values
+     * @param intercept Intercept parameter for scaling values
+     * @param alloc If \c true, the default, and \c data is \c NULL, memory will be allocated for
+     *   the blob. If \c false, the blob will be \c NULL in this case
+    **/
     void init (void *data, const size_t length, const int datatype, const double slope, const double intercept, const bool alloc = true)
     {
         this->_length = length;
@@ -220,6 +249,12 @@ protected:
             dataPtr = data;
     }
     
+    /**
+     * Update the slope and intercept to cover the range of another data object. If the current
+     * object's datatype can capture the required range without scaling, the slope and intercept
+     * are simply reset
+     * @param source Another data object
+    **/
     void calibrateFrom (const NiftiImageData &data)
     {
         slope = 1.0;
@@ -241,6 +276,9 @@ protected:
     }
     
 public:
+    /**
+     * Inner class representing a single element in the data blob
+    **/
     struct ElementProxy
     {
     private:
@@ -248,12 +286,25 @@ public:
         void *ptr;
         
     public:
+        /**
+         * Primary constructor
+         * @param parent A reference to the parent object
+         * @param ptr An opaque pointer to the element. If \c NULL, the start of the data blob
+         *   encapsulated by the parent will be used
+        **/
         ElementProxy (const NiftiImageData &parent, void *ptr = NULL)
             : parent(parent)
         {
             this->ptr = (ptr == NULL ? parent.dataPtr : ptr);
         }
         
+        /**
+         * Copy assignment operator
+         * @param value The value to assign. Any basic numeric type supported by NIfTI-1 is
+         *   allowed, but \c int is used as an intermediate type for all integers, so values
+         *   unrepresentable in a signed 32-bit integer may overflow
+         * @return A reference to the callee
+        **/
         template <typename SourceType>
         ElementProxy & operator= (const SourceType &value)
         {
@@ -293,6 +344,9 @@ public:
             return *this;
         }
         
+        /**
+         * Implicit type-cast operator, suitable for implicit conversion to basic numeric types
+        **/
         template <typename TargetType>
         operator TargetType() const
         {
@@ -304,6 +358,11 @@ public:
                 return TargetType(parent.handler->doubleValue(ptr));
         }
         
+        /**
+         * Copy assignment operator
+         * @param other Another data element
+         * @return A reference to the callee
+        **/
         ElementProxy & operator= (const ElementProxy &other)
         {
             if (other.parent.isScaled() || other.parent.isFloatingPoint())
@@ -320,6 +379,9 @@ public:
         }
     };
     
+    /**
+     * Iterator type for \c NiftiImageData, with \c ElementProxy as its value type
+    **/
     class Iterator : public std::iterator<std::random_access_iterator_tag, ElementProxy>
     {
     private:
@@ -328,6 +390,13 @@ public:
         size_t step;
         
     public:
+        /**
+         * Primary constructor
+         * @param parent A reference to the parent object
+         * @param ptr An opaque pointer to the memory underpinning the iterator
+         * @param step The increment between elements within the blob, in bytes. If zero, the
+         *   default, the width associated with the stored datatype will be used.
+        **/
         Iterator (const NiftiImageData &parent, void *ptr = NULL, const size_t step = 0)
             : parent(parent)
         {
@@ -335,6 +404,10 @@ public:
             this->step = (step == 0 ? parent.handler->size() : step);
         }
         
+        /**
+         * Copy constructor
+         * @param other Another iterator
+        **/
         Iterator (const Iterator &other)
             : parent(other.parent), ptr(other.ptr), step(other.step) {}
         
@@ -368,14 +441,30 @@ public:
         ElementProxy operator[] (const size_t i) { return ElementProxy(parent, static_cast<char*>(ptr) + (i * step)); }
     };
     
+    /**
+     * Default constructor, creating an empty data object
+    **/
     NiftiImageData ()
         : dataPtr(NULL), _datatype(DT_NONE), _length(0), handler(NULL), slope(1.0), intercept(0.0), owner(false) {}
     
+    /**
+     * Primary constructor
+     * @param data A pointer to a pre-allocated data blob, or \c NULL. In the latter case, memory
+     *   will be allocated by the object, and cleaned up at destruction unless it is disowned
+     * @param length The number of elements in the blob
+     * @param datatype The NIfTI datatype code corresponding to the type of the data elements
+     * @param slope The slope parameter to use for data scaling, if any
+     * @param intercept The intercept parameter to use for data scaling, if any
+    **/
     NiftiImageData (void *data, const size_t length, const int datatype, const double slope = 1.0, const double intercept = 0.0)
     {
         init(data, length, datatype, slope, intercept);
     }
     
+    /**
+     * Convenience constructor for a \c nifti_image
+     * @param image The image struct whose data the object will wrap
+    **/
     NiftiImageData (nifti_image *image)
     {
         if (image == NULL)
@@ -384,6 +473,13 @@ public:
             init(image->data, image->nvox, image->datatype, static_cast<double>(image->scl_slope), static_cast<double>(image->scl_inter), false);
     }
     
+    /**
+     * Copy constructor with optional type conversion
+     * @param source Another \c NiftiImageData object to copy data from
+     * @param datatype The datatype to convert to, or \c DT_NONE, the default, for no conversion.
+     *   If the range of the source data cannot be represented by the chosen type, the slope and
+     *   intercept parameters will be set to adjust the range
+    **/
     NiftiImageData (const NiftiImageData &source, const int datatype = DT_NONE)
     {
         init(NULL, source.length(), datatype == DT_NONE ? source.datatype() : datatype, source.slope, source.intercept);
@@ -397,6 +493,9 @@ public:
         }
     }
     
+    /**
+     * Destructor which frees the type handler, and the data blob if it is owned by this object
+    **/
     virtual ~NiftiImageData ()
     {
         delete handler;
@@ -404,6 +503,11 @@ public:
             free(dataPtr);
     }
     
+    /**
+     * Copy assignment operator
+     * @param source Another \c NiftiImageData object, from which the data and metadata are copied
+     * @return A reference to the callee
+    **/
     NiftiImageData & operator= (const NiftiImageData &source)
     {
         if (source.dataPtr != NULL)
@@ -417,32 +521,100 @@ public:
         return *this;
     }
     
-    void * blob () const             { return dataPtr; }
-    int datatype () const            { return _datatype; }
-    size_t length () const           { return _length; }
-    size_t size () const             { return _length; }
+    void * blob () const             { return dataPtr; }                /**< Return an opaque pointer to the blob */
+    int datatype () const            { return _datatype; }              /**< Return stored datatype code */
+    size_t length () const           { return _length; }                /**< Return the number of elements in the data */
+    size_t size () const             { return _length; }                /**< Return the number of elements in the data */
+    
+    /** Return the number of bytes used per element, or zero if the datatype is undefined or the blob is \c NULL */
     size_t bytesPerPixel () const    { return (handler == NULL ? 0 : handler->size()); }
+    
+    /** Return the total size of the data blob, in bytes */
     size_t totalBytes () const       { return _length * bytesPerPixel(); }
     
+    /**
+     * Determine whether or not the object is empty
+     * @return \c true if the data pointer is \c NULL; \c false otherwise
+    **/
     bool isEmpty () const            { return (dataPtr == NULL); }
+    
+    /**
+     * Determine whether the object uses data scaling
+     * @return \c true if the slope and intercept parameters are set to nontrivial values;
+         \c false otherwise
+    **/
     bool isScaled () const           { return (slope != 0.0 && (slope != 1.0 || intercept != 0.0)); }
+    
+    /**
+     * Determine whether the datatype is complex
+     * @return Currently \c false, always
+    **/
     bool isComplex () const          { return false; }
+    
+    /**
+     * Determine whether the datatype is floating point
+     * @return \c true if the data represents 32-bit or 64-bit floating point values; \c false
+     *   otherwise
+    **/
     bool isFloatingPoint () const    { return (_datatype == DT_FLOAT32 || _datatype == DT_FLOAT64); }
+    
+    /**
+     * Determine whether the datatype is an integer type
+     * @return \c true if the data represents integers; \c false otherwise
+    **/
     bool isInteger () const          { return nifti_is_inttype(_datatype); }
+    
+    /**
+     * Determine whether the datatype corresponds to an RGB value
+     * @return Currently \c false, always
+    **/
     bool isRgb () const              { return false; }
     
+    /**
+     * Return a similar object to the callee, but with the slope and intercept values reset
+     * @return A new \c NiftiImageData object, pointing to the same memory as the callee
+    **/
     NiftiImageData unscaled () const { return NiftiImageData(dataPtr, _length, _datatype); }
     
+    /**
+     * Disown the data blob, removing responsibility for freeing it upon destruction
+     * @return A reference to the modified callee
+    **/
     NiftiImageData & disown ()       { this->owner = false; return *this; }
     
+    /** Obtain a constant iterator corresponding to the start of the blob */
     const Iterator begin () const { return Iterator(*this); }
+    
+    /** Obtain a constant iterator corresponding to the end of the blob */
     const Iterator end () const { return Iterator(*this, static_cast<char*>(dataPtr) + totalBytes()); }
+    
+    /** Obtain a mutable iterator corresponding to the start of the blob */
     Iterator begin () { return Iterator(*this); }
+    
+    /** Obtain a mutable iterator corresponding to the end of the blob */
     Iterator end () { return Iterator(*this, static_cast<char*>(dataPtr) + totalBytes()); }
     
+    /**
+     * Indexing operator, returning a constant element
+     * @param i Index value, where the first dimension moves fastest
+     * @return Constant element proxy type
+    **/
     const ElementProxy operator[] (const size_t i) const { return ElementProxy(*this, static_cast<char*>(dataPtr) + (i * bytesPerPixel())); }
+    
+    /**
+     * Indexing operator, returning a mutable element
+     * @param i Index value, where the first dimension moves fastest
+     * @return Mutable element proxy type
+    **/
     ElementProxy operator[] (const size_t i) { return ElementProxy(*this, static_cast<char*>(dataPtr) + (i * bytesPerPixel())); }
     
+    /**
+     * Calculate the minimum and maximum values in the blob, as doubles
+     * @param min Pointer to the minimum value (output parameter). Will be set to zero if the
+     *   datatype is unknown or the data is empty
+     * @param max Pointer to the maximum value (output parameter). Will be set to zero if the
+     *   datatype is unknown or the data is empty
+    **/
     void minmax (double *min, double *max) const
     {
         if (handler == NULL)
