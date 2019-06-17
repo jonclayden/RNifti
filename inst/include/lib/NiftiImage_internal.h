@@ -3,9 +3,9 @@
 
 namespace internal {
 
-inline short stringToDatatype (const std::string &datatype)
+inline int stringToDatatype (const std::string &datatype)
 {
-    static std::map<std::string,short> datatypeCodes;
+    static std::map<std::string,int> datatypeCodes;
     if (datatypeCodes.empty())
     {
         datatypeCodes["auto"] = DT_NONE;

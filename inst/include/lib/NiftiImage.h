@@ -413,12 +413,14 @@ public:
             : parent(other.parent), ptr(other.ptr), step(other.step) {}
         
         Iterator & operator++ () { ptr = static_cast<char*>(ptr) + step; return *this; }
+        Iterator operator++ (int) { Iterator copy(*this); ptr = static_cast<char*>(ptr) + step; return copy; }
         Iterator operator+ (ptrdiff_t n) const
         {
             void *newptr = static_cast<char*>(ptr) + (n * step);
             return Iterator(parent, newptr, step);
         }
         Iterator & operator-- () { ptr = static_cast<char*>(ptr) - step; return *this; }
+        Iterator operator-- (int) { Iterator copy(*this); ptr = static_cast<char*>(ptr) - step; return copy; }
         Iterator operator- (ptrdiff_t n) const
         {
             void *newptr = static_cast<char*>(ptr) - (n * step);
@@ -492,6 +494,20 @@ public:
             calibrateFrom(source);
             std::copy(source.begin(), source.end(), this->begin());
         }
+    }
+    
+    /**
+     * Iterator-based constructor
+     * @param from Iterator type representing the start of the source data to be copied
+     * @param to Iterator type representing the end of the source data to be copied
+     * @param datatype The NIfTI datatype to use within the data blob
+    **/
+    template <class InputIterator>
+    NiftiImageData (InputIterator from, InputIterator to, const int datatype)
+    {
+        const size_t length = static_cast<size_t>(std::distance(from, to));
+        init(NULL, length, datatype, 1.0, 0.0);
+        std::copy(from, to, this->begin());
     }
     
     /**
@@ -730,7 +746,7 @@ public:
      * @return A \c nifti_image datatype code
      * @exception runtime_error If a non-numeric type is passed
     **/
-    static short sexpTypeToNiftiType (const int sexpType)
+    static int sexpTypeToNiftiType (const int sexpType)
     {
         if (sexpType == INTSXP || sexpType == LGLSXP)
             return DT_INT32;
@@ -1173,7 +1189,7 @@ public:
      * and the image's slope and intercept set to capture the full range of original values
      * @return Self, after changing the datatype
     **/
-    NiftiImage & changeDatatype (const short datatype, const bool useSlope = false);
+    NiftiImage & changeDatatype (const int datatype, const bool useSlope = false);
     
     /**
      * Change the datatype of the image, casting the pixel data if present
@@ -1193,7 +1209,7 @@ public:
      * @return Self, after replacing the data
     **/
     template <typename SourceType>
-    NiftiImage & replaceData (const std::vector<SourceType> &data, const short datatype = DT_NONE);
+    NiftiImage & replaceData (const std::vector<SourceType> &data, const int datatype = DT_NONE);
     
     /**
      * Replace the pixel data in the image with the contents of a \c NiftiImageData object
@@ -1320,7 +1336,7 @@ public:
      * @param fileName The file name to write to, with appropriate suffix (e.g. ".nii.gz")
      * @param datatype The datatype to use when writing the file
     **/
-    void toFile (const std::string fileName, const short datatype = DT_NONE) const;
+    void toFile (const std::string fileName, const int datatype = DT_NONE) const;
     
     /**
      * Write the image to a NIfTI-1 file
@@ -1461,7 +1477,7 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
     nifti_1_header header;
     header.sizeof_hdr = 348;
     
-    const std::vector<short> dims = object.slot("dim_");
+    const std::vector<int> dims = object.slot("dim_");
     for (int i=0; i<8; i++)
         header.dim[i] = dims[i];
     
@@ -1535,20 +1551,15 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
     const SEXP data = PROTECT(object.slot(".Data"));
     if (!copyData || Rf_length(data) <= 1)
         this->image->data = NULL;
+    else if (header.datatype == DT_INT32)
+    {
+        Rcpp::IntegerVector intData(data);
+        replaceData(NiftiImageData(intData.begin(), intData.end(), DT_INT32));
+    }
     else
     {
-        const size_t dataSize = nifti_get_volsize(this->image);
-        this->image->data = calloc(1, dataSize);
-        if (header.datatype == DT_INT32)
-        {
-            Rcpp::IntegerVector intData(data);
-            std::copy(intData.begin(), intData.end(), static_cast<int32_t*>(this->image->data));
-        }
-        else
-        {
-            Rcpp::DoubleVector doubleData(data);
-            std::copy(doubleData.begin(), doubleData.end(), static_cast<double*>(this->image->data));
-        }
+        Rcpp::DoubleVector doubleData(data);
+        replaceData(NiftiImageData(doubleData.begin(), doubleData.end(), DT_FLOAT64));
     }
     UNPROTECT(1);
 }
@@ -1571,7 +1582,7 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
         data = call.eval();
     }
     
-    const short datatype = (Rf_isNull(data) ? DT_INT32 : sexpTypeToNiftiType(data.sexp_type()));
+    const int datatype = (Rf_isNull(data) ? DT_INT32 : sexpTypeToNiftiType(data.sexp_type()));
     
     int dims[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
     const std::vector<int> dimVector = mriImage.field("imageDims");
@@ -1658,7 +1669,7 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     for (int i=0; i<nDims; i++)
         dims[i+1] = dimVector[i];
     
-    const short datatype = sexpTypeToNiftiType(object.sexp_type());
+    const int datatype = sexpTypeToNiftiType(object.sexp_type());
     acquire(nifti_make_new_nim(dims, datatype, int(copyData)));
     
     if (copyData)
@@ -2023,8 +2034,8 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         size_t volSize = size_t(image->nx * image->ny * image->nz);
         size_t nVolumes = std::max(size_t(1), image->nvox / volSize);
         
-        const std::vector<double> oldData = this->getData<double>();
-        std::vector<double> newData(image->nvox);
+        const NiftiImageData oldData = this->data();
+        NiftiImageData newData(oldData);
         
         // Where the sign is negative we need to start at the end of the dimension
         size_t volStart = 0;
@@ -2035,7 +2046,7 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         }
         
         // Iterate over the data and place it into a new vector
-        std::vector<double>::const_iterator it = oldData.begin();
+        NiftiImageData::Iterator it = oldData.begin();
         for (size_t v=0; v<nVolumes; v++)
         {
             for (int k=0; k<image->nz; k++)
@@ -2251,7 +2262,7 @@ inline std::vector<TargetType> NiftiImage::getData (const bool useSlope) const
     }
 }
 
-inline NiftiImage & NiftiImage::changeDatatype (const short datatype, const bool useSlope)
+inline NiftiImage & NiftiImage::changeDatatype (const int datatype, const bool useSlope)
 {
     if (this->isNull() || image->datatype == datatype)
         return *this;
@@ -2269,29 +2280,9 @@ inline NiftiImage & NiftiImage::changeDatatype (const std::string &datatype, con
 }
 
 template <typename SourceType>
-inline NiftiImage & NiftiImage::replaceData (const std::vector<SourceType> &data, const short datatype)
+inline NiftiImage & NiftiImage::replaceData (const std::vector<SourceType> &data, const int datatype)
 {
-    if (this->isNull())
-        return *this;
-    else if (data.size() != image->nvox)
-        throw std::runtime_error("New data length does not match the number of voxels in the image");
-    
-    if (datatype != DT_NONE)
-    {
-        nifti_image_unload(image);
-        image->datatype = datatype;
-        nifti_datatype_sizes(datatype, &image->nbyper, &image->swapsize);
-    }
-    
-    double min, max;
-    NiftiImageData imageData = this->data();
-    std::copy(data.begin(), data.end(), imageData.begin());
-    imageData.minmax(&min, &max);
-    image->scl_slope = 0.0;
-    image->scl_inter = 0.0;
-    image->cal_min = static_cast<float>(min);
-    image->cal_max = static_cast<float>(max);
-    
+    replaceData(NiftiImageData(data.begin(), data.end(), datatype));
     return *this;
 }
 
@@ -2326,7 +2317,7 @@ inline NiftiImage & NiftiImage::replaceData (const NiftiImageData &data)
     return *this;
 }
 
-inline void NiftiImage::toFile (const std::string fileName, const short datatype) const
+inline void NiftiImage::toFile (const std::string fileName, const int datatype) const
 {
     const bool changingDatatype = (datatype != DT_NONE && !this->isNull() && datatype != image->datatype);
     
