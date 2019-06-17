@@ -408,16 +408,11 @@ public:
     {
         if (source.dataPtr != NULL)
         {
-            if (source.length() != this->length())
-                throw std::runtime_error("Assigned data source does not have the same length as the target");
-            else
-            {
-                // Free the old data, if we allocated it
-                if (owner)
-                    free(dataPtr);
-                init(NULL, source.length(), source.datatype(), source.slope, source.intercept);
-                memcpy(dataPtr, source.dataPtr, source.totalBytes());
-            }
+            // Free the old data, if we allocated it
+            if (owner)
+                free(dataPtr);
+            init(NULL, source.length(), source.datatype(), source.slope, source.intercept);
+            memcpy(dataPtr, source.dataPtr, source.totalBytes());
         }
         return *this;
     }
