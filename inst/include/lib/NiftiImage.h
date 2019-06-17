@@ -299,7 +299,7 @@ public:
      * Default constructor, creating an empty data object
     **/
     NiftiImageData ()
-        : dataPtr(NULL), _datatype(DT_NONE), _length(0), handler(NULL), slope(1.0), intercept(0.0), owner(false) {}
+        : slope(1.0), intercept(0.0), dataPtr(NULL), _datatype(DT_NONE), handler(NULL), _length(0), owner(false) {}
     
     /**
      * Primary constructor

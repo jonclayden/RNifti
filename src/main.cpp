@@ -452,16 +452,15 @@ BEGIN_RCPP
         if (data.isFloatingPoint() || data.isScaled())
         {
             NumericVector result(indices.length());
-            for (size_t i=0; i<indices.length(); i++)
-                result[i] = (indices[i] > data.size() ? NA_REAL : data[indices[i] - 1]);
+            for (int i=0; i<indices.length(); i++)
+                result[i] = (size_t(indices[i]) > data.size() ? NA_REAL : data[indices[i] - 1]);
             return result;
         }
         else
         {
             IntegerVector result(indices.length());
-            NiftiImageData::Iterator start = data.begin();
-            for (size_t i=0; i<indices.length(); i++)
-                result[i] = (indices[i] > data.size() ? NA_INTEGER : data[indices[i] - 1]);
+            for (int i=0; i<indices.length(); i++)
+                result[i] = (size_t(indices[i]) > data.size() ? NA_INTEGER : data[indices[i] - 1]);
             return result;
         }
     }
