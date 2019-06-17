@@ -36,8 +36,8 @@
  * @mainpage RNifti: Fast R and C++ Access to NIfTI Images
  * A more extensive overview of the \c RNifti package, and its usage from R, is provided on the
  * package's GitHub page at \c https://github.com/jonclayden/RNifti. The primary role of these
- * pages is to document the \ref RNifti::NiftiImage C++ class for package developers linking to
- * \c RNifti.
+ * pages is to document the \ref RNifti::NiftiImage and \ref RNifti::NiftiImageData C++ classes
+ * for package developers linking to \c RNifti.
 **/
 
 namespace RNifti {
