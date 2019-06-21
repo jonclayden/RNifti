@@ -99,6 +99,9 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
 #' @export
 retrieveNifti <- function (object)
 {
+    if (is.character(object)) {
+        object = path.expand(object)
+    }
     .Call("asNifti", object, PACKAGE="RNifti")
 }
 
