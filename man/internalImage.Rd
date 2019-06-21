@@ -4,6 +4,8 @@
 \alias{dim.internalImage}
 \alias{dim<-.internalImage}
 \alias{as.array.internalImage}
+\alias{[.internalImage}
+\alias{[<-.internalImage}
 \title{Internal images}
 \usage{
 \method{dim}{internalImage}(x)
@@ -11,14 +13,25 @@
 \method{dim}{internalImage}(x) <- value
 
 \method{as.array}{internalImage}(x, ...)
+
+\method{[}{internalImage}(x, i, j, ..., drop = TRUE)
+
+\method{[}{internalImage}(x, i, j, ...) <- value
 }
 \arguments{
 \item{x}{An \code{"internalImage"} object.}
 
-\item{value}{Not used. Changing the dimensions of an internal image is
-invalid, and will produce an error.}
+\item{value}{Not used. Changing the dimensions of (or data in) an internal
+image is invalid, and will produce an error. Convert to an array first.}
 
-\item{...}{Additional parameters to methods. Currently unused.}
+\item{...}{Additional parameters to methods. Only used for additional
+indices.}
+
+\item{i, j}{Index vectors. May be missing, which indicates that the whole of
+the relevant dimension should be obtained.}
+
+\item{drop}{If \code{TRUE} (the default), unitary indices in the result will
+be dropped. This mirrors the behaviour of standard array indexing.}
 }
 \description{
 An internal image is a simple R object with a few attributes including a

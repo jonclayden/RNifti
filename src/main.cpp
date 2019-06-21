@@ -7,6 +7,7 @@
 using namespace Rcpp;
 using namespace RNifti;
 
+typedef std::vector<int> int_vector;
 typedef std::vector<float> float_vector;
 
 ::mat44 matrixToXform (const SEXP _matrix, bool *valid = NULL)
@@ -436,6 +437,92 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP indexVector (SEXP _image, SEXP _indices)
+{
+BEGIN_RCPP
+    const NiftiImage image(_image, true, true);
+    if (image.isNull())
+        Rf_error("Cannot index into a NULL image");
+    else if (image->data == NULL)
+        return LogicalVector(Rf_length(_indices), NA_LOGICAL);
+    else
+    {
+        const IntegerVector indices(_indices);
+        const NiftiImageData data = image.data();
+        if (data.isFloatingPoint() || data.isScaled())
+        {
+            NumericVector result(indices.length());
+            for (int i=0; i<indices.length(); i++)
+                result[i] = (size_t(indices[i]) > data.size() ? NA_REAL : data[indices[i] - 1]);
+            return result;
+        }
+        else
+        {
+            IntegerVector result(indices.length());
+            for (int i=0; i<indices.length(); i++)
+                result[i] = (size_t(indices[i]) > data.size() ? NA_INTEGER : data[indices[i] - 1]);
+            return result;
+        }
+    }
+END_RCPP
+}
+
+RcppExport SEXP indexList (SEXP _image, SEXP _indices)
+{
+BEGIN_RCPP
+    const NiftiImage image(_image, true, true);
+    if (image.isNull())
+        Rf_error("Cannot index into a NULL image");
+    else if (image->data == NULL)
+        return LogicalVector(1, NA_LOGICAL);
+    else
+    {
+        const List indices(_indices);
+        const std::vector<int> dim = image.dim();
+        const int nDims = indices.length();
+        std::vector<size_t> strides(nDims);
+        std::vector<int_vector> locs(nDims);
+        int_vector sizes(nDims);
+        std::vector<size_t> cumulativeSizes(nDims);
+        size_t count = 1;
+        for (int i=0; i<nDims; i++)
+        {
+            strides[i] = (i == 0 ? 1 : strides[i-1] * dim[i-1]);
+            locs[i] = as<int_vector>(indices[i]);
+            sizes[i] = locs[i].size();
+            cumulativeSizes[i] = (i == 0 ? 1 : cumulativeSizes[i-1] * sizes[i-1]);
+            count *= sizes[i];
+        }
+        
+        const NiftiImageData data = image.data();
+        if (data.isFloatingPoint() || data.isScaled())
+        {
+            NumericVector result(count);
+            for (size_t j=0; j<count; j++)
+            {
+                size_t loc = 0;
+                for (int i=0; i<nDims; i++)
+                    loc += (locs[i][(j / cumulativeSizes[i]) % sizes[i]] - 1) * strides[i];
+                result[j] = (loc >= data.size() ? NA_REAL : data[loc]);
+            }
+            return result;
+        }
+        else
+        {
+            IntegerVector result(count);
+            for (size_t j=0; j<count; j++)
+            {
+                size_t loc = 0;
+                for (int i=0; i<nDims; i++)
+                    loc += (locs[i][(j / cumulativeSizes[i]) % sizes[i]] - 1) * strides[i];
+                result[j] = (loc >= data.size() ? NA_INTEGER : data[loc]);
+            }
+            return result;
+        }
+    }
+END_RCPP
+}
+
 RcppExport SEXP rescaleImage (SEXP _image, SEXP _scales)
 {
 BEGIN_RCPP
@@ -471,6 +558,8 @@ static R_CallMethodDef callMethods[] = {
     { "getRotation",    (DL_FUNC) &getRotation,     2 },
     { "getAddresses",   (DL_FUNC) &getAddresses,    1 },
     { "hasData",        (DL_FUNC) &hasData,         1 },
+    { "indexVector",    (DL_FUNC) &indexVector,     2 },
+    { "indexList",      (DL_FUNC) &indexList,       2 },
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },
     { NULL, NULL, 0 }
@@ -490,6 +579,7 @@ void R_init_RNifti (DllInfo *info)
     R_RegisterCCallable("RNifti",   "nii_image_unload",     (DL_FUNC) &nifti_image_unload);
     R_RegisterCCallable("RNifti",   "nii_image_free",       (DL_FUNC) &nifti_image_free);
     
+    R_RegisterCCallable("RNifti",   "nii_is_inttype",       (DL_FUNC) &nifti_is_inttype);
     R_RegisterCCallable("RNifti",   "nii_datatype_sizes",   (DL_FUNC) &nifti_datatype_sizes);
     R_RegisterCCallable("RNifti",   "nii_datatype_string",  (DL_FUNC) &nifti_datatype_string);
     R_RegisterCCallable("RNifti",   "nii_units_string",     (DL_FUNC) &nifti_units_string);

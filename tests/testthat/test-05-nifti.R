@@ -66,10 +66,30 @@ test_that("NIfTI files can be read and written", {
     expect_equal(round(compressedImage[40,40,30]), 363)
     
     image <- readNifti(imagePath, internal=TRUE)
+    array <- as.array(image)
     expect_s3_class(image, "internalImage")
     expect_s3_class(image, "niftiImage")
-    expect_equal(as.array(image)[40,40,30], 368)
+    expect_equal(image[], array)
+    expect_equal(image[,,], array)
+    expect_equal(array[40,40,30], 368)
+    expect_equal(image[40,40,30], 368)
+    expect_equal(image[271048], 368)
+    expect_identical(image[552961], NA_integer_)
+    expect_equal(array[40,,30], image[40,,30])
+    expect_equal(array[40:42,,30:32], image[40:42,,30:32])
+    m <- matrix(c(40,40,30,42,30,32), byrow=TRUE, ncol=3)
+    expect_equal(array[m], image[m])
+    expect_equal(array[c(40,42),,c(30,32)], image[c(40,42),,c(30,32)])
     expect_error(dim(image) <- c(60L,96L,96L))
+    expect_error(pixdim(image) <- c(1,1,1))
+    expect_error(image[40,40,30] <- 400)
+    
+    # Check that internal indexing still works when data scaling is in play
+    compressedInternalImage <- readNifti(tempPath, internal=TRUE)
+    expect_equal(round(compressedInternalImage[40,40,30]), 363)
+    expect_equal(compressedInternalImage[271048], compressedImage[271048])
+    expect_equal(compressedInternalImage[40,,30], compressedImage[40,,30])
+    expect_equal(compressedInternalImage[c(40,42),,c(30,32)], compressedImage[c(40,42),,c(30,32)])
     
     image <- readNifti(volumeImagePath, volumes=1:2)
     expect_equal(dim(image), c(96L,96L,60L,2L))
@@ -110,4 +130,22 @@ test_that("NIfTI objects have the expected copying semantics", {
     expect_true(all(RNifti:::addresses(im1) == RNifti:::addresses(im2)))
     im1$intent_code <- 1000L
     expect_false(all(RNifti:::addresses(im1) == RNifti:::addresses(im2)))
+})
+
+test_that("NAs are preserved across datatypes", {
+    # Original datatype is int16/short
+    image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+    tempPath <- paste(tempfile(), "nii.gz", sep=".")
+    
+    image[40,40,30] <- NA
+    writeNifti(image, tempPath, datatype="int")
+    expect_equal(readNifti(tempPath)[40,40,30], NA_integer_)
+    writeNifti(image, tempPath, datatype="double")
+    image <- readNifti(tempPath)
+    expect_equal(image[40,40,30], NA_real_)
+    image[42,42,32] <- NA
+    writeNifti(image, tempPath, datatype="int")
+    expect_equal(readNifti(tempPath)[42,42,32], NA_integer_)
+    writeNifti(image, tempPath, datatype="short")
+    expect_equal(readNifti(tempPath)[42,42,32], 0)
 })

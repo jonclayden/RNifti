@@ -2,6 +2,8 @@
 
 S3method("$",niftiImage)
 S3method("$<-",niftiImage)
+S3method("[",internalImage)
+S3method("[<-",internalImage)
 S3method("dim<-",internalImage)
 S3method("pixdim<-",default)
 S3method("pixunits<-",default)

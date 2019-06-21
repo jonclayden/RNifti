@@ -18,6 +18,7 @@ static int(*_nifti_copy_extensions)(nifti_image*, const nifti_image*) = NULL;
 static void(*_nifti_image_unload)(nifti_image*) = NULL;
 static void(*_nifti_image_free)(nifti_image*) = NULL;
 
+static int(*_nifti_is_inttype)(int) = NULL;
 static void(*_nifti_datatype_sizes)(int, int*, int*) = NULL;
 static char const *(*_nifti_datatype_string)(int) = NULL;
 static char const *(*_nifti_units_string)(int) = NULL;
@@ -61,6 +62,7 @@ void niftilib_register_all ()
         _nifti_image_unload = (void(*)(nifti_image*)) R_GetCCallable("RNifti","nii_image_unload");
         _nifti_image_free = (void(*)(nifti_image*)) R_GetCCallable("RNifti","nii_image_free");
         
+        _nifti_is_inttype = (int(*)(int)) R_GetCCallable("RNifti","nii_is_inttype");
         _nifti_datatype_sizes = (void(*)(int, int*, int*)) R_GetCCallable("RNifti","nii_datatype_sizes");
         _nifti_datatype_string = (char const *(*)(int)) R_GetCCallable("RNifti","nii_datatype_string");
         _nifti_units_string = (char const *(*)(int)) R_GetCCallable("RNifti","nii_units_string");
@@ -144,6 +146,13 @@ void nifti_image_free (nifti_image *nim)
     if (_nifti_image_free == NULL)
         niftilib_register_all();
     _nifti_image_free(nim);
+}
+
+int nifti_is_inttype (int dt)
+{
+    if (_nifti_is_inttype == NULL)
+        niftilib_register_all();
+    return _nifti_is_inttype(dt);
 }
 
 void nifti_datatype_sizes (int datatype, int *nbyper, int *swapsize)

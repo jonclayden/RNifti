@@ -7,9 +7,14 @@
 #' not be changed.
 #' 
 #' @param x An \code{"internalImage"} object.
-#' @param value Not used. Changing the dimensions of an internal image is
-#'   invalid, and will produce an error.
-#' @param ... Additional parameters to methods. Currently unused.
+#' @param value Not used. Changing the dimensions of (or data in) an internal
+#'   image is invalid, and will produce an error. Convert to an array first.
+#' @param i,j Index vectors. May be missing, which indicates that the whole of
+#'   the relevant dimension should be obtained.
+#' @param ... Additional parameters to methods. Only used for additional
+#'   indices.
+#' @param drop If \code{TRUE} (the default), unitary indices in the result will
+#'   be dropped. This mirrors the behaviour of standard array indexing.
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @rdname internalImage
@@ -32,6 +37,74 @@ dim.internalImage <- function (x)
 as.array.internalImage <- function (x, ...)
 {
     return (.Call("pointerToArray", x, PACKAGE="RNifti"))
+}
+
+#' @rdname internalImage
+#' @export
+"[.internalImage" <- function (x, i, j, ..., drop = TRUE)
+{
+    nArgs <- nargs() - as.integer(!missing(drop))
+    if (nArgs < 2)
+        return (as.array(x))
+    
+    # Evaluate the indices, replacing missing values with -1
+    if (nArgs == 2)
+        indices <- substitute(list(i))
+    else
+        indices <- substitute(list(i,j,...))
+    present <- (sapply(indices, as.character)[-1] != "")
+    if (any(!present))
+        indices[which(!present)+1] <- -1
+    indices <- eval(indices, parent.frame())
+    lengths <- rep(-1L, nArgs - 1)
+    lengths[present] <- sapply(indices[present], length)
+    
+    dims <- dim(x)
+    data <- NULL
+    
+    if (all(lengths == -1))
+        return (as.array(x))
+    else if (any(lengths == 0))
+        return (numeric(0))
+    else if (nArgs == 2 && present[1])
+    {
+        if (is.matrix(i))
+        {
+            if (ncol(i) != length(dims))
+                stop("Index matrix should have as many columns as the image has dimensions")
+            strides <- c(1, cumprod(dims)[-length(dims)])
+            locs <- apply(i, 1, function(n) sum((n-1)*strides) + 1)
+        }
+        else
+            locs <- as.integer(i)
+        
+        return (.Call("indexVector", x, locs, PACKAGE="RNifti"))
+    }
+    else if (nArgs != length(dims) + 1)
+        stop("Number of indices (", nArgs-1, ") not equal to the dimensionality of the image (", length(dims), ")")
+    else
+    {
+        data <- .Call("indexList", x, lapply(seq_along(indices), function(l) {
+            if (length(indices[[l]]) == 1 && indices[[l]] == -1)
+                seq_len(dims[l])
+            else if (is.logical(indices[[l]]))
+                which(indices[[l]])
+            else
+                indices[[l]]
+        }), PACKAGE="RNifti")
+        dim(data) <- ifelse(present, lengths, dims)
+    }
+    
+    if (drop)
+        data <- drop(data)
+    return (data)
+}
+
+#' @rdname internalImage
+#' @export
+"[<-.internalImage" <- function (x, i, j, ..., value)
+{
+    stop("The data in an internal image cannot be changed - convert to array first")
 }
 
 #' @export

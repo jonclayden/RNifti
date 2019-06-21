@@ -195,7 +195,12 @@ This arrangement is efficient and generally works well, but many R operations st
 
 ## API
 
-It is possible to use the package's NIfTI-handling code in other R packages' compiled code, thereby obviating the need to duplicate the reference implementation. Moreover, `RNifti` provides a C++ wrapper class, `NiftiImage`, which simplifies memory management, supports the package's internal image pointers and persistence, and provides syntactic sugar. Full doxygen documentation for this class is available at <http://doxygen.flakery.org/RNifti/>, and is also provided with package releases.
+It is possible to use the package's NIfTI-handling code in other R packages' compiled code, thereby obviating the need to duplicate the reference implementation. Moreover, `RNifti` provides two key C++ wrapper classes:
+
+- `NiftiImage`, which simplifies memory management and supports the package's internal image pointers and associated reference counting, and
+- `NiftiImageData`, which encapsulates the pixel data within an image, and handles datatype multiplexing and data scaling, as well as providing indexing, iterators and other niceties.
+
+Full doxygen documentation for these classes is available at <http://doxygen.flakery.org/RNifti/>, and is also provided with package releases.
 
 A third-party package can use the `NiftiImage` class by including
 
@@ -254,7 +259,7 @@ Thanks to contributions from [@soolijoo](https://github.com/soolijoo), it is pos
 | `src/znzlib/znzlib.c`           | Source for I/O functions from the NIfTI-1 reference implementation                                  |
 | `src/zlib/*`                    | `zlib` source files for reading and writing gzipped files (optional, as above)                      |
 
-Note that the `NiftiImage` class is header-only, but C code from the NIfTI-1 reference implementation will need to be compiled and linked into the project. The `print.h` header should be included before including `NiftiImage.h`, so that the R API is not used for printing error messages. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example.
+Note that the `NiftiImage` and `NiftiImageData` classes are header-only, but C code from the NIfTI-1 reference implementation will need to be compiled and linked into the project. The `NiftiImage_print.h` header should be included before including `NiftiImage.h`, so that the R API is not used for printing error messages. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example.
 
 ## The NIfTI-2 format
 

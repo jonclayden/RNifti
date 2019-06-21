@@ -4,5 +4,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^appveyor.yml$
+^\.covrignore$
 ^standalone$
 ^revdep$
