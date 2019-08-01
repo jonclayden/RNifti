@@ -137,7 +137,7 @@ inline void copyIfPresent (const Rcpp::List &list, const std::set<std::string> n
             std::ostringstream message;
             message << "Field \"" << name << "\" has " << length << "elements, but only the first will be used";
             Rf_warning(message.str().c_str());
-            target = Rcpp::as<std::vector<TargetType>>(object)[0];
+            target = Rcpp::as< std::vector<TargetType> >(object)[0];
         }
         else
             target = Rcpp::as<TargetType>(object);
