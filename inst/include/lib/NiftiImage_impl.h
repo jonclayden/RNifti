@@ -123,7 +123,25 @@ template <typename TargetType>
 inline void copyIfPresent (const Rcpp::List &list, const std::set<std::string> names, const std::string &name, TargetType &target)
 {
     if (names.count(name) == 1)
-        target = Rcpp::as<TargetType>(list[name]);
+    {
+        const Rcpp::RObject object = list[name];
+        const int length = Rf_length(object);
+        if (length == 0)
+        {
+            std::ostringstream message;
+            message << "Field \"" << name << "\" is empty and will be ignored";
+            Rf_warning(message.str().c_str());
+        }
+        else if (length > 1)
+        {
+            std::ostringstream message;
+            message << "Field \"" << name << "\" has " << length << "elements, but only the first will be used";
+            Rf_warning(message.str().c_str());
+            target = Rcpp::as<std::vector<TargetType>>(object)[0];
+        }
+        else
+            target = Rcpp::as<TargetType>(object);
+    }
 }
 
 // Special case for char, because Rcpp tries to be too clever and convert it to a string
@@ -131,7 +149,11 @@ template <>
 inline void copyIfPresent (const Rcpp::List &list, const std::set<std::string> names, const std::string &name, char &target)
 {
     if (names.count(name) == 1)
-        target = static_cast<char>(Rcpp::as<int>(list[name]));
+    {
+        int intValue = 0;
+        copyIfPresent<int>(list, names, name, intValue);
+        target = static_cast<char>(intValue);
+    }
 }
 
 inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const bool ignoreDatatype = false)
@@ -150,7 +172,9 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
     if (names.count("dim") == 1)
     {
         std::vector<short> dim = list["dim"];
-        for (size_t i=0; i<std::min(dim.size(),size_t(8)); i++)
+        if (dim.size() != 8)
+            throw std::runtime_error("Field \"dim\" must contain 8 elements");
+        for (size_t i=0; i<8; i++)
             header->dim[i] = dim[i];
     }
     
@@ -169,7 +193,9 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
     if (names.count("pixdim") == 1)
     {
         std::vector<float> pixdim = list["pixdim"];
-        for (size_t i=0; i<std::min(pixdim.size(),size_t(8)); i++)
+        if (pixdim.size() != 8)
+            throw std::runtime_error("Field \"pixdim\" must contain 8 elements");
+        for (size_t i=0; i<8; i++)
             header->pixdim[i] = pixdim[i];
     }
     copyIfPresent(list, names, "vox_offset", header->vox_offset);
@@ -200,19 +226,25 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
     if (names.count("srow_x") == 1)
     {
         std::vector<float> srow_x = list["srow_x"];
-        for (size_t i=0; i<std::min(srow_x.size(),size_t(4)); i++)
+        if (srow_x.size() != 4)
+            throw std::runtime_error("Field \"srow_x\" must contain 4 elements");
+        for (size_t i=0; i<4; i++)
             header->srow_x[i] = srow_x[i];
     }
     if (names.count("srow_y") == 1)
     {
         std::vector<float> srow_y = list["srow_y"];
-        for (size_t i=0; i<std::min(srow_y.size(),size_t(4)); i++)
+        if (srow_y.size() != 4)
+            throw std::runtime_error("Field \"srow_y\" must contain 4 elements");
+        for (size_t i=0; i<4; i++)
             header->srow_y[i] = srow_y[i];
     }
     if (names.count("srow_z") == 1)
     {
         std::vector<float> srow_z = list["srow_z"];
-        for (size_t i=0; i<std::min(srow_z.size(),size_t(4)); i++)
+        if (srow_z.size() != 4)
+            throw std::runtime_error("Field \"srow_z\" must contain 4 elements");
+        for (size_t i=0; i<4; i++)
             header->srow_z[i] = srow_z[i];
     }
     
