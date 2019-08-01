@@ -2,6 +2,14 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 0.11.1
+
+- Attempting to update image header fields with values of the wrong length
+  (e.g. through `updateNifti`) now results in a warning or error. See the
+  documentation for that R function for further details.
+
+===============================================================================
+
 VERSION 0.11.0
 
 R interface
