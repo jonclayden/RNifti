@@ -120,6 +120,11 @@ retrieveNifti <- function (object)
 #' This allows users to selectively update certain fields while leaving others
 #' alone (but see the note below).
 #' 
+#' If multiple values are passed for a field that expects a scalar (which is
+#' most of them), the first element of the vector will be used, with a warning.
+#' An empty vector will be ignored, also with a warning. If a value of the
+#' wrong length is passed to a vector-valued field, an error will be generated.
+#' 
 #' Datatype information in a list \code{template} is ignored. The datatype can
 #' only be changed using the \code{datatype} argument, but in this case the
 #' internal object gets out of sync with the R array, so an internal image is
@@ -144,9 +149,13 @@ retrieveNifti <- function (object)
 #'   interpretation of the pixel data, so it is impossible in general to change
 #'   them without also changing the array values on both the C and the R side.
 #'   Therefore, to avoid unexpected side-effects, these fields are not affected
-#'   by this function.
+#'   by this function. The \code{dim} and \code{pixdim} fields can be changed,
+#'   but for most users the accessor functions of the same name are much safer,
+#'   and should be used in preference.
 #' 
 #' @author Jon Clayden <code@@clayden.org>
+#' @seealso \code{\link{$.niftiImage}}, \code{\link{dim.internalImage}},
+#'   \code{\link{pixdim}}, \code{\link{xform}}
 #' @export
 updateNifti <- function (image, template = NULL, datatype = "auto")
 {
