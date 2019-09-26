@@ -783,16 +783,7 @@ public:
      * @param readData If \c true, the data will be read as well as the metadata
      * @exception runtime_error If reading from the file fails
     **/
-    NiftiImage (const std::string &path, const bool readData = true)
-        : image(NULL), refCount(NULL)
-    {
-        acquire(nifti_image_read(path.c_str(), readData));
-        if (image == NULL)
-            throw std::runtime_error("Failed to read image from path " + path);
-#ifndef NDEBUG
-        Rc_printf("Creating NiftiImage with pointer %p (from string)\n", this->image);
-#endif
-    }
+    NiftiImage (const std::string &path, const bool readData = true);
     
     /**
      * Initialise using a path string and sequence of required volumes

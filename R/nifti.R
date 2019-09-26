@@ -42,9 +42,9 @@ readNifti <- function (file, internal = FALSE, volumes = NULL)
     if (length(file) == 0)
         stop("File name vector is empty")
     else if (length(file) > 1)
-        lapply(file, function(f) .Call("readNifti", path.expand(f), internal, volumes, PACKAGE="RNifti"))
+        lapply(file, function(f) .Call("readNifti", f, internal, volumes, PACKAGE="RNifti"))
     else
-        .Call("readNifti", path.expand(file), internal, volumes, PACKAGE="RNifti")
+        .Call("readNifti", file, internal, volumes, PACKAGE="RNifti")
 }
 
 #' Write a NIfTI-1 format file
@@ -75,7 +75,7 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
     if (is.array(image) && !is.null(template))
         image <- updateNifti(image, template)
     
-    invisible(.Call("writeNifti", image, path.expand(file), tolower(datatype), PACKAGE="RNifti"))
+    invisible(.Call("writeNifti", image, file, tolower(datatype), PACKAGE="RNifti"))
 }
 
 #' Obtain an internal NIfTI representation of an object
@@ -260,7 +260,7 @@ print.analyzeHeader <- function (x, ...)
 #' @export
 niftiVersion <- function (file)
 {
-    sapply(file, function(f) .Call("niftiVersion", path.expand(f), PACKAGE="RNifti"))
+    sapply(file, function(f) .Call("niftiVersion", f, PACKAGE="RNifti"))
 }
 
 addresses <- function (image)
