@@ -1384,7 +1384,7 @@ inline NiftiImage & NiftiImage::replaceData (const NiftiImageData &data)
     return *this;
 }
 
-inline void NiftiImage::toFile (const std::string fileName, const int datatype) const
+inline std::pair<std::string,std::string> NiftiImage::toFile (const std::string fileName, const int datatype) const
 {
     const bool changingDatatype = (datatype != DT_NONE && !this->isNull() && datatype != image->datatype);
     
@@ -1398,11 +1398,13 @@ inline void NiftiImage::toFile (const std::string fileName, const int datatype) 
     if (status != 0)
         throw std::runtime_error("Failed to set filenames for NIfTI object");
     nifti_image_write(imageToWrite);
+    
+    return std::pair<std::string,std::string>(std::string(imageToWrite->fname), std::string(imageToWrite->iname));
 }
 
-inline void NiftiImage::toFile (const std::string fileName, const std::string &datatype) const
+inline std::pair<std::string,std::string> NiftiImage::toFile (const std::string fileName, const std::string &datatype) const
 {
-    toFile(fileName, internal::stringToDatatype(datatype));
+    return toFile(fileName, internal::stringToDatatype(datatype));
 }
 
 #ifdef USING_R

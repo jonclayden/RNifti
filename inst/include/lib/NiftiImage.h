@@ -1125,15 +1125,17 @@ public:
      * Write the image to a NIfTI-1 file
      * @param fileName The file name to write to, with appropriate suffix (e.g. ".nii.gz")
      * @param datatype The datatype to use when writing the file
+     * @return A pair of strings, giving the final header and image paths in that order
     **/
-    void toFile (const std::string fileName, const int datatype = DT_NONE) const;
+    std::pair<std::string,std::string> toFile (const std::string fileName, const int datatype = DT_NONE) const;
     
     /**
      * Write the image to a NIfTI-1 file
      * @param fileName The file name to write to, with appropriate suffix (e.g. ".nii.gz")
      * @param datatype The datatype to use when writing the file, or "auto"
+     * @return A pair of strings, giving the final header and image paths in that order
     **/
-    void toFile (const std::string fileName, const std::string &datatype) const;
+    std::pair<std::string,std::string> toFile (const std::string fileName, const std::string &datatype) const;
     
 #ifdef USING_R
     
