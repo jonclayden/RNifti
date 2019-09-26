@@ -37,7 +37,8 @@ test_that("NIfTI files can be read and written", {
     data <- updateNifti(data, image)
     expect_equal(pixdim(data), c(2.5,2.5,2.5))
     
-    writeNifti(image, tempPath)
+    paths <- writeNifti(image, tempPath)
+    expect_equal(paths, c(header=tempPath,image=tempPath))
     expect_equal(pixdim(readNifti(tempPath)), c(2.5,2.5,2.5))
     unlink(tempPath)
     

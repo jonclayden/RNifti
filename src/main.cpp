@@ -85,8 +85,8 @@ RcppExport SEXP writeNifti (SEXP _image, SEXP _file, SEXP _datatype)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, true, true);
-    image.toFile(as<std::string>(_file), as<std::string>(_datatype));
-    return R_NilValue;
+    const std::pair<std::string,std::string> paths = image.toFile(as<std::string>(_file), as<std::string>(_datatype));
+    return CharacterVector::create(Named("header")=paths.first, Named("image")=paths.second);
 END_RCPP
 }
 
