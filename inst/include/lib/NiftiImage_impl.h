@@ -322,6 +322,31 @@ inline void NiftiImageData::ConcreteTypeHandler<Type>::minmax (void *ptr, const 
     }
 }
 
+template <typename ElementType>
+inline void NiftiImageData::ConcreteTypeHandler< std::complex<ElementType> >::minmax (void *ptr, const size_t length, double *min, double *max) const
+{
+    if (ptr == NULL || length < 1)
+    {
+        *min = static_cast<double>(std::numeric_limits<ElementType>::min());
+        *max = static_cast<double>(std::numeric_limits<ElementType>::max());
+    }
+    else
+    {
+        ElementType *loc = static_cast<ElementType*>(ptr);
+        ElementType currentMin = *loc, currentMax = *loc;
+        for (size_t i=1; i<(2*length); i++)
+        {
+            loc++;
+            if (internal::lessThan(*loc, currentMin))
+                currentMin = *loc;
+            if (internal::lessThan(currentMax, *loc))
+                currentMax = *loc;
+        }
+        *min = static_cast<double>(currentMin);
+        *max = static_cast<double>(currentMax);
+    }
+}
+
 template <typename SourceType>
 inline NiftiImageData::Element & NiftiImageData::Element::operator= (const SourceType &value)
 {

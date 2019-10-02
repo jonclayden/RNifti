@@ -42,6 +42,8 @@
 
 namespace RNifti {
 
+typedef std::complex<float> complex64;
+typedef std::complex<double> complex128;
 /**
  * Wrapper class encapsulating a NIfTI data blob, with responsibility for handling data scaling
  * and polymorphism. This class provides read/write data access, iterators, etc., which internally
@@ -64,6 +66,7 @@ protected:
         virtual ~TypeHandler() {}
         virtual size_t size () const { return 0; }
         virtual bool hasNaN () const { return false; }
+        virtual std::complex<double> getComplex (void *ptr) const = 0;
         virtual double getDouble (void *ptr) const = 0;
         virtual int getInt (void *ptr) const = 0;
         virtual void setDouble (void *ptr, const double value) const = 0;
@@ -79,10 +82,35 @@ protected:
     {
         size_t size () const { return (sizeof(Type)); }
         bool hasNaN () const { return std::numeric_limits<Type>::has_quiet_NaN; }
+        std::complex<double> getComplex (void *ptr) const { return std::complex<double>(static_cast<double>(*static_cast<Type*>(ptr)), 0.0); }
         double getDouble (void *ptr) const { return static_cast<double>(*static_cast<Type*>(ptr)); }
         int getInt (void *ptr) const { return static_cast<int>(*static_cast<Type*>(ptr)); }
         void setDouble (void *ptr, const double value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
         void setInt (void *ptr, const int value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
+        void minmax (void *ptr, const size_t length, double *min, double *max) const;
+    };
+    
+    template <typename ElementType>
+    struct ConcreteTypeHandler< std::complex<ElementType> > : public TypeHandler
+    {
+        size_t size () const { return (sizeof(ElementType) * 2); }
+        bool hasNaN () const { return std::numeric_limits<ElementType>::has_quiet_NaN; }
+        std::complex<ElementType> getNative (void *ptr) const
+        {
+            const ElementType real = *static_cast<ElementType*>(ptr);
+            const ElementType imag = *(static_cast<ElementType*>(ptr) + 1);
+            return std::complex<ElementType>(real, imag);
+        }
+        void setNative (void *ptr, const std::complex<ElementType> value) const
+        {
+            *(static_cast<ElementType*>(ptr)) = value.real();
+            *(static_cast<ElementType*>(ptr) + 1) = value.imag();
+        }
+        std::complex<double> getComplex (void *ptr) const { return std::complex<double>(getNative(ptr)); }
+        double getDouble (void *ptr) const { return static_cast<double>(getNative(ptr).real()); }
+        int getInt (void *ptr) const { return static_cast<int>(getNative(ptr).real()); }
+        void setDouble (void *ptr, const double value) const { setNative(ptr, std::complex<ElementType>(value, 0.0)); }
+        void setInt (void *ptr, const int value) const { setNative(ptr, std::complex<ElementType>(static_cast<ElementType>(value), 0.0)); }
         void minmax (void *ptr, const size_t length, double *min, double *max) const;
     };
     
@@ -98,16 +126,18 @@ protected:
         
         switch (_datatype)
         {
-            case DT_UINT8:   return new ConcreteTypeHandler<uint8_t>();  break;
-            case DT_INT16:   return new ConcreteTypeHandler<int16_t>();  break;
-            case DT_INT32:   return new ConcreteTypeHandler<int32_t>();  break;
-            case DT_FLOAT32: return new ConcreteTypeHandler<float>();    break;
-            case DT_FLOAT64: return new ConcreteTypeHandler<double>();   break;
-            case DT_INT8:    return new ConcreteTypeHandler<int8_t>();   break;
-            case DT_UINT16:  return new ConcreteTypeHandler<uint16_t>(); break;
-            case DT_UINT32:  return new ConcreteTypeHandler<uint32_t>(); break;
-            case DT_INT64:   return new ConcreteTypeHandler<int64_t>();  break;
-            case DT_UINT64:  return new ConcreteTypeHandler<uint64_t>(); break;
+            case DT_UINT8:      return new ConcreteTypeHandler<uint8_t>();      break;
+            case DT_INT16:      return new ConcreteTypeHandler<int16_t>();      break;
+            case DT_INT32:      return new ConcreteTypeHandler<int32_t>();      break;
+            case DT_FLOAT32:    return new ConcreteTypeHandler<float>();        break;
+            case DT_FLOAT64:    return new ConcreteTypeHandler<double>();       break;
+            case DT_INT8:       return new ConcreteTypeHandler<int8_t>();       break;
+            case DT_UINT16:     return new ConcreteTypeHandler<uint16_t>();     break;
+            case DT_UINT32:     return new ConcreteTypeHandler<uint32_t>();     break;
+            case DT_INT64:      return new ConcreteTypeHandler<int64_t>();      break;
+            case DT_UINT64:     return new ConcreteTypeHandler<uint64_t>();     break;
+            case DT_COMPLEX64:  return new ConcreteTypeHandler<complex64>();    break;
+            case DT_COMPLEX128: return new ConcreteTypeHandler<complex128>();   break;
             
             default:
             throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(_datatype)) + ")");
