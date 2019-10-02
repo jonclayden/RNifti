@@ -21,6 +21,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <complex>
 #include <stdexcept>
 #include <algorithm>
 #include <map>
@@ -44,6 +45,7 @@ namespace RNifti {
 
 typedef std::complex<float> complex64;
 typedef std::complex<double> complex128;
+
 /**
  * Wrapper class encapsulating a NIfTI data blob, with responsibility for handling data scaling
  * and polymorphism. This class provides read/write data access, iterators, etc., which internally
