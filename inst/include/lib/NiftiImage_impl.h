@@ -297,8 +297,8 @@ inline void addAttributes (const SEXP pointer, const NiftiImage &source, const b
 
 }       // internal namespace
 
-template <typename Type>
-inline void NiftiImageData::ConcreteTypeHandler<Type>::minmax (void *ptr, const size_t length, double *min, double *max) const
+template <typename Type, bool alpha>
+inline void NiftiImageData::ConcreteTypeHandler<Type,alpha>::minmax (void *ptr, const size_t length, double *min, double *max) const
 {
     if (ptr == NULL || length < 1)
     {
@@ -323,7 +323,7 @@ inline void NiftiImageData::ConcreteTypeHandler<Type>::minmax (void *ptr, const 
 }
 
 template <typename ElementType>
-inline void NiftiImageData::ConcreteTypeHandler< std::complex<ElementType> >::minmax (void *ptr, const size_t length, double *min, double *max) const
+inline void NiftiImageData::ConcreteTypeHandler<std::complex<ElementType>,false>::minmax (void *ptr, const size_t length, double *min, double *max) const
 {
     if (ptr == NULL || length < 1)
     {

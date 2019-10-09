@@ -43,8 +43,18 @@
 
 namespace RNifti {
 
-typedef std::complex<float> complex64;
-typedef std::complex<double> complex128;
+typedef std::complex<float> complex64_t;
+typedef std::complex<double> complex128_t;
+
+struct rgba32_t
+{
+    union ValueType {
+        int packed;
+        unsigned char bytes[4];
+    };
+    ValueType value;
+    rgba32_t () { value.packed = 0; }
+};
 
 /**
  * Wrapper class encapsulating a NIfTI data blob, with responsibility for handling data scaling
@@ -68,9 +78,10 @@ protected:
         virtual ~TypeHandler() {}
         virtual size_t size () const { return 0; }
         virtual bool hasNaN () const { return false; }
-        virtual std::complex<double> getComplex (void *ptr) const = 0;
-        virtual double getDouble (void *ptr) const = 0;
-        virtual int getInt (void *ptr) const = 0;
+        virtual complex128_t getComplex (void *ptr) const { return complex128_t(0.0, 0.0); }
+        virtual double getDouble (void *ptr) const { return 0.0; }
+        virtual int getInt (void *ptr) const { return 0; }
+        virtual rgba32_t getRgb (void *ptr) const { return rgba32_t(); }
         virtual void setDouble (void *ptr, const double value) const = 0;
         virtual void setInt (void *ptr, const int value) const = 0;
         virtual void minmax (void *ptr, const size_t length, double *min, double *max) const = 0;
@@ -79,12 +90,12 @@ protected:
     /**
      * Concrete inner class template defining behaviour specific to individual data types
     **/
-    template <typename Type>
+    template <typename Type, bool alpha = false>
     struct ConcreteTypeHandler : public TypeHandler
     {
         size_t size () const { return (sizeof(Type)); }
         bool hasNaN () const { return std::numeric_limits<Type>::has_quiet_NaN; }
-        std::complex<double> getComplex (void *ptr) const { return std::complex<double>(static_cast<double>(*static_cast<Type*>(ptr)), 0.0); }
+        complex128_t getComplex (void *ptr) const { return complex128_t(static_cast<double>(*static_cast<Type*>(ptr)), 0.0); }
         double getDouble (void *ptr) const { return static_cast<double>(*static_cast<Type*>(ptr)); }
         int getInt (void *ptr) const { return static_cast<int>(*static_cast<Type*>(ptr)); }
         void setDouble (void *ptr, const double value) const { *(static_cast<Type*>(ptr)) = static_cast<Type>(value); }
@@ -93,7 +104,7 @@ protected:
     };
     
     template <typename ElementType>
-    struct ConcreteTypeHandler< std::complex<ElementType> > : public TypeHandler
+    struct ConcreteTypeHandler<std::complex<ElementType>,false> : public TypeHandler
     {
         size_t size () const { return (sizeof(ElementType) * 2); }
         bool hasNaN () const { return std::numeric_limits<ElementType>::has_quiet_NaN; }
@@ -103,17 +114,45 @@ protected:
             const ElementType imag = *(static_cast<ElementType*>(ptr) + 1);
             return std::complex<ElementType>(real, imag);
         }
-        void setNative (void *ptr, const std::complex<ElementType> value) const
+        void setNative (void *ptr, const std::complex<ElementType> native) const
         {
-            *(static_cast<ElementType*>(ptr)) = value.real();
-            *(static_cast<ElementType*>(ptr) + 1) = value.imag();
+            *(static_cast<ElementType*>(ptr)) = native.real();
+            *(static_cast<ElementType*>(ptr) + 1) = native.imag();
         }
-        std::complex<double> getComplex (void *ptr) const { return std::complex<double>(getNative(ptr)); }
+        complex128_t getComplex (void *ptr) const { return complex128_t(getNative(ptr)); }
         double getDouble (void *ptr) const { return static_cast<double>(getNative(ptr).real()); }
         int getInt (void *ptr) const { return static_cast<int>(getNative(ptr).real()); }
         void setDouble (void *ptr, const double value) const { setNative(ptr, std::complex<ElementType>(value, 0.0)); }
         void setInt (void *ptr, const int value) const { setNative(ptr, std::complex<ElementType>(static_cast<ElementType>(value), 0.0)); }
         void minmax (void *ptr, const size_t length, double *min, double *max) const;
+    };
+    
+    template <bool alpha>
+    struct ConcreteTypeHandler<rgba32_t,alpha> : public TypeHandler
+    {
+        size_t size () const { return alpha ? 4 : 3; }
+        rgba32_t getNative (void *ptr) const
+        {
+            rgba32_t native;
+            unsigned char *source = static_cast<unsigned char *>(ptr);
+            std::copy(source, source + (alpha ? 4 : 3), native.value.bytes);
+            return native;
+        }
+        void setNative (void *ptr, const rgba32_t native) const
+        {
+            unsigned char *target = static_cast<unsigned char *>(ptr);
+            std::copy(native.value.bytes, native.value.bytes + (alpha ? 4 : 3), target);
+        }
+        int getInt (void *ptr) const { return getNative(ptr).value.packed; }
+        rgba32_t getRgb (void *ptr) const { return getNative(ptr); }
+        void setDouble (void *ptr, const double value) const { throw std::runtime_error("Setting an RGB field with a double value makes no sense"); }
+        void setInt (void *ptr, const int value) const
+        {
+            rgba32_t native;
+            native.value.packed = value;
+            setNative(ptr, native);
+        }
+        void minmax (void *ptr, const size_t length, double *min, double *max) const { *min = 0.0; *max = 255.0; }
     };
     
     /**
@@ -128,18 +167,20 @@ protected:
         
         switch (_datatype)
         {
-            case DT_UINT8:      return new ConcreteTypeHandler<uint8_t>();      break;
-            case DT_INT16:      return new ConcreteTypeHandler<int16_t>();      break;
-            case DT_INT32:      return new ConcreteTypeHandler<int32_t>();      break;
-            case DT_FLOAT32:    return new ConcreteTypeHandler<float>();        break;
-            case DT_FLOAT64:    return new ConcreteTypeHandler<double>();       break;
-            case DT_INT8:       return new ConcreteTypeHandler<int8_t>();       break;
-            case DT_UINT16:     return new ConcreteTypeHandler<uint16_t>();     break;
-            case DT_UINT32:     return new ConcreteTypeHandler<uint32_t>();     break;
-            case DT_INT64:      return new ConcreteTypeHandler<int64_t>();      break;
-            case DT_UINT64:     return new ConcreteTypeHandler<uint64_t>();     break;
-            case DT_COMPLEX64:  return new ConcreteTypeHandler<complex64>();    break;
-            case DT_COMPLEX128: return new ConcreteTypeHandler<complex128>();   break;
+            case DT_UINT8:      return new ConcreteTypeHandler<uint8_t>();          break;
+            case DT_INT16:      return new ConcreteTypeHandler<int16_t>();          break;
+            case DT_INT32:      return new ConcreteTypeHandler<int32_t>();          break;
+            case DT_FLOAT32:    return new ConcreteTypeHandler<float>();            break;
+            case DT_FLOAT64:    return new ConcreteTypeHandler<double>();           break;
+            case DT_INT8:       return new ConcreteTypeHandler<int8_t>();           break;
+            case DT_UINT16:     return new ConcreteTypeHandler<uint16_t>();         break;
+            case DT_UINT32:     return new ConcreteTypeHandler<uint32_t>();         break;
+            case DT_INT64:      return new ConcreteTypeHandler<int64_t>();          break;
+            case DT_UINT64:     return new ConcreteTypeHandler<uint64_t>();         break;
+            case DT_COMPLEX64:  return new ConcreteTypeHandler<complex64_t>();      break;
+            case DT_COMPLEX128: return new ConcreteTypeHandler<complex128_t>();     break;
+            case DT_RGB24:      return new ConcreteTypeHandler<rgba32_t,false>();   break;
+            case DT_RGBA32:     return new ConcreteTypeHandler<rgba32_t,true>();    break;
             
             default:
             throw std::runtime_error("Unsupported data type (" + std::string(nifti_datatype_string(_datatype)) + ")");
