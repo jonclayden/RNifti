@@ -488,9 +488,9 @@ public:
     
     /**
      * Determine whether the datatype is complex
-     * @return Currently \c false, always
+     * @return \c true if the data represents complex floating point values; \c false otherwise
     **/
-    bool isComplex () const          { return false; }
+    bool isComplex () const          { return (_datatype == DT_COMPLEX64 || _datatype == DT_COMPLEX128); }
     
     /**
      * Determine whether the datatype is floating point
@@ -506,10 +506,10 @@ public:
     bool isInteger () const          { return nifti_is_inttype(_datatype); }
     
     /**
-     * Determine whether the datatype corresponds to an RGB value
-     * @return Currently \c false, always
+     * Determine whether the datatype corresponds to an RGB type
+     * @return \c true if the data represents RGB colour values; \c false otherwise
     **/
-    bool isRgb () const              { return false; }
+    bool isRgb () const              { return (_datatype == DT_RGB24 || _datatype == DT_RGBA32); }
     
     /**
      * Return a similar object to the callee, but with the slope and intercept values reset
@@ -569,6 +569,7 @@ public:
 };
 
 
+// R provides an NaN (NA) value for integers
 #ifdef USING_R
 template <>
 inline bool NiftiImageData::ConcreteTypeHandler<int>::hasNaN () const { return true; }
@@ -676,6 +677,8 @@ public:
             return DT_INT32;
         else if (sexpType == REALSXP)
             return DT_FLOAT64;
+        else if (sexpType == CPLXSXP)
+            return DT_COMPLEX128;
         else
             throw std::runtime_error("Array elements must be numeric");
     }

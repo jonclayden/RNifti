@@ -99,6 +99,13 @@ inline int stringToDatatype (const std::string &datatype)
         datatypeCodes["uint32"] = DT_UINT32;
         datatypeCodes["int64"] = DT_INT64;
         datatypeCodes["uint64"] = DT_UINT64;
+        datatypeCodes["complex64"] = DT_COMPLEX64;
+        datatypeCodes["complex128"] = DT_COMPLEX128;
+        datatypeCodes["complex"] = DT_COMPLEX128;
+        datatypeCodes["rgb24"] = DT_RGB24;
+        datatypeCodes["rgb"] = DT_RGB24;
+        datatypeCodes["rgba32"] = DT_RGBA32;
+        datatypeCodes["rgba"] = DT_RGBA32;
     }
     
     std::locale locale;
@@ -618,10 +625,11 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
         header.srow_z[i] = srow_z[i];
     }
     
+    // Ignoring complex and RGB types here because oro.nifti doesn't yet support them
     if (header.datatype == DT_UINT8 || header.datatype == DT_INT16 || header.datatype == DT_INT32 || header.datatype == DT_INT8 || header.datatype == DT_UINT16 || header.datatype == DT_UINT32)
         header.datatype = DT_INT32;
     else if (header.datatype == DT_FLOAT32 || header.datatype == DT_FLOAT64)
-        header.datatype = DT_FLOAT64;  // This assumes that sizeof(double) == 8
+        header.datatype = DT_FLOAT64;
     else
         throw std::runtime_error("Data type is not supported");
     
@@ -756,6 +764,8 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
         const size_t dataSize = nifti_get_volsize(image);
         if (datatype == DT_INT32)
             memcpy(this->image->data, INTEGER(object), dataSize);
+        else if (datatype == DT_COMPLEX128)
+            memcpy(this->image->data, COMPLEX(object), dataSize);
         else
             memcpy(this->image->data, REAL(object), dataSize);
     }
@@ -1272,6 +1282,8 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
         image->data = calloc(1, dataSize);
         if (image->datatype == DT_INT32)
             memcpy(image->data, INTEGER(object), dataSize);
+        else if (image->datatype == DT_COMPLEX128)
+            memcpy(image->data, COMPLEX(object), dataSize);
         else
             memcpy(image->data, REAL(object), dataSize);
     
