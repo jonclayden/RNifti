@@ -784,6 +784,8 @@ protected:
     void initFromArray (const Rcpp::RObject &object, const bool copyData = true);
    
 #endif
+    
+    void initFromDims (const std::vector<int> &dim, const int datatype);
 
     /**
      * Modify the pixel dimensions, and potentially the xform matrices to match
@@ -852,6 +854,10 @@ public:
         Rc_printf("Creating NiftiImage with pointer %p (from pointer)\n", this->image);
 #endif
     }
+    
+    NiftiImage (const std::vector<int> &dim, const int datatype);
+    
+    NiftiImage (const std::vector<int> &dim, const std::string &datatype);
     
     /**
      * Initialise using a path string

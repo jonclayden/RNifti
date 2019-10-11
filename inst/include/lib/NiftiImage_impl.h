@@ -787,6 +787,17 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     }
 }
 
+inline void NiftiImage::initFromDims (const std::vector<int> &dim, const int datatype)
+{
+    const int nDims = std::min(7, int(dim.size()));
+    int dims[8] = { nDims, 0, 0, 0, 0, 0, 0, 0 };
+    std::copy(dim.begin(), dim.begin() + nDims, &dims[1]);
+    acquire(nifti_make_new_nim(dims, datatype, 1));
+    
+    if (image == NULL)
+        throw std::runtime_error("Failed to create image from scratch");
+}
+
 inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const bool readOnly)
     : image(NULL), refCount(NULL)
 {
@@ -850,6 +861,24 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
 }
 
 #endif // USING_R
+
+inline NiftiImage::NiftiImage (const std::vector<int> &dim, const int datatype)
+    : image(NULL), refCount(NULL)
+{
+    initFromDims(dim, datatype);
+#ifndef NDEBUG
+    Rc_printf("Creating NiftiImage with pointer %p (from dims)\n", this->image);
+#endif
+}
+
+inline NiftiImage::NiftiImage (const std::vector<int> &dim, const std::string &datatype)
+    : image(NULL), refCount(NULL)
+{
+    initFromDims(dim, internal::stringToDatatype(datatype));
+#ifndef NDEBUG
+    Rc_printf("Creating NiftiImage with pointer %p (from dims)\n", this->image);
+#endif
+}
 
 inline NiftiImage::NiftiImage (const std::string &path, const bool readData)
     : image(NULL), refCount(NULL)
