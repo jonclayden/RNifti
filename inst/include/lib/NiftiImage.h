@@ -296,7 +296,7 @@ public:
         Element & operator= (const Element &other);
         
         /**
-         * Implicit type-cast operator, suitable for implicit conversion to basic numeric types
+         * Type-cast operator, suitable for implicit conversion to basic numeric types
         **/
         template <typename TargetType>
         operator TargetType() const
@@ -307,6 +307,37 @@ public:
                 return TargetType(parent.handler->getInt(ptr));
             else
                 return TargetType(parent.handler->getDouble(ptr));
+        }
+        
+        template <typename ElementType>
+        operator std::complex<ElementType>() const
+        {
+            if (parent.isScaled())
+                return std::complex<ElementType>(parent.handler->getComplex(ptr) * parent.slope + complex128_t(parent.intercept, parent.intercept));
+            else
+                return std::complex<ElementType>(parent.handler->getComplex(ptr));
+        }
+        
+#ifdef USING_R
+        /**
+         * \c Rcomplex type-cast operator, allowing data to be copied straight to a CPLXSXP
+        **/
+        operator Rcomplex() const
+        {
+            const complex128_t value = parent.handler->getComplex(ptr);
+            Rcomplex rValue = { value.real(), value.imag() };
+            if (parent.isScaled())
+            {
+                rValue.r = rValue.r * parent.slope + parent.intercept;
+                rValue.i = rValue.i * parent.slope + parent.intercept;
+            }
+            return rValue;
+        }
+#endif
+        
+        operator rgba32_t() const
+        {
+            return parent.handler->getRgb(ptr);
         }
     };
     

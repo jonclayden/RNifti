@@ -52,6 +52,9 @@ inline bool isNaN<double> (const double x) { return bool(ISNAN(x)); }
 // For R specifically, we have to catch NA_INTEGER (a.k.a. INT_MIN)
 template <>
 inline bool isNaN<int> (const int x) { return (x == NA_INTEGER); }
+
+template <>
+inline bool isNaN<rgba32_t> (const rgba32_t x) { return (x.value.packed == NA_INTEGER); }
 #endif
 
 template <typename Type>
@@ -1489,6 +1492,8 @@ inline Rcpp::RObject NiftiImage::toArray () const
             Rf_warning("Internal image contains no data - filling array with NAs");
             array = Rcpp::LogicalVector(image->nvox, NA_LOGICAL);
         }
+        else if (data.isComplex())
+            array = Rcpp::ComplexVector(data.begin(), data.end());
         else if (data.isFloatingPoint() || data.isScaled())
             array = Rcpp::NumericVector(data.begin(), data.end());
         else
