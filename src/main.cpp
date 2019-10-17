@@ -45,6 +45,37 @@ NumericMatrix xformToMatrix (const ::mat44 xform)
     return matrix;
 }
 
+RcppExport SEXP packRgb (SEXP _object, SEXP _channels, SEXP _maxValue)
+{
+BEGIN_RCPP
+    const size_t length = size_t(Rf_length(_object));
+    const int channels = as<int>(_channels);
+    const size_t pixels = length / size_t(channels);
+    const double maxValue = as<double>(_maxValue);
+    
+    if (pixels * channels != length)
+    {
+        std::ostringstream message;
+        message << "Data length (" << length << ") is not a multiple of the number of channels (" << channels << ")";
+        Rf_error(message.str().c_str());
+    }
+    
+    NumericVector source(_object);
+    IntegerVector result(pixels);
+    rgba32_t rgba;
+    for (size_t i=0; i<pixels; i++)
+    {
+        for (int j=0; j<channels; j++)
+            rgba.value.bytes[j] = (unsigned char) RNifti::internal::roundEven(source[i + pixels*j] * 255.0 / maxValue);
+        for (int j=channels; j<4; j++)
+            rgba.value.bytes[j] = 0;
+        result[i] = rgba.value.packed;
+    }
+    
+    return result;
+END_RCPP
+}
+
 RcppExport SEXP asNifti (SEXP _object)
 {
 BEGIN_RCPP
@@ -543,6 +574,7 @@ END_RCPP
 extern "C" {
 
 static R_CallMethodDef callMethods[] = {
+    { "packRgb",        (DL_FUNC) &packRgb,         3 },
     { "asNifti",        (DL_FUNC) &asNifti,         1 },
     { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
