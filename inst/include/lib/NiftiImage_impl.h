@@ -759,14 +759,24 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     for (int i=0; i<nDims; i++)
         dims[i+1] = dimVector[i];
     
-    const int datatype = sexpTypeToNiftiType(object.sexp_type());
+    int datatype = sexpTypeToNiftiType(object.sexp_type());
+    if (object.inherits("rgbArray"))
+    {
+        const int channels = object.attr("channels");
+        datatype = (channels == 4 ? DT_RGBA32 : DT_RGB24);
+    }
     acquire(nifti_make_new_nim(dims, datatype, int(copyData)));
     
     if (copyData)
     {
         const size_t dataSize = nifti_get_volsize(image);
-        if (datatype == DT_INT32)
+        if (datatype == DT_INT32 || datatype == DT_RGBA32)
             memcpy(this->image->data, INTEGER(object), dataSize);
+        else if (datatype == DT_RGB24)
+        {
+            NiftiImageData data(image);
+            std::copy(INTEGER(object), INTEGER(object)+image->nvox, data.begin());
+        }
         else if (datatype == DT_COMPLEX128)
             memcpy(this->image->data, COMPLEX(object), dataSize);
         else
@@ -1500,7 +1510,10 @@ inline Rcpp::RObject NiftiImage::toArray () const
             array = Rcpp::IntegerVector(data.begin(), data.end());
     
         internal::addAttributes(array, *this);
-        array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "array");
+        if (data.isRgb())
+            array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "rgbArray", "array");
+        else
+            array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "array");
         return array;
     }
 }
