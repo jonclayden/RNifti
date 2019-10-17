@@ -489,7 +489,15 @@ BEGIN_RCPP
     {
         const IntegerVector indices(_indices);
         const NiftiImageData data = image.data();
-        if (data.isFloatingPoint() || data.isScaled())
+        if (data.isComplex())
+        {
+            ComplexVector result(indices.length());
+            const Rcomplex naValue { NA_REAL, NA_REAL };
+            for (int i=0; i<indices.length(); i++)
+                result[i] = (size_t(indices[i]) > data.size() ? naValue : data[indices[i] - 1]);
+            return result;
+        }
+        else if (data.isFloatingPoint() || data.isScaled())
         {
             NumericVector result(indices.length());
             for (int i=0; i<indices.length(); i++)
@@ -535,7 +543,20 @@ BEGIN_RCPP
         }
         
         const NiftiImageData data = image.data();
-        if (data.isFloatingPoint() || data.isScaled())
+        if (data.isComplex())
+        {
+            ComplexVector result(count);
+            const Rcomplex naValue { NA_REAL, NA_REAL };
+            for (size_t j=0; j<count; j++)
+            {
+                size_t loc = 0;
+                for (int i=0; i<nDims; i++)
+                    loc += (locs[i][(j / cumulativeSizes[i]) % sizes[i]] - 1) * strides[i];
+                result[j] = (loc >= data.size() ? naValue : data[loc]);
+            }
+            return result;
+        }
+        else if (data.isFloatingPoint() || data.isScaled())
         {
             NumericVector result(count);
             for (size_t j=0; j<count; j++)
