@@ -16,6 +16,9 @@ test_that("complex datatypes are handled properly", {
     header <- niftiHeader(tempPath)
     expect_equal(header$datatype, 1792L)
     expect_equal(header$bitpix, 128L)
+
+    complexImage <- readNifti(tempPath, internal=TRUE)
+    expect_equal(complexImage[40,40,30], 0+10i)
 })
 
 test_that("RGB datatypes are handled properly", {
@@ -23,5 +26,9 @@ test_that("RGB datatypes are handled properly", {
     
     set.seed(1)
     k <- stats::kmeans(as.vector(image), 3L)
+    data <- rgbArray(k$cluster==1, k$cluster==2, k$cluster==3, dim=dim(image))
+    rgbImage <- updateNifti(data, image)
     
+    expect_s3_class(data, "rgbArray")
+    expect_equal(rgbImage$datatype, 128L)
 })
