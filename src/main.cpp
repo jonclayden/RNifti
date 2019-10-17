@@ -65,10 +65,19 @@ BEGIN_RCPP
     rgba32_t rgba;
     for (size_t i=0; i<pixels; i++)
     {
-        for (int j=0; j<channels; j++)
-            rgba.value.bytes[j] = (unsigned char) RNifti::internal::roundEven(source[i + pixels*j] * 255.0 / maxValue);
-        for (int j=channels; j<4; j++)
-            rgba.value.bytes[j] = 0;
+        if (channels > 2)
+        {
+            for (int j=0; j<channels; j++)
+                rgba.value.bytes[j] = (unsigned char) RNifti::internal::roundEven(source[i + pixels*j] * 255.0 / maxValue);
+            for (int j=channels; j<4; j++)
+                rgba.value.bytes[j] = 0;
+        }
+        else
+        {
+            for (int j=0; j<3; j++)
+                rgba.value.bytes[j] = (unsigned char) RNifti::internal::roundEven(source[i] * 255.0 / maxValue);
+            rgba.value.bytes[3] = (unsigned char) RNifti::internal::roundEven(source[i + pixels] * 255.0 / maxValue);
+        }
         result[i] = rgba.value.packed;
     }
     

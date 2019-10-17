@@ -1,30 +1,39 @@
-rgbArray <- function (r, g, b, a, max = NULL, dim = NULL, ...)
+#' @export
+rgbArray <- function (red, green, blue, alpha, max = NULL, dim = NULL, ...)
 {
-    if (is.null(dim))
-        dim <- dim(r)
-    
     source <- NULL
     channels <- 0L
     
-    if (!missing(g) && !missing(b) && !missing(a))
+    if (!missing(green) && !missing(blue) && !missing(alpha))
     {
-        source <- c(r, g, b, a)
+        source <- cbind(red, green, blue, alpha)
         channels <- 4L
     }
-    else if (!missing(g) && !missing(b))
+    else if (!missing(green) && !missing(blue))
     {
-        source <- c(r, g, b)
-        channels <- 4L
+        source <- cbind(red, green, blue)
+        channels <- 3L
     }
-    else if (is.matrix(r) || is.array(r))
+    else if (!missing(alpha))
     {
-        source <- r
-        channels <- dim(r)[ndim(r)]
+        source <- cbind(red, alpha)
+        channels <- 2L
+    }
+    else if (is.matrix(red) || is.array(red))
+    {
+        source <- red
+        channels <- dim(red)[ndim(red)]
+        if (channels < 2L || channels > 4L)
+            stop("If only one argument is supplied, its last dimension must be 2, 3 or 4")
+        if (is.null(dim))
+            dim <- dim(red)[-ndim(red)]
     }
     
+    if (is.null(dim))
+        dim <- dim(red)
     if (is.null(max))
         max <- switch(storage.mode(source), integer=255, 1)
     
     result <- .Call("packRgb", source, channels, max, PACKAGE="RNifti")
-    return (structure(result, ..., dim=dim, class="rgbArray"))
+    return (structure(result, ..., channels=channels, dim=dim, class="rgbArray"))
 }
