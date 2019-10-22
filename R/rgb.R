@@ -28,6 +28,8 @@ rgbArray <- function (red, green, blue, alpha, max = NULL, dim = NULL, ...)
         if (is.null(dim))
             dim <- dim(red)[-ndim(red)]
     }
+    else
+        stop("At least two channels must be specified, or the first argument should be multidimensional")
     
     if (is.null(dim))
         dim <- dim(red)
