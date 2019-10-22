@@ -85,6 +85,28 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP rgbToStrings (SEXP _object)
+{
+BEGIN_RCPP
+    IntegerVector array(_object);
+    const int channels = array.attr("channels");
+    const size_t len = Rf_length(array);
+    
+    CharacterVector result(len);
+    for (size_t i=0; i<len; i++)
+    {
+        rgba32_t rgba;
+        rgba.value.packed = array[i];
+        std::ostringstream value;
+        value << "#" << std::hex << std::uppercase;
+        for (int j=0; j<channels; j++)
+            value << std::setw(2) << std::setfill('0') << int(rgba.value.bytes[j]);
+        result[i] = value.str();
+    }
+    return result;
+END_RCPP
+}
+
 RcppExport SEXP unpackRgb (SEXP _object, SEXP _channels)
 {
 BEGIN_RCPP
@@ -630,6 +652,7 @@ extern "C" {
 
 static R_CallMethodDef callMethods[] = {
     { "packRgb",        (DL_FUNC) &packRgb,         3 },
+    { "rgbToStrings",   (DL_FUNC) &rgbToStrings,    1 },
     { "unpackRgb",      (DL_FUNC) &unpackRgb,       2 },
     { "asNifti",        (DL_FUNC) &asNifti,         1 },
     { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },

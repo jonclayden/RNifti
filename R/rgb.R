@@ -19,7 +19,12 @@ rgbArray <- function (red, green, blue, alpha, max = NULL, dim = NULL, ...)
         source <- cbind(red, alpha)
         channels <- 2L
     }
-    else if (is.matrix(red) || is.array(red))
+    else if (is.character(red))
+    {
+        channels <- ifelse(max(nchar(red),na.rm=TRUE) > 7L, 4L, 3L)
+        source <- t(col2rgb(red, alpha=(channels==4L)))
+    }
+    else if (is.numeric(red) && is.array(red))
     {
         source <- red
         channels <- dim(red)[ndim(red)]
@@ -41,7 +46,13 @@ rgbArray <- function (red, green, blue, alpha, max = NULL, dim = NULL, ...)
 }
 
 #' @export
-extractChannels <- function (array, channels = c("red","green","blue","alpha"))
+as.character.rgbArray <- function (x, ...)
+{
+    .Call("rgbToStrings", x, PACKAGE="RNifti")
+}
+
+#' @export
+extractChannels <- function (array, channels = c("red","green","blue","alpha"), raw = FALSE)
 {
     if (!inherits(array, "rgbArray"))
         array <- rgbArray(array)
@@ -50,6 +61,8 @@ extractChannels <- function (array, channels = c("red","green","blue","alpha"))
     channelNumbers <- c(red=1L, green=2L, blue=3L, alpha=4L)[channels]
     
     result <- .Call("unpackRgb", array, channelNumbers, PACKAGE="RNifti")
+    if (!raw)
+        storage.mode(result) <- "integer"
     dimnames(result) <- list(NULL, channels)
     return (result)
 }
