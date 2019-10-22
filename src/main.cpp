@@ -85,6 +85,31 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP unpackRgb (SEXP _object, SEXP _channels)
+{
+BEGIN_RCPP
+    IntegerVector array(_object);
+    const int_vector channels = as<int_vector>(_channels);
+    
+    int_vector dim = array.attr("dim");
+    dim.push_back(channels.size());
+    const size_t len = Rf_length(array);
+    RawVector result(len * channels.size());
+    rgba32_t rgba;
+    for (size_t i=0; i<len; i++)
+    {
+        rgba.value.packed = array[i];
+        for (int_vector::const_iterator it=channels.begin(); it<channels.end(); ++it)
+        {
+            const int channel = (*it) - 1;
+            result[i + len * channel] = rgba.value.bytes[channel];
+        }
+    }
+    result.attr("dim") = dim;
+    return result;
+END_RCPP
+}
+
 RcppExport SEXP asNifti (SEXP _object)
 {
 BEGIN_RCPP
@@ -605,6 +630,7 @@ extern "C" {
 
 static R_CallMethodDef callMethods[] = {
     { "packRgb",        (DL_FUNC) &packRgb,         3 },
+    { "unpackRgb",      (DL_FUNC) &unpackRgb,       2 },
     { "asNifti",        (DL_FUNC) &asNifti,         1 },
     { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },
     { "readNifti",      (DL_FUNC) &readNifti,       3 },

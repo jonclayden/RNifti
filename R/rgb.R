@@ -39,3 +39,17 @@ rgbArray <- function (red, green, blue, alpha, max = NULL, dim = NULL, ...)
     result <- .Call("packRgb", source, channels, max, PACKAGE="RNifti")
     return (structure(result, ..., channels=channels, dim=dim, class="rgbArray"))
 }
+
+#' @export
+extractChannels <- function (array, channels = c("red","green","blue","alpha"))
+{
+    if (!inherits(array, "rgbArray"))
+        array <- rgbArray(array)
+    
+    channels <- match.arg(channels, several.ok=TRUE)
+    channelNumbers <- c(red=1L, green=2L, blue=3L, alpha=4L)[channels]
+    
+    result <- .Call("unpackRgb", array, channelNumbers, PACKAGE="RNifti")
+    dimnames(result) <- list(NULL, channels)
+    return (result)
+}
