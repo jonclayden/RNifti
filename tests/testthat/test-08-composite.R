@@ -26,6 +26,9 @@ test_that("RGB datatypes are handled properly", {
     image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
     tempPath <- paste(tempfile(), "nii.gz", sep=".")
     
+    expect_equal(as.character(rgbArray(diag(3))), c("#FF0000","#00FF00","#0000FF"))
+    expect_equivalent(extractChannels(diag(3),"red")[,1], c(255L,0L,0L))
+    
     k <- stats::kmeans(as.vector(image), 3L)
     data <- rgbArray(k$cluster==1, k$cluster==2, k$cluster==3, dim=dim(image))
     rgbImage <- updateNifti(data, image)
