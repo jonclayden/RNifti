@@ -1186,13 +1186,7 @@ public:
      * Return the number of blocks in the image
      * @return An integer giving the number of blocks in the image
     **/
-    int nBlocks () const
-    {
-        if (image == NULL)
-            return 0;
-        else
-            return image->dim[image->ndim];
-    }
+    int nBlocks () const { return (image == NULL ? 0 : image->dim[image->ndim]); }
     
     /**
      * Extract a block from the image
@@ -1239,6 +1233,33 @@ public:
      * @return A \ref Block object
     **/
     Block volume (const int i) { return Block(*this, 4, i); }
+    
+    /**
+     * Return the number of colour channels used by the image
+     * @return An integer giving the number of channels: generally 1, exception for RGB datatypes,
+     * which have 3 or 4, or the empty datatype, which has 0. Also 0 for null images
+    **/
+    int nChannels () const
+    {
+        if (image == NULL)
+            return 0;
+        else
+        {
+            switch (image->datatype)
+            {
+                case DT_NONE:   return 0;
+                case DT_RGB24:  return 3;
+                case DT_RGBA32: return 4;
+                default:        return 1;
+            }
+        }
+    }
+    
+    /**
+     * Return the number of voxels in the image
+     * @return An integer giving the number of voxels in the image
+    **/
+    size_t nVoxels () const { return (image == NULL ? 0 : image->nvox); }
     
     /**
      * Write the image to a NIfTI-1 file
