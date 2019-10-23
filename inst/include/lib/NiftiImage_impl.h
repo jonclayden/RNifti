@@ -762,7 +762,7 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     int datatype = sexpTypeToNiftiType(object.sexp_type());
     if (object.inherits("rgbArray"))
     {
-        const int channels = object.attr("channels");
+        const int channels = (object.hasAttribute("channels") ? object.attr("channels") : 3);
         datatype = (channels == 4 ? DT_RGBA32 : DT_RGB24);
     }
     acquire(nifti_make_new_nim(dims, datatype, int(copyData)));
