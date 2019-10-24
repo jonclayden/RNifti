@@ -88,18 +88,16 @@ END_RCPP
 RcppExport SEXP rgbToStrings (SEXP _object)
 {
 BEGIN_RCPP
-    IntegerVector array(_object);
-    const int channels = array.attr("channels");
-    const size_t len = Rf_length(array);
-    
-    CharacterVector result(len);
-    for (size_t i=0; i<len; i++)
+    const NiftiImage image(_object, true, true);
+    const NiftiImageData data = image.data();
+    CharacterVector result(image.nVoxels());
+    for (size_t i=0; i<image.nVoxels(); i++)
     {
         rgba32_t rgba;
-        rgba.value.packed = array[i];
+        rgba.value.packed = int(data[i]);
         std::ostringstream value;
         value << "#" << std::hex << std::uppercase;
-        for (int j=0; j<channels; j++)
+        for (int j=0; j<image.nChannels(); j++)
             value << std::setw(2) << std::setfill('0') << int(rgba.value.bytes[j]);
         result[i] = value.str();
     }
@@ -110,21 +108,22 @@ END_RCPP
 RcppExport SEXP unpackRgb (SEXP _object, SEXP _channels)
 {
 BEGIN_RCPP
-    IntegerVector array(_object);
+    const NiftiImage image(_object, true, true);
+    const NiftiImageData data = image.data();
     const int_vector channels = as<int_vector>(_channels);
-    
-    int_vector dim = array.attr("dim");
+    int_vector dim = image.dim();
     dim.push_back(channels.size());
-    const size_t len = Rf_length(array);
+    
+    const size_t len = image.nVoxels();
     RawVector result(len * channels.size());
     rgba32_t rgba;
     for (size_t i=0; i<len; i++)
     {
-        rgba.value.packed = array[i];
-        for (int_vector::const_iterator it=channels.begin(); it<channels.end(); ++it)
+        rgba.value.packed = int(data[i]);
+        for (int j=0; j<channels.size(); j++)
         {
-            const int channel = (*it) - 1;
-            result[i + len * channel] = rgba.value.bytes[channel];
+            const int channel = channels[j] - 1;
+            result[i + len * j] = int(rgba.value.bytes[channel]);
         }
     }
     result.attr("dim") = dim;

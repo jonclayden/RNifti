@@ -32,13 +32,15 @@ test_that("RGB datatypes are handled properly", {
     k <- stats::kmeans(as.vector(image), 3L)
     data <- rgbArray(k$cluster==1, k$cluster==2, k$cluster==3, dim=dim(image))
     rgbImage <- updateNifti(data, image)
-    refValue <- rgbArray(diag(3))[k$cluster[40 + 39*96 + 29*9216]]
+    cluster <- k$cluster[40 + 39*96 + 29*9216]
+    refValue <- rgbArray(diag(3))[cluster]
     
     expect_s3_class(data, "rgbArray")
     expect_equal(rgbImage[40,40,30], refValue)
     expect_equal(rgbImage$datatype, 128L)
     expect_equal(rgbImage$bitpix, 24L)
     expect_equivalent(unclass(data), unclass(as.array(rgbImage)))
+    expect_equivalent(extractChannels(rgbImage,c("red","green","blue")[cluster])[40,40,30,1], 255L)
     
     writeNifti(rgbImage, tempPath)
     header <- niftiHeader(tempPath)

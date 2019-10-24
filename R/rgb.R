@@ -54,7 +54,7 @@ as.character.rgbArray <- function (x, ...)
 #' @export
 extractChannels <- function (array, channels = c("red","green","blue","alpha"), raw = FALSE)
 {
-    if (!inherits(array, "rgbArray"))
+    if (!inherits(array,"niftiImage") && !inherits(array,"rgbArray"))
         array <- rgbArray(array)
     
     channels <- match.arg(channels, several.ok=TRUE)
@@ -63,6 +63,6 @@ extractChannels <- function (array, channels = c("red","green","blue","alpha"), 
     result <- .Call("unpackRgb", array, channelNumbers, PACKAGE="RNifti")
     if (!raw)
         storage.mode(result) <- "integer"
-    dimnames(result) <- list(NULL, channels)
+    dimnames(result) <- c(rep(list(NULL),ndim(array)), list(channels))
     return (result)
 }
