@@ -46,6 +46,12 @@ namespace RNifti {
 typedef std::complex<float> complex64_t;
 typedef std::complex<double> complex128_t;
 
+/**
+ * Simple RGB(A) type encapsulating an 8-bit colour value with optional opacity, which can also be
+ * set or retrieved as a single 32-bit integer. The default value is equivalent to zero, a fully
+ * transparent black.
+ * @author Jon Clayden (<code@clayden.org>)
+**/
 struct rgba32_t
 {
     union ValueType {
