@@ -1597,8 +1597,16 @@ inline Rcpp::RObject NiftiImage::headerToList () const
     result["intent_name"] = std::string(header.intent_name, 16);
     result["magic"] = std::string(header.magic, 4);
     
+    Rcpp::List strings;
+    strings["datatype"] = nifti_datatype_string(header.datatype);
+    strings["intent_code"] = nifti_intent_string(header.intent_code);
+    strings["qform_code"] = nifti_xform_string(header.qform_code);
+    strings["sform_code"] = nifti_xform_string(header.sform_code);
+    strings["slice_code"] = nifti_slice_string(header.slice_code);
+    
     internal::addAttributes(result, *this, false, false);
     result.attr("class") = Rcpp::CharacterVector::create("niftiHeader");
+    result.attr("strings") = strings;
     
     return result;
 }

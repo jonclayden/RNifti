@@ -219,9 +219,16 @@ print.niftiHeader <- function (x, ...)
     cat("NIfTI-1 header\n")
     widths <- nchar(names(x), "width")
     maxWidth <- max(widths)
+    names <- names(x)
+    strings <- attr(x, "strings")
     
     for (i in seq_along(widths))
-        cat(paste0(paste(rep(" ",maxWidth-widths[i]),collapse=""), names(x)[i], ": ", paste(format(x[[i]],trim=TRUE),collapse="  "), "\n"))
+    {
+        if (!is.null(strings[[names[i]]]))
+            cat(paste0(paste(rep(" ",maxWidth-widths[i]),collapse=""), names[i], ": ", paste(format(x[[i]],trim=TRUE),collapse="  "), " (", strings[[names[i]]], ")\n"))
+        else
+            cat(paste0(paste(rep(" ",maxWidth-widths[i]),collapse=""), names[i], ": ", paste(format(x[[i]],trim=TRUE),collapse="  "), "\n"))
+    }
 }
 
 #' @rdname niftiHeader
