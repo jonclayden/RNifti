@@ -828,6 +828,11 @@ protected:
    
 #endif
     
+    /**
+     * Initialise an empty object from basic metadata
+     * @param dim A vector of image dimensions
+     * @param datatype A datatype code for the image data
+    **/
     void initFromDims (const std::vector<int> &dim, const int datatype);
 
     /**
@@ -898,8 +903,18 @@ public:
 #endif
     }
     
+    /**
+     * Initialise from basic metadata, allocating and zeroing pixel data
+     * @param dim A vector of image dimensions
+     * @param datatype A datatype code for the image data
+    **/
     NiftiImage (const std::vector<int> &dim, const int datatype);
     
+    /**
+     * Initialise from basic metadata, allocating and zeroing pixel data
+     * @param dim A vector of image dimensions
+     * @param datatype A datatype string for the image data
+    **/
     NiftiImage (const std::vector<int> &dim, const std::string &datatype);
     
     /**
