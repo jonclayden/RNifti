@@ -1,11 +1,11 @@
 CPPFLAGS += -DNDEBUG -DHAVE_ZLIB
-CFLAGS += -I../inst/include
-CXXFLAGS += -I../inst/include
+CFLAGS += -I.
+CXXFLAGS += -I.
 
 RM = rm -f
 
-NIFTILIB_OBJECTS = ../src/niftilib/nifti1_io.o ../src/znzlib/znzlib.o
-ZLIB_OBJECTS = ../src/zlib/adler32.o ../src/zlib/compress.o ../src/zlib/crc32.o ../src/zlib/deflate.o ../src/zlib/gzclose.o ../src/zlib/gzlib.o ../src/zlib/gzread.o ../src/zlib/gzwrite.o ../src/zlib/infback.o ../src/zlib/inffast.o ../src/zlib/inflate.o ../src/zlib/inftrees.o ../src/zlib/trees.o ../src/zlib/uncompr.o ../src/zlib/zutil.o
+NIFTILIB_OBJECTS = niftilib/nifti1_io.o znzlib/znzlib.o
+ZLIB_OBJECTS = zlib/adler32.o zlib/compress.o zlib/crc32.o zlib/deflate.o zlib/gzclose.o zlib/gzlib.o zlib/gzread.o zlib/gzwrite.o zlib/infback.o zlib/inffast.o zlib/inflate.o zlib/inftrees.o zlib/trees.o zlib/uncompr.o zlib/zutil.o
 
 all: nii_info
 
