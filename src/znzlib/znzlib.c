@@ -22,7 +22,7 @@ NB: seeks for writable files with compression are quite restricted
  */
 
 #include "znzlib/znzlib.h"
-#include "lib/NiftiImage_print.h"
+#include "RNifti/NiftiImage_print.h"
 
 /*
 znzlib.c  (zipped or non-zipped library)

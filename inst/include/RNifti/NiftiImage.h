@@ -1332,7 +1332,7 @@ public:
 };
 
 // Include implementations
-#include "lib/NiftiImage_impl.h"
+#include "RNifti/NiftiImage_impl.h"
 
 } // main namespace
 
