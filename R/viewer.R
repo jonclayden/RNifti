@@ -1,7 +1,7 @@
 .plotLayer <- function (layer, loc, asp = NULL, add = FALSE)
 {
     axis <- which(!is.na(loc))
-    indices <- alist(i=, j=, k=)
+    indices <- alist(x=, y=, z=, t=1, u=1, v=1, w=1)[seq_len(ndim(layer$image))]
     indices[axis] <- loc[axis]
     data <- do.call("[", c(layer["image"],indices))
     dims <- dim(data)
@@ -18,14 +18,15 @@
 }
 
 #' @export
-view <- function (..., x = c(0,0,0), y = NA, z = NA, world = TRUE, orientation = "LAS", interactive = base::interactive(), crosshairs = TRUE, labels = TRUE, infoPanel = defaultInfoPanel)
+view <- function (..., point = NULL, radiological = FALSE, interactive = base::interactive(), crosshairs = TRUE, labels = TRUE, infoPanel = defaultInfoPanel)
 {
     layers <- list(...)
-    layerExpressions <- sapply(substitute(list(...)), as.character)[-1]
+    layerExpressions <- sapply(substitute(list(...)), deparse)[-1]
     nLayers <- length(layers)
     if (nLayers == 0)
         stop("At least one image must be specified")
     
+    orientation <- ifelse(radiological, "LAS", "RAS")
     for (i in seq_len(nLayers))
     {
         if (!inherits(layers[[i]], "viewLayer"))
@@ -33,21 +34,24 @@ view <- function (..., x = c(0,0,0), y = NA, z = NA, world = TRUE, orientation =
             layers[[i]] <- layer(layers[[i]])
             layers[[i]]$label <- layerExpressions[i]
         }
-        orientation(layers[[i]]$image) <- orientation
+        header <- niftiHeader(layers[[i]]$image)
+        if (header$qform_code > 0 || header$sform_code > 0)
+            orientation(layers[[i]]$image) <- orientation
     }
     
-    dims <- dim(layers[[1]]$image)
-    fov <- dims * pixdim(layers[[1]]$image)
+    baseImage <- layers[[1]]$image
+    ndim <- ndim(baseImage)
+    dims <- c(dim(baseImage), rep(1,max(0,3-ndim)))[1:3]
+    fov <- dims * c(pixdim(baseImage), rep(1,max(0,3-ndim)))[1:3]
     
-    if (length(x) > 1)
-        point <- x
-    else
-        point <- c(x, y, z)
+    if (is.null(point) && any(origin(baseImage) > 1))
+        point <- origin(baseImage)
+    else if (is.null(point))
+        point <- dims / 2
+    point <- as.integer(point)
     
-    if (world)
-        point <- round(worldToVoxel(point, xform(layers[[1]]$image)))
-    
-    labelText <- list(c("P","A","I","S"), c("R","L","I","S"), c("R","L","P","A"))
+    positiveLabels <- unlist(strsplit(orientation, ""))
+    negativeLabels <- c(R="L", A="P", S="I", L="R", P="A", I="S")[positiveLabels]
     
     oldPars <- par(bg="black", col="white", fg="white", col.axis="white", col.lab="white", col.main="white")
     oldOptions <- options(locatorBell=FALSE, preferRaster=TRUE)
@@ -69,9 +73,12 @@ view <- function (..., x = c(0,0,0), y = NA, z = NA, world = TRUE, orientation =
         # Plot the info panel first so that we have some handle on the coordinate system when we use locator()
         layout(matrix(c(2,3,4,1),nrow=2,byrow=TRUE))
         
-        data <- lapply(layers, function(layer) do.call("[", c(list(layer$image),as.list(point))))
-        imageNames <- sapply(layers, "[[", "label")
-        infoPanel(point, data, imageNames)
+        data <- lapply(layers, function(layer) {
+            indices <- alist(x=, y=, z=, t=, u=, v=, w=)[seq_len(ndim(layer$image))]
+            indices[seq_along(point)] <- point
+            do.call("[", c(list(layer$image),indices))
+        })
+        infoPanel(point, data, sapply(layers,"[[","label"))
         
         for (i in 1:3)
         {
@@ -94,7 +101,11 @@ view <- function (..., x = c(0,0,0), y = NA, z = NA, world = TRUE, orientation =
             }
             
             if (labels)
-                text(c(0.1*width[1]+region[1],0.9*width[1]+region[1],0.5*width[2]+region[3],0.5*width[2]+region[3]), c(0.5*width[1]+region[1],0.5*width[1]+region[1],0.1*width[2]+region[3],0.9*width[2]+region[3]), labels=labelText[[i]])
+            {
+                # Order is left, right, bottom, top
+                currentLabels <- c(negativeLabels[inPlaneAxes[1]], positiveLabels[inPlaneAxes[1]], negativeLabels[inPlaneAxes[2]], positiveLabels[inPlaneAxes[2]])
+                text(c(0.1*width[1]+region[1],0.9*width[1]+region[1],0.5*width[2]+region[3],0.5*width[2]+region[3]), c(0.5*width[1]+region[1],0.5*width[1]+region[1],0.1*width[2]+region[3],0.9*width[2]+region[3]), labels=currentLabels)
+            }
         }
         
         if (!interactive)
@@ -149,28 +160,33 @@ layer <- function (image, scale = "grey", min = NULL, max = NULL)
             window[which.min(abs(window))] <- 0
     }
     
+    image[image < window[1]] <- window[1]
+    image[image > window[2]] <- window[2]
+    
     return (structure(list(image=image, label=label, colours=colours, window=window), class="viewLayer"))
 }
 
 #' @export
-defaultInfoPanel <- function (point, data, imageNames)
+defaultInfoPanel <- function (point, data, labels)
 {
     usingQuartz <- isTRUE(names(dev.cur()) == "quartz")
     quitInstructions <- paste(ifelse(usingQuartz,"Press Esc","Right click"), "to exit", sep=" ")
     
     plot(NA, xlim=c(0,1), ylim=c(0,1), xlab="", ylab="", xaxt="n", yaxt="n", bty="n", main=paste("Location: (", paste(point,collapse=","), ")", sep=""))
-    nImages <- min(4, length(imageNames))
+    nImages <- min(4, length(labels))
     yLocs <- 0.95 - cumsum(c(0,rep(c(0.1,0.13),nImages)))
     yLocs[length(yLocs)] <- -0.05
-    labels <- quitInstructions
+    text <- quitInstructions
     for (i in seq_len(nImages))
     {
-        labels <- c(labels, {
-            if (is.numeric(data[[i]]))
-                as.character(signif(mean(data[[i]]),6))
+        text <- c(text, {
+            if (is.numeric(data[[i]]) && length(data[[i]]) == 1)
+                as.character(signif(data[[i]], 6))
+            else if (is.numeric(data[[i]]))
+                paste0(signif(data[[i]][1],6), ", and ", length(data[[i]])-1, " more value(s)")
             else
                 data[[i]]
-        }, imageNames[i])
+        }, labels[i])
     }
-    text(0.5, yLocs, rev(labels), col=c(rep(c("white","red"),nImages),"grey70"), cex=pmin(1,1/strwidth(rev(labels))), xpd=TRUE)
+    text(0.5, yLocs, rev(text), col=c(rep(c("white","red"),nImages),"grey70"), cex=pmin(1,1/strwidth(rev(text))), xpd=TRUE)
 }
