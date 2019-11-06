@@ -21,7 +21,7 @@
 view <- function (..., point = NULL, radiological = FALSE, interactive = base::interactive(), crosshairs = TRUE, labels = TRUE, infoPanel = defaultInfoPanel)
 {
     layers <- list(...)
-    layerExpressions <- sapply(substitute(list(...)), deparse)[-1]
+    layerExpressions <- trimws(sapply(substitute(list(...)), deparse, control=NULL, nlines=1)[-1], whitespace="[ \"]")
     nLayers <- length(layers)
     if (nLayers == 0)
         stop("At least one image must be specified")
@@ -183,7 +183,7 @@ defaultInfoPanel <- function (point, data, labels)
             if (is.numeric(data[[i]]) && length(data[[i]]) == 1)
                 as.character(signif(data[[i]], 6))
             else if (is.numeric(data[[i]]))
-                paste0(signif(data[[i]][1],6), ", and ", length(data[[i]])-1, " more value(s)")
+                paste0(signif(data[[i]][1],6), ", ... (", length(data[[i]]), " values)")
             else
                 data[[i]]
         }, labels[i])
