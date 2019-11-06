@@ -26,6 +26,7 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
     if (nLayers == 0)
         stop("At least one image must be specified")
     
+    originalXform <- NULL
     orientation <- ifelse(radiological, "LAS", "RAS")
     for (i in seq_len(nLayers))
     {
@@ -34,21 +35,24 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
             layers[[i]] <- layer(layers[[i]])
             layers[[i]]$label <- layerExpressions[i]
         }
+        if (i == 1)
+            originalXform <- xform(layers[[i]]$image)
         header <- niftiHeader(layers[[i]]$image)
         if (header$qform_code > 0 || header$sform_code > 0)
             orientation(layers[[i]]$image) <- orientation
     }
     
     baseImage <- layers[[1]]$image
+    reorientedXform <- xform(baseImage)
     ndim <- ndim(baseImage)
     dims <- c(dim(baseImage), rep(1,max(0,3-ndim)))[1:3]
     fov <- dims * c(pixdim(baseImage), rep(1,max(0,3-ndim)))[1:3]
     
     if (is.null(point) && any(origin(baseImage) > 1))
-        point <- origin(baseImage)
+        point <- round(origin(baseImage))
     else if (is.null(point))
-        point <- dims / 2
-    point <- as.integer(point)
+        point <- round(dims / 2)
+    reorientedPoint <- round(worldToVoxel(voxelToWorld(point, originalXform), reorientedXform))
     
     positiveLabels <- unlist(strsplit(orientation, ""))
     negativeLabels <- c(R="L", A="P", S="I", L="R", P="A", I="S")[positiveLabels]
@@ -64,9 +68,11 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
     
     repeat
     {
-        point[point < 1] <- 1
-        point[point > dims] <- dims[point > dims]
-        voxelCentre <- (point - 1) / (dims - 1)
+        reorientedPoint[reorientedPoint < 1] <- 1
+        reorientedPoint[reorientedPoint > dims] <- dims[reorientedPoint > dims]
+        voxelCentre <- (reorientedPoint - 1) / (dims - 1)
+        
+        point <- round(worldToVoxel(voxelToWorld(reorientedPoint, reorientedXform), originalXform))
         
         starts <- ends <- numeric(0)
         
@@ -75,7 +81,7 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
         
         data <- lapply(layers, function(layer) {
             indices <- alist(x=, y=, z=, t=, u=, v=, w=)[seq_len(ndim(layer$image))]
-            indices[seq_along(point)] <- point
+            indices[seq_along(point)] <- reorientedPoint
             do.call("[", c(list(layer$image),indices))
         })
         infoPanel(point, data, sapply(layers,"[[","label"))
@@ -83,7 +89,7 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
         for (i in 1:3)
         {
             inPlaneAxes <- setdiff(1:3, i)
-            loc <- replace(rep(NA,3), i, point[i])
+            loc <- replace(rep(NA,3), i, reorientedPoint[i])
             
             for (j in seq_along(layers))
                 .plotLayer(layers[[j]], loc, asp=fov[inPlaneAxes[2]]/fov[inPlaneAxes[1]], add=(j>1))
@@ -122,15 +128,15 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
         else if (nextPoint[1] <= ends[5] && nextPoint[2] > ends[6])
         {
             adjustedPoint <- (nextPoint-c(starts[5],ends[6])) / (ends[5:6]-starts[5:6]) * (ends[1:2]-starts[1:2]) + starts[1:2]
-            point[2:3] <- round(adjustedPoint * (dims[2:3] - 1)) + 1
+            reorientedPoint[2:3] <- round(adjustedPoint * (dims[2:3] - 1)) + 1
         }
         else if (nextPoint[1] > ends[5] && nextPoint[2] > ends[6])
         {
             adjustedPoint <- (nextPoint-ends[5:6]) / (ends[5:6]-starts[5:6]) * (ends[3:4]-starts[3:4]) + starts[3:4]
-            point[c(1,3)] <- round(adjustedPoint * (dims[c(1,3)] - 1)) + 1
+            reorientedPoint[c(1,3)] <- round(adjustedPoint * (dims[c(1,3)] - 1)) + 1
         }
         else
-            point[1:2] <- round(nextPoint * (dims[1:2] - 1)) + 1
+            reorientedPoint[1:2] <- round(nextPoint * (dims[1:2] - 1)) + 1
     }
     
     invisible(NULL)
