@@ -949,7 +949,7 @@ inline void NiftiImage::updatePixdim (const std::vector<float> &pixdim)
             {
                 if (i != j)
                     scaleMatrix.m[i][j] = 0.0;
-                else if (i >= nDims)
+                else if (i >= pixdimLength)
                     scaleMatrix.m[i][j] = 1.0;
                 else
                     scaleMatrix.m[i][j] = pixdim[i] / origPixdim[i];
