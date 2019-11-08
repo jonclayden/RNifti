@@ -1,10 +1,11 @@
 .plotLayer <- function (layer, loc, asp = NULL, add = FALSE)
 {
     axis <- which(!is.na(loc))
-    indices <- alist(x=, y=, z=, t=1, u=1, v=1, w=1)[seq_len(ndim(layer$image))]
+    indices <- alist(i=, j=, k=, t=1, u=1, v=1, w=1)
     indices[axis] <- loc[axis]
-    data <- do.call("[", c(layer["image"],indices))
-    dims <- dim(data)
+    data <- do.call("[", c(layer["image"], indices[seq_len(ndim(layer$image))], list(drop=FALSE)))
+    dims <- dim(data)[-axis]
+    dim(data) <- dims
     
     if (add)
         data <- replace(data, which(data==0), NA)
@@ -38,7 +39,7 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
         if (i == 1)
             originalXform <- xform(layers[[i]]$image)
         header <- niftiHeader(layers[[i]]$image)
-        if (header$qform_code > 0 || header$sform_code > 0)
+        if (ndim(layers[[i]]$image) > 2 && (header$qform_code > 0 || header$sform_code > 0))
             orientation(layers[[i]]$image) <- orientation
     }
     
@@ -77,17 +78,26 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
         starts <- ends <- numeric(0)
         
         # Plot the info panel first so that we have some handle on the coordinate system when we use locator()
-        layout(matrix(c(2,3,4,1),nrow=2,byrow=TRUE))
+        if (ndim == 2)
+        {
+            starts <- ends <- rep(0:1, 2)
+            layout(matrix(c(2,1), nrow=1))
+        }
+        else
+            layout(matrix(c(2,3,4,1), nrow=2, byrow=TRUE))
         
         data <- lapply(layers, function(layer) {
-            indices <- alist(x=, y=, z=, t=, u=, v=, w=)[seq_len(ndim(layer$image))]
+            indices <- alist(i=, j=, k=, t=, u=, v=, w=)
             indices[seq_along(point)] <- reorientedPoint
-            do.call("[", c(list(layer$image),indices))
+            do.call("[", c(list(layer$image), indices[seq_len(ndim(layer$image))]))
         })
         infoPanel(point, data, sapply(layers,"[[","label"))
         
         for (i in 1:3)
         {
+            if (ndim == 2 && i < 3)
+                next
+            
             inPlaneAxes <- setdiff(1:3, i)
             loc <- replace(rep(NA,3), i, reorientedPoint[i])
             
