@@ -185,8 +185,8 @@ layer <- function (image, scale = "grey", min = NULL, max = NULL)
 #' @export
 defaultInfoPanel <- function (point, data, labels)
 {
-    usingQuartz <- isTRUE(names(dev.cur()) == "quartz")
-    quitInstructions <- paste(ifelse(usingQuartz,"Press Esc","Right click"), "to exit", sep=" ")
+    escapeToQuit <- isTRUE(names(dev.cur()) %in% c("quartz","RStudioGD"))
+    quitInstructions <- paste(ifelse(escapeToQuit,"Press Esc","Right click"), "to exit", sep=" ")
     
     plot(NA, xlim=c(0,1), ylim=c(0,1), xlab="", ylab="", xaxt="n", yaxt="n", bty="n", main=paste("Location: (", paste(point,collapse=","), ")", sep=""))
     nImages <- min(4, length(labels))
