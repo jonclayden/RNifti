@@ -45,6 +45,18 @@ NumericMatrix xformToMatrix (const ::mat44 xform)
     return matrix;
 }
 
+inline unsigned char clip (const double &value)
+{
+    unsigned char result;
+    if (value < 0.0)
+        result = 0;
+    else if (value > 1.0)
+        result = 255;
+    else
+        result = RNifti::internal::roundEven(value * 255.0);
+    return result;
+}
+
 RcppExport SEXP packRgb (SEXP _object, SEXP _channels, SEXP _maxValue)
 {
 BEGIN_RCPP
@@ -68,15 +80,15 @@ BEGIN_RCPP
         if (channels > 2)
         {
             for (int j=0; j<channels; j++)
-                rgba.value.bytes[j] = (unsigned char) RNifti::internal::roundEven(source[i + pixels*j] * 255.0 / maxValue);
+                rgba.value.bytes[j] = clip(source[i + pixels*j] / maxValue);
             for (int j=channels; j<4; j++)
                 rgba.value.bytes[j] = 0;
         }
         else
         {
             for (int j=0; j<3; j++)
-                rgba.value.bytes[j] = (unsigned char) RNifti::internal::roundEven(source[i] * 255.0 / maxValue);
-            rgba.value.bytes[3] = (unsigned char) RNifti::internal::roundEven(source[i + pixels] * 255.0 / maxValue);
+                rgba.value.bytes[j] = clip(source[i] / maxValue);
+            rgba.value.bytes[3] = clip(source[i + pixels] / maxValue);
         }
         result[i] = rgba.value.packed;
     }
