@@ -7,15 +7,27 @@
     dims <- dim(data)[-axis]
     dim(data) <- dims
     
-    if (add)
-        data <- replace(data, which(data==0), NA)
-    
     if (is.null(asp))
         asp <- dims[2] / dims[1]
     
-    oldPars <- par(mai=c(0,0,0,0), bg=layer$colours[1])
-    on.exit(par(oldPars))
-    image(data, col=layer$colours, axes=FALSE, asp=asp, add=add, zlim=layer$window)
+    if (inherits(layer$image, "rgbArray"))
+    {
+        data <- as.character(structure(data, class="rgbArray"))
+        palette <- unique(data)
+        indices <- match(data, palette)
+        dim(indices) <- dims
+        oldPars <- par(mai=c(0,0,0,0))
+        on.exit(par(oldPars))
+        image(indices, col=palette, axes=FALSE, asp=asp, add=add, zlim=c(1,length(palette)))
+    }
+    else
+    {
+        if (add)
+            data <- replace(data, which(data==0), NA)
+        oldPars <- par(mai=c(0,0,0,0), bg=layer$colours[1])
+        on.exit(par(oldPars))
+        image(data, col=layer$colours, axes=FALSE, asp=asp, add=add, zlim=layer$window)
+    }
 }
 
 #' @export
@@ -158,26 +170,31 @@ layer <- function (image, scale = "grey", min = NULL, max = NULL)
     label <- deparse(substitute(image))
     image <- as.array(retrieveNifti(image))
     
-    if (is.character(scale) && length(scale) == 1)
-        colours <- switch(scale, grey=gray(0:99/99), gray=gray(0:99/99), greyscale=gray(0:99/99), grayscale=gray(0:99/99), heat=heat.colors(100), rainbow=rainbow(100,start=0.7,end=0.1), shades::gradient(scale,100))
+    if (inherits(image, "rgbArray"))
+        colours <- window <- NULL
     else
-        colours <- scale
-    
-    if (is.null(min))
-        min <- image$cal_min
-    if (is.null(max))
-        max <- image$cal_max
-    
-    window <- c(min, max)
-    if (any(is.na(window)) || (min == max))
     {
-        window <- quantile(image[is.finite(image)], c(0.025,0.975), na.rm=TRUE)
-        if (diff(window) > abs(mean(window)))
-            window[which.min(abs(window))] <- 0
-    }
+        if (is.character(scale) && length(scale) == 1)
+            colours <- switch(scale, grey=gray(0:99/99), gray=gray(0:99/99), greyscale=gray(0:99/99), grayscale=gray(0:99/99), heat=heat.colors(100), rainbow=rainbow(100,start=0.7,end=0.1), shades::gradient(scale,100))
+        else
+            colours <- scale
     
-    image[image < window[1]] <- window[1]
-    image[image > window[2]] <- window[2]
+        if (is.null(min))
+            min <- image$cal_min
+        if (is.null(max))
+            max <- image$cal_max
+    
+        window <- c(min, max)
+        if (any(is.na(window)) || (min == max))
+        {
+            window <- quantile(image[is.finite(image)], c(0.025,0.975), na.rm=TRUE)
+            if (diff(window) > abs(mean(window)))
+                window[which.min(abs(window))] <- 0
+        }
+    
+        image[image < window[1]] <- window[1]
+        image[image > window[2]] <- window[2]
+    }
     
     return (structure(list(image=image, label=label, colours=colours, window=window), class="viewLayer"))
 }
