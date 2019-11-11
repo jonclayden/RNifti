@@ -101,7 +101,11 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
         data <- lapply(layers, function(layer) {
             indices <- alist(i=, j=, k=, t=, u=, v=, w=)
             indices[seq_along(point)] <- reorientedPoint
-            do.call("[", c(list(layer$image), indices[seq_len(ndim(layer$image))]))
+            result <- do.call("[", c(list(layer$image), indices[seq_len(ndim(layer$image))]))
+            if (inherits(layer$image, "rgbArray"))
+                return (as.character(structure(result, dim=c(1,length(result)), class="rgbArray")))
+            else
+                return (result)
         })
         infoPanel(point, data, sapply(layers,"[[","label"))
         
