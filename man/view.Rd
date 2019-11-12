@@ -5,8 +5,8 @@
 \alias{layer}
 \title{A basic 3D image viewer}
 \usage{
-view(..., point = NULL, radiological = FALSE,
-  interactive = base::interactive(), crosshairs = TRUE,
+view(..., point = NULL, radiological = getOption("radiologicalView",
+  FALSE), interactive = base::interactive(), crosshairs = TRUE,
   labels = TRUE, infoPanel = defaultInfoPanel)
 
 layer(image, scale = "grey", min = NULL, max = NULL)
@@ -64,13 +64,21 @@ rounded to that extreme.}
 This function displays one or more 2D or 3D images, with optional
 click-to-navigate interactivity.
 }
+\note{
+Because of the way R's main run-loop interacts with graphics, it will
+  not be possible to issue further commands to the terminal while
+  interactive mode is enabled. Instructions for leaving this mode are shown
+  by the default info panel; see also \code{\link{locator}}, which is the
+  underlying core function.
+}
 \examples{
 im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
 view(im, interactive=FALSE)
 
 }
 \seealso{
-\code{\link{defaultInfoPanel}}, \code{\link{orientation}}
+\code{\link{defaultInfoPanel}}, \code{\link{orientation}},
+  \code{\link{locator}}
 }
 \author{
 Jon Clayden <code@clayden.org>

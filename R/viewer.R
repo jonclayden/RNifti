@@ -75,14 +75,21 @@
 #' @return \code{layer} returns a list of class \code{"viewLayer"}, to be used
 #'   in a view. \code{view} is called for its side-effect of showing a view.
 #' 
+#' @note Because of the way R's main run-loop interacts with graphics, it will
+#'   not be possible to issue further commands to the terminal while
+#'   interactive mode is enabled. Instructions for leaving this mode are shown
+#'   by the default info panel; see also \code{\link{locator}}, which is the
+#'   underlying core function.
+#' 
 #' @examples
 #' im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
 #' view(im, interactive=FALSE)
 #' 
 #' @author Jon Clayden <code@@clayden.org>
-#' @seealso \code{\link{defaultInfoPanel}}, \code{\link{orientation}}
+#' @seealso \code{\link{defaultInfoPanel}}, \code{\link{orientation}},
+#'   \code{\link{locator}}
 #' @export
-view <- function (..., point = NULL, radiological = FALSE, interactive = base::interactive(), crosshairs = TRUE, labels = TRUE, infoPanel = defaultInfoPanel)
+view <- function (..., point = NULL, radiological = getOption("radiologicalView",FALSE), interactive = base::interactive(), crosshairs = TRUE, labels = TRUE, infoPanel = defaultInfoPanel)
 {
     # Get the layers to display, and the expressions used to generate them
     layers <- list(...)
@@ -117,9 +124,13 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
     dims <- c(dim(baseImage), rep(1,max(0,3-ndim)))[1:3]
     fov <- dims * c(pixdim(baseImage), rep(1,max(0,3-ndim)))[1:3]
     
+    # Don't show labels if the base image is 2D or has no meaningful xform information
+    if (ndim < 3L || attr(reorientedXform,"code") == 0L)
+        labels <- FALSE
+    
     # If no point is specified, use the origin if it's nontrivial, otherwise the centre of the image
-    if (is.null(point) && any(origin(baseImage) > 1))
-        point <- round(origin(baseImage))
+    if (is.null(point) && any(origin(originalXform) > 1))
+        point <- round(origin(originalXform))
     else if (is.null(point))
         point <- round(dims / 2)
     
@@ -135,8 +146,6 @@ view <- function (..., point = NULL, radiological = FALSE, interactive = base::i
     on.exit({
         par(oldPars)
         options(oldOptions)
-        if (interactive)
-            dev.off()
     })
     
     repeat
@@ -264,7 +273,7 @@ layer <- function (image, scale = "grey", min = NULL, max = NULL)
             window <- quantile(image[is.finite(image)], c(0.01,0.99), na.rm=TRUE)
             if (diff(window) > abs(mean(window)))
                 window[which.min(abs(window))] <- 0
-            message("Setting window for layer `", label, "` to (", signif(window[1],4), ", ", signif(window[2],4), ")")
+            message("Setting window to (", signif(window[1],4), ", ", signif(window[2],4), ")")
         }
     
         image[image < window[1]] <- window[1]
@@ -291,7 +300,7 @@ layer <- function (image, scale = "grey", min = NULL, max = NULL)
 defaultInfoPanel <- function (point, data, labels)
 {
     escapeToQuit <- isTRUE(names(dev.cur()) %in% c("quartz","RStudioGD"))
-    quitInstructions <- paste(ifelse(escapeToQuit,"Press Esc","Right click"), "to exit", sep=" ")
+    quitInstructions <- paste(ifelse(escapeToQuit,"Press Esc","Right click"), "to leave interactive mode", sep=" ")
     
     plot(NA, xlim=c(0,1), ylim=c(0,1), xlab="", ylab="", xaxt="n", yaxt="n", bty="n", main=paste("Location: [", paste(point,collapse=","), "]", sep=""))
     nImages <- min(4, length(labels))
