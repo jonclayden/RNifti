@@ -191,9 +191,10 @@ layer <- function (image, scale = "grey", min = NULL, max = NULL)
         window <- c(min, max)
         if (any(is.na(window)) || (min == max))
         {
-            window <- quantile(image[is.finite(image)], c(0.025,0.975), na.rm=TRUE)
+            window <- quantile(image[is.finite(image)], c(0.01,0.99), na.rm=TRUE)
             if (diff(window) > abs(mean(window)))
                 window[which.min(abs(window))] <- 0
+            message("Setting window for layer `", label, "` to (", signif(window[1],4), ", ", signif(window[2],4), ")")
         }
     
         image[image < window[1]] <- window[1]
