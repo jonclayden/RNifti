@@ -34,7 +34,8 @@
 #'   matrix has a \code{"code"} attribute, the appropriate qform or sform code
 #'   is also set.
 #' @return For \code{xform}, an affine matrix corresponding to the ``qform''
-#'   or ``sform'' information in the image header. For \code{orientation}, a
+#'   or ``sform'' information in the image header, with a \code{"code"}
+#'   attribute giving the corresponding xform code. For \code{orientation}, a
 #'   string with three characters indicating the (approximate) orientation of
 #'   the image. The replacement forms return the modified object.
 #' 

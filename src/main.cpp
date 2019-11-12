@@ -315,8 +315,14 @@ BEGIN_RCPP
     else
     {
         const NiftiImage image(_image, false, true);
-        ::mat44 xform = image.xform(as<bool>(_preferQuaternion));
-        return xformToMatrix(xform);
+        const bool preferQuaternion = as<bool>(_preferQuaternion);
+        ::mat44 xform = image.xform(preferQuaternion);
+        NumericMatrix matrix = xformToMatrix(xform);
+        if (image.isNull())
+            matrix.attr("code") = 0;
+        else
+            matrix.attr("code") = ((preferQuaternion && image->qform_code > 0) || image->sform_code <= 0) ? image->qform_code : image->sform_code;
+        return matrix;
     }
 END_RCPP
 }
