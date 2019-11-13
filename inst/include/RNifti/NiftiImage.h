@@ -1190,7 +1190,7 @@ public:
 #ifdef USING_R
     /**
      * Update the image from an R array
-     * @param array An R array or list object
+     * @param object An R array or list object
      * @return Self, after updating data and/or metadata
     **/
     NiftiImage & update (const Rcpp::RObject &object);
