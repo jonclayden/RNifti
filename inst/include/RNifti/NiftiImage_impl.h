@@ -270,7 +270,7 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
         strcpy(header->magic, Rcpp::as<std::string>(list["magic"]).substr(0,3).c_str());
 }
 
-inline void addAttributes (const SEXP pointer, const NiftiImage &source, const bool realDim = true, const bool includeXptr = true)
+inline void addAttributes (const SEXP pointer, const NiftiImage &source, const bool realDim = true, const bool includeXptr = true, const bool keepData = true)
 {
     const int nDims = source->dim[0];
     Rcpp::RObject object(pointer);
@@ -298,7 +298,10 @@ inline void addAttributes (const SEXP pointer, const NiftiImage &source, const b
     
     if (includeXptr)
     {
-        Rcpp::XPtr<NiftiImage> xptr(new NiftiImage(source,false));
+        NiftiImage *imagePtr = new NiftiImage(source, false);
+        if (!keepData)
+            imagePtr->dropData();
+        Rcpp::XPtr<NiftiImage> xptr(imagePtr);
         object.attr(".nifti_image_ptr") = xptr;
     }
 }
@@ -1516,7 +1519,7 @@ inline Rcpp::RObject NiftiImage::toArray () const
         else
             array = Rcpp::IntegerVector(data.begin(), data.end());
     
-        internal::addAttributes(array, *this);
+        internal::addAttributes(array, *this, true, true, false);
         if (data.isRgb())
         {
             array.attr("class") = Rcpp::CharacterVector::create("niftiImage", "rgbArray", "array");
