@@ -143,11 +143,31 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP asNifti (SEXP _object)
+RcppExport SEXP asNifti (SEXP _image, SEXP _reference, SEXP _datatype, SEXP _internal)
 {
 BEGIN_RCPP
-    const NiftiImage image(_object, true, true);
-    return image.toPointer("NIfTI image");
+    const std::string datatype = as<std::string>(_datatype);
+    const bool willChangeDatatype = (datatype != "auto");
+    const int internal = as<int>(_internal);
+    const bool usePointer = (internal == 1 || (internal == NA_LOGICAL && Rf_inherits(_image,"internalImage")) || willChangeDatatype);
+    
+    NiftiImage image;
+    if (Rf_isVectorList(_reference) && Rf_length(_reference) < 36)
+    {
+        image = NiftiImage(_image);
+        image.update(_reference);
+    }
+    else if (Rf_isNull(_reference))
+        image = NiftiImage(_image);
+    else
+    {
+        image = NiftiImage(_reference);
+        image.update(_image);
+    }
+    
+    if (willChangeDatatype)
+        image.changeDatatype(datatype);
+    return image.toArrayOrPointer(usePointer, "NIfTI image");
 END_RCPP
 }
 
@@ -185,43 +205,6 @@ BEGIN_RCPP
     const NiftiImage image(_image, true, true);
     const std::pair<std::string,std::string> paths = image.toFile(as<std::string>(_file), as<std::string>(_datatype));
     return CharacterVector::create(Named("header")=paths.first, Named("image")=paths.second);
-END_RCPP
-}
-
-RcppExport SEXP updateNifti (SEXP _image, SEXP _reference, SEXP _datatype)
-{
-BEGIN_RCPP
-    const std::string datatype = as<std::string>(_datatype);
-    const bool willChangeDatatype = (datatype != "auto");
-    
-    if (Rf_isVectorList(_reference) && Rf_length(_reference) < 36)
-    {
-        NiftiImage image(_image);
-        image.update(_reference);
-        if (willChangeDatatype)
-            image.changeDatatype(datatype);
-        return image.toArrayOrPointer(willChangeDatatype, "NIfTI image");
-    }
-    else
-    {
-        const NiftiImage reference(_reference, true, true);
-        if (reference.isNull() && willChangeDatatype)
-        {
-            NiftiImage image(_image);
-            image.changeDatatype(datatype);
-            return image.toPointer("NIfTI image");
-        }
-        else if (reference.isNull() && !willChangeDatatype)
-            return _image;
-        else
-        {
-            NiftiImage image = reference;
-            image.update(_image);
-            if (willChangeDatatype)
-                image.changeDatatype(datatype);
-            return image.toArrayOrPointer(willChangeDatatype, "NIfTI image");
-        }
-    }
 END_RCPP
 }
 
@@ -640,11 +623,10 @@ static R_CallMethodDef callMethods[] = {
     { "packRgb",        (DL_FUNC) &packRgb,         3 },
     { "rgbToStrings",   (DL_FUNC) &rgbToStrings,    1 },
     { "unpackRgb",      (DL_FUNC) &unpackRgb,       2 },
-    { "asNifti",        (DL_FUNC) &asNifti,         1 },
+    { "asNifti",        (DL_FUNC) &asNifti,         4 },
     { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      3 },
-    { "updateNifti",    (DL_FUNC) &updateNifti,     3 },
     { "niftiHeader",    (DL_FUNC) &niftiHeader,     1 },
     { "analyzeHeader",  (DL_FUNC) &analyzeHeader,   1 },
     { "getXform",       (DL_FUNC) &getXform,        2 },
