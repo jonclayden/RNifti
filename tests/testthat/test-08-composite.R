@@ -5,7 +5,7 @@ test_that("complex datatypes are handled properly", {
     tempPath <- paste(tempfile(), "nii.gz", sep=".")
     
     data <- sqrt(array(as.complex(image)-468, dim=dim(image)))
-    complexImage <- updateNifti(data, image)
+    complexImage <- asNifti(data, image)
     
     expect_equal(complexImage[40,40,30], 0+10i)
     expect_equal(complexImage$datatype, 1792L)
@@ -31,7 +31,7 @@ test_that("RGB datatypes are handled properly", {
     
     k <- stats::kmeans(as.vector(image), 3L)
     data <- rgbArray(k$cluster==1, k$cluster==2, k$cluster==3, dim=dim(image))
-    rgbImage <- updateNifti(data, image)
+    rgbImage <- asNifti(data, image)
     cluster <- k$cluster[40 + 39*96 + 29*9216]
     refValue <- rgbArray(diag(3))[cluster]
     

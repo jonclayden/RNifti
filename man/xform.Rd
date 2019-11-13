@@ -22,8 +22,8 @@ orientation(x) <- value
 rotation(x, useQuaternionFirst = TRUE)
 }
 \arguments{
-\item{image, x}{An image, in any acceptable form (see
-\code{\link{retrieveNifti}}), or a 4x4 numeric xform matrix.}
+\item{image, x}{An image, in any acceptable form (see \code{\link{asNifti}}),
+or a 4x4 numeric xform matrix.}
 
 \item{useQuaternionFirst}{A single logical value. If \code{TRUE}, the
 ``qform'' matrix will be used first, if it is defined; otherwise the

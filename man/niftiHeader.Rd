@@ -17,10 +17,9 @@ analyzeHeader(image = list())
 \method{print}{analyzeHeader}(x, ...)
 }
 \arguments{
-\item{image}{An image, in any acceptable form (see
-\code{\link{retrieveNifti}}). A list containing partial header information
-is acceptable, including an empty list, which returns defaults for every
-field.}
+\item{image}{An image, in any acceptable form (see \code{\link{asNifti}}).
+A list containing partial header information is acceptable, including an
+empty list, which returns defaults for every field.}
 
 \item{x}{A \code{"niftiHeader"} object.}
 

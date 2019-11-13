@@ -251,7 +251,7 @@ view <- function (..., point = NULL, radiological = getOption("radiologicalView"
 layer <- function (image, scale = "grey", min = NULL, max = NULL)
 {
     label <- deparse(substitute(image))
-    image <- as.array(retrieveNifti(image))
+    image <- asNifti(image, internal=FALSE)
     
     if (inherits(image, "rgbArray"))
         colours <- window <- NULL

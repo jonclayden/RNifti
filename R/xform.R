@@ -25,8 +25,8 @@
 #' image dimensions are known, which isn't the case when reorienting an xform
 #' alone.
 #' 
-#' @param image,x An image, in any acceptable form (see
-#'   \code{\link{retrieveNifti}}), or a 4x4 numeric xform matrix.
+#' @param image,x An image, in any acceptable form (see \code{\link{asNifti}}),
+#'   or a 4x4 numeric xform matrix.
 #' @param useQuaternionFirst A single logical value. If \code{TRUE}, the
 #'   ``qform'' matrix will be used first, if it is defined; otherwise the
 #'   ``sform'' matrix will take priority.

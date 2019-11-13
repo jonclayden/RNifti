@@ -7,13 +7,12 @@
 writeNifti(image, file, template = NULL, datatype = "auto")
 }
 \arguments{
-\item{image}{An image, in any acceptable form (see
-\code{\link{retrieveNifti}}).}
+\item{image}{An image, in any acceptable form (see \code{\link{asNifti}}).}
 
 \item{file}{A character string containing a file name.}
 
 \item{template}{An optional template object to derive NIfTI-1 properties
-from. Passed to \code{\link{updateNifti}} if \code{image} is an array.}
+from. Passed to \code{\link{asNifti}} if \code{image} is an array.}
 
 \item{datatype}{The NIfTI datatype to use when writing the data out. The
 default, \code{"auto"} uses the R type or, for internal images, the
@@ -33,7 +32,7 @@ C library.
 The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 }
 \seealso{
-\code{\link{readNifti}}, \code{\link{updateNifti}}
+\code{\link{readNifti}}, \code{\link{asNifti}}
 }
 \author{
 Jon Clayden <code@clayden.org>

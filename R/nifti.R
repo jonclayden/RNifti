@@ -52,11 +52,10 @@ readNifti <- function (file, internal = FALSE, volumes = NULL)
 #' This function writes an image to NIfTI-1 format, using the standard NIfTI-1
 #' C library.
 #' 
-#' @param image An image, in any acceptable form (see
-#'   \code{\link{retrieveNifti}}).
+#' @param image An image, in any acceptable form (see \code{\link{asNifti}}).
 #' @param file A character string containing a file name.
 #' @param template An optional template object to derive NIfTI-1 properties
-#'   from. Passed to \code{\link{updateNifti}} if \code{image} is an array.
+#'   from. Passed to \code{\link{asNifti}} if \code{image} is an array.
 #' @param datatype The NIfTI datatype to use when writing the data out. The
 #'   default, \code{"auto"} uses the R type or, for internal images, the
 #'   original datatype. Other possibilities are \code{"float"}, \code{"int16"},
@@ -67,13 +66,13 @@ readNifti <- function (file, internal = FALSE, volumes = NULL)
 #' \dontrun{writeNifti(im, "image.nii.gz", datatype="float")}
 #' 
 #' @author Jon Clayden <code@@clayden.org>
-#' @seealso \code{\link{readNifti}}, \code{\link{updateNifti}}
+#' @seealso \code{\link{readNifti}}, \code{\link{asNifti}}
 #' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @export
 writeNifti <- function (image, file, template = NULL, datatype = "auto")
 {
     if (is.array(image) && !is.null(template))
-        image <- updateNifti(image, template)
+        image <- asNifti(image, template)
     
     invisible(.Call("writeNifti", image, file, tolower(datatype), PACKAGE="RNifti"))
 }
@@ -183,10 +182,9 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
 #' \code{dumpNifti} is an alias of \code{niftiHeader}, but the former is now
 #' soft-deprecated.
 #' 
-#' @param image An image, in any acceptable form (see
-#'   \code{\link{retrieveNifti}}). A list containing partial header information
-#'   is acceptable, including an empty list, which returns defaults for every
-#'   field.
+#' @param image An image, in any acceptable form (see \code{\link{asNifti}}).
+#'   A list containing partial header information is acceptable, including an
+#'   empty list, which returns defaults for every field.
 #' @param x A \code{"niftiHeader"} object.
 #' @param ... Ignored.
 #' @return For \code{niftiHeader}, a list of class \code{"niftiHeader"}, with

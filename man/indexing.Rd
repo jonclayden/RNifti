@@ -20,7 +20,7 @@
 These methods provide shorthand access to metadata elements from the NIfTI
 header corresponding to an image. The extraction version returns the
 corresponding element from the result of \code{niftiHeader}, while the
-replacement version calls \code{updateNifti} to replace it.
+replacement version calls \code{asNifti} to replace it.
 }
 \examples{
 im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
@@ -28,7 +28,7 @@ print(im$descrip)
 
 }
 \seealso{
-\code{\link{niftiHeader}}, \code{\link{updateNifti}}
+\code{\link{niftiHeader}}, \code{\link{asNifti}}
 }
 \author{
 Jon Clayden <code@clayden.org>

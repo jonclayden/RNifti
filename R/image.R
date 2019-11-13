@@ -277,7 +277,7 @@ pixunits.default <- function (object)
 #' These methods provide shorthand access to metadata elements from the NIfTI
 #' header corresponding to an image. The extraction version returns the
 #' corresponding element from the result of \code{niftiHeader}, while the
-#' replacement version calls \code{updateNifti} to replace it.
+#' replacement version calls \code{asNifti} to replace it.
 #' 
 #' @param x A \code{"niftiImage"} object, internal or otherwise.
 #' @param name A string naming the field required.
@@ -288,7 +288,7 @@ pixunits.default <- function (object)
 #' print(im$descrip)
 #' 
 #' @author Jon Clayden <code@@clayden.org>
-#' @seealso \code{\link{niftiHeader}}, \code{\link{updateNifti}}
+#' @seealso \code{\link{niftiHeader}}, \code{\link{asNifti}}
 #' @rdname indexing
 #' @export
 "$.niftiImage" <- function (x, name)
@@ -302,5 +302,5 @@ pixunits.default <- function (object)
 {
     template <- list()
     template[[name]] <- value
-    return (updateNifti(x, template))
+    return (asNifti(x, template))
 }

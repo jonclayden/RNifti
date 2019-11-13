@@ -2,10 +2,10 @@ context("Reading, writing and manipulating NIfTI objects")
 
 test_that("NIfTI objects can be created from data", {
     data <- array(rnorm(24), dim=c(3L,2L,4L))
-    image <- retrieveNifti(data)
+    image <- asNifti(data)
     
     expect_equal(ndim(data), 3L)
-    expect_s3_class(image, "internalImage")
+    expect_s3_class(image, "niftiImage")
     expect_equal(dim(image), c(3L,2L,4L))
     expect_equal(pixdim(data), c(1,1,1))
     expect_equal(pixdim(image), c(1,1,1))
@@ -34,7 +34,7 @@ test_that("NIfTI files can be read and written", {
     
     data <- as.vector(image)        # strips all attributes
     expect_equal(pixdim(data), 1)
-    data <- updateNifti(data, image)
+    data <- asNifti(data, image)
     expect_equal(pixdim(data), c(2.5,2.5,2.5))
     
     paths <- writeNifti(image, tempPath)
@@ -107,7 +107,7 @@ test_that("image objects can be manipulated", {
     
     image$intent_code <- 1000L
     expect_equal(image$intent_code, 1000L)
-    image <- updateNifti(image, datatype="float")
+    image <- asNifti(image, datatype="float")
     expect_equal(image$datatype, 16L)
     
     # Empty values are ignored (with a warning)
