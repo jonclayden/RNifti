@@ -273,6 +273,8 @@ layer <- function (image, scale = "grey", min = NULL, max = NULL)
             window <- quantile(image[is.finite(image)], c(0.01,0.99), na.rm=TRUE)
             if (diff(window) > abs(mean(window)))
                 window[which.min(abs(window))] <- 0
+            if (diff(window) == 0)
+                window <- range(image, na.rm=TRUE)
             message("Setting window to (", signif(window[1],4), ", ", signif(window[2],4), ")")
         }
     
