@@ -258,7 +258,7 @@ layer <- function (image, scale = "grey", min = NULL, max = NULL)
     else
     {
         if (is.character(scale) && length(scale) == 1)
-            colours <- switch(scale, grey=gray(0:99/99), gray=gray(0:99/99), greyscale=gray(0:99/99), grayscale=gray(0:99/99), heat=heat.colors(100), rainbow=rainbow(100,start=0.7,end=0.1), shades::gradient(scale,100))
+            colours <- switch(scale, grey=gray(0:99/99), gray=gray(0:99/99), greyscale=gray(0:99/99), grayscale=gray(0:99/99), heat=heat.colors(100), rainbow=rainbow(100,start=0.7,end=0.1), unclass(shades::gradient(scale,100)))
         else
             colours <- scale
     
