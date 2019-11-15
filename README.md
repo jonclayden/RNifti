@@ -174,14 +174,9 @@ The `RNifti` package uses the robust NIfTI-1 reference implementation, which is 
 ```r
 installed.packages()[c("AnalyzeFMRI","ANTsRCore","neuroim","oro.nifti","RNifti",
                        "tractor.base"), "Version"]
-```
-
-```
 ##  AnalyzeFMRI    ANTsRCore      neuroim    oro.nifti       RNifti tractor.base 
 ##     "1.1-21"      "0.7.3"      "0.0.6"      "0.9.1"      "1.0.0"      "3.3.2"
-```
 
-```r
 library(microbenchmark)
 microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
                ANTsRCore::antsImageRead("example.nii"),
@@ -190,29 +185,6 @@ microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
                RNifti::readNifti("example.nii"),
                RNifti::readNifti("example.nii", internal=TRUE),
                tractor.base::readImageFile("example.nii"), unit="ms")
-```
-
-```
-## Output level is not set; defaulting to "Info"
-```
-
-```
-## Warning: no DISPLAY variable so Tk is not available
-```
-
-```
-## Warning: loading Rplot failed
-```
-
-```
-## Warning in rgl.init(initValue, onlyNULL): RGL: unable to open X11 display
-```
-
-```
-## Warning: 'rgl_init' failed, running with rgl.useNULL = TRUE
-```
-
-```
 ## Unit: milliseconds
 ##                                               expr       min        lq
 ##          AnalyzeFMRI::f.read.volume("example.nii") 10.650034 10.785712

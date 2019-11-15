@@ -102,6 +102,7 @@ The `RNifti` package uses the robust NIfTI-1 reference implementation, which is 
 ```{r}
 installed.packages()[c("AnalyzeFMRI","ANTsRCore","neuroim","oro.nifti","RNifti",
                        "tractor.base"), "Version"]
+
 library(microbenchmark)
 microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
                ANTsRCore::antsImageRead("example.nii"),
