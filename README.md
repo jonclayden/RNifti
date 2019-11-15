@@ -1,3 +1,5 @@
+
+
 [![CRAN version](http://www.r-pkg.org/badges/version/RNifti)](https://cran.r-project.org/package=RNifti) [![Build Status](https://travis-ci.org/jonclayden/RNifti.svg?branch=master)](https://travis-ci.org/jonclayden/RNifti) [![Build status](https://ci.appveyor.com/api/projects/status/ftoy9c6k0ne3ga12/branch/master?svg=true)](https://ci.appveyor.com/project/jonclayden/rnifti/branch/master) [![Coverage Status](https://coveralls.io/repos/github/jonclayden/RNifti/badge.svg?branch=master)](https://coveralls.io/github/jonclayden/RNifti?branch=master)
 
 # RNifti: Fast R and C++ Access to NIfTI Images
@@ -33,25 +35,10 @@ This image is an R array with some additional attributes containing information 
 
 ```r
 dim(image)
-```
-
-```
 ## [1] 96 96 60
-```
-
-```r
 pixdim(image)
-```
-
-```
 ## [1] 2.5 2.5 2.5
-```
-
-```r
 pixunits(image)
-```
-
-```
 ## [1] "mm" "s"
 ```
 
@@ -62,9 +49,6 @@ A fuller list of the raw metadata stored in the file can be obtained using the `
 
 ```r
 niftiHeader(image)
-```
-
-```
 ## NIfTI-1 header
 ##     sizeof_hdr: 348
 ##       dim_info: 0
@@ -110,9 +94,6 @@ Advanced users who know the NIfTI format well may want to alter elements of this
 ```r
 image$intent_code <- 1
 image$intent_code
-```
-
-```
 ## [1] 1
 ```
 
@@ -132,9 +113,6 @@ The NIfTI-1 format has a mechanism for indicating the physical orientation and l
 
 ```r
 xform(image)
-```
-
-```
 ##      [,1] [,2] [,3]      [,4]
 ## [1,] -2.5  0.0  0.0 122.03390
 ## [2,]  0.0  2.5  0.0 -95.18523
@@ -149,9 +127,6 @@ Just the rotation with respect to the canonical axes can be obtained with the `r
 
 ```r
 rotation(image)
-```
-
-```
 ##      [,1] [,2] [,3]
 ## [1,]   -1    0    0
 ## [2,]    0    1    0
@@ -163,9 +138,6 @@ In this case, the image is flipped along the x-axis relative to the canonical ax
 
 ```r
 orientation(image)
-```
-
-```
 ## [1] "LAS"
 ```
 
@@ -174,18 +146,9 @@ So, here, "LAS" means that the positive x-axis points left, the positive y-axis 
 
 ```r
 image[30,30,20]
-```
-
-```
 ## [1] 457
-```
-
-```r
 orientation(image) <- "RAS"
 xform(image)
-```
-
-```
 ##      [,1] [,2] [,3]       [,4]
 ## [1,]  2.5  0.0  0.0 -115.46609
 ## [2,]  0.0  2.5  0.0  -95.18523
@@ -193,21 +156,9 @@ xform(image)
 ## [4,]  0.0  0.0  0.0    1.00000
 ## attr(,"code")
 ## [1] 2
-```
-
-```r
 image[30,30,20]
-```
-
-```
 ## [1] 409
-```
-
-```r
 image[67,30,20]
-```
-
-```
 ## [1] 457
 ```
 

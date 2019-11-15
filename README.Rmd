@@ -1,3 +1,7 @@
+```{r, echo=FALSE}
+knitr::opts_chunk$set(collapse = TRUE)
+```
+
 [![CRAN version](http://www.r-pkg.org/badges/version/RNifti)](https://cran.r-project.org/package=RNifti) [![Build Status](https://travis-ci.org/jonclayden/RNifti.svg?branch=master)](https://travis-ci.org/jonclayden/RNifti) [![Build status](https://ci.appveyor.com/api/projects/status/ftoy9c6k0ne3ga12/branch/master?svg=true)](https://ci.appveyor.com/project/jonclayden/rnifti/branch/master) [![Coverage Status](https://coveralls.io/repos/github/jonclayden/RNifti/badge.svg?branch=master)](https://coveralls.io/github/jonclayden/RNifti?branch=master)
 
 # RNifti: Fast R and C++ Access to NIfTI Images
