@@ -2,5 +2,6 @@
 ^\.travis\.yml$
 ^appveyor.yml$
 ^\.covrignore$
+^README.Rmd$
 ^standalone$
 ^revdep$
