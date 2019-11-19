@@ -186,13 +186,13 @@ image[47,39,23]
 ## [1] 300
 ```
 
-Notice that the sign of the top-left element of the xform has now flipped, and the value of the image at location (30,30,20) has changed because the data has been reordered. The equivalent x-location is now 67, which is the 30th element counting in the other direction (96 - 50 + 1 = 47).
+Notice that the sign of the top-left element of the xform has now flipped, and the value of the image at location (50,39,23) has changed because the data has been reordered. The equivalent x-location is now 47, which is the 50th element counting in the other direction (96 - 50 + 1 = 47).
 
 This latter operation can be useful to ensure that indexing into several images with different native storage conventions will end up always having approximately the same meaning (and it is performed internally by the viewer, if required). It is non-destructive, because no interpolation of the data is performed. This means that the axes will not exactly align with the requested directions if the original image was oblique to the canonical axes, but conversely it ensures that no degradation in the image will result. (The [`RNiftyReg` package](https://github.com/jonclayden/RNiftyReg) can be used to apply an arbitrary rotation to an image and interpolate the data onto the new grid, if required.)
 
 ## Support for composite types
 
-The NIfTI-1 standard supports composite types such as complex-valued and RGB images, and support for these was added in version 1.0.0 of this package. Complex data is exposed to R using R's standard `complex` vector type:
+The NIfTI-1 standard supports composite types such as complex-valued and RGB images, and support for these was added in version 1.0.0 of this package. Complex data is exposed to R using the standard `complex` vector type:
 
 
 ```r
@@ -222,7 +222,7 @@ view(rgbImage)
 
 ![plot of chunk unnamed-chunk-15](tools/figures/unnamed-chunk-15-1.png)
 
-Notice that values are shown in the viewer using conventional R's hex string format, but the data is of class `rgbArray`. The function of the same name can be used to create these arrays from strings or channel values, for the purposes of building RGB images from data, while the `as.character` method and `channels` function perform the opposite conversions.
+Notice that values are shown in the viewer using R's conventional hex string format, but the data is of class `rgbArray`. The function of the same name can be used to create these arrays from strings or channel values, for the purposes of building RGB images from data, while the `as.character` method and `channels` function perform the opposite conversions.
 
 
 ```r
@@ -273,9 +273,9 @@ microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
 ##  26.8987791 10.4609615 13.3785205  180.474982   100
 ```
 
-With a median runtime of less than 2 ms, `RNifti` is typically at least ten times as fast as the alternatives to read this image into R. The exception is `ANTsRCore`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsR` has substantial dependencies, which may affect its suitability in some applications.
+With a median runtime of less than 2 ms, `RNifti` is typically around ten times as fast as the alternatives to read this image into R. The exception is `ANTsRCore`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsR` has substantial dependencies, which may affect its suitability in some applications.
 
-Moreover, when reading the file into an "internal" image, which does not copy the pixel values into R data structures until they are required, the median runtime drops by a further 80%, to just 300 µs. This saves time and memory, while allowing data access through standard R indexing operations.
+Moreover, when reading the file into an "internal" image, which does not copy the pixel values into R data structures until they are required, the median runtime drops by a further 80%, to just 300 µs. This saves time and memory, while still allowing data access through standard R indexing operations.
 
 ## Implementation details
 
