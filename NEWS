@@ -2,6 +2,45 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.0.0
+
+R interface
+
+- A basic image viewer with optional interactivity has been added to the
+  package, and is accessible through the new `view()` function.
+- The package now supports complex and RGB NIfTI datatypes. Complex values
+  are transformed to the built in complex R type, while RGB values are
+  represented in a byte-packed integer form, with new functions to convert to
+  and from this form. See `?rgbArray` for details.
+- The `retrieveNifti()` and `updateNifti()` functions have been soft-deprecated
+  in favour of the new `asNifti()`, which does the work of both of them.
+- Standard (non-internal) images no longer retain a copy of their data
+  internally as well as in the R-visible array, to save memory. This is safe
+  because the latter always overrides the former anyway. (Inspired by issue
+  #14.)
+- The list returned by `niftiHeader()` now includes attributes describing the
+  meanings of metadata codes such as xform codes, and these are now shown by
+  the `print` method for these objects.
+- The `xform()` function now attaches a `code` attribute to its return value.
+- `writeNifti()` now return the final header and image paths written,
+  invisibly. (Suggested by John Muschelli, PR #15.)
+- The R path expansion API is now used in the C++ code, so tilde expansion (for
+  example) should now be universally supported.
+
+API changes
+
+- Complex and RGB datatype support is now available through the API. As a
+  result, the `isComplex()` and `isRgb()` methods of the `NiftiImageData` class
+  no longer always return `false`.
+- A basic `NiftiImage` constructor that initialises an image from a vector of
+  dimensions and a datatype has been added.
+- New `nChannels()` (for number of colour channels; 1 except for RGB/RGBA
+  images) and `nVoxels()` methods have been added to the `NiftiImage` class.
+- The `toFile()` methods now return a pair of strings giving the final header
+  and image file names, rather than nothing.
+
+===============================================================================
+
 VERSION 0.11.1
 
 - Attempting to update image header fields with values of the wrong length
