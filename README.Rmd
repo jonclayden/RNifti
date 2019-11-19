@@ -1,5 +1,5 @@
 ```{r, echo=FALSE}
-knitr::opts_chunk$set(collapse = TRUE)
+knitr::opts_chunk$set(collapse=TRUE, fig.path="tools/figures/", dpi=150)
 ```
 
 [![CRAN version](http://www.r-pkg.org/badges/version/RNifti)](https://cran.r-project.org/package=RNifti) [![Build Status](https://travis-ci.org/jonclayden/RNifti.svg?branch=master)](https://travis-ci.org/jonclayden/RNifti) [![Build status](https://ci.appveyor.com/api/projects/status/ftoy9c6k0ne3ga12/branch/master?svg=true)](https://ci.appveyor.com/project/jonclayden/rnifti/branch/master) [![Coverage Status](https://coveralls.io/repos/github/jonclayden/RNifti/badge.svg?branch=master)](https://coveralls.io/github/jonclayden/RNifti?branch=master)
@@ -21,6 +21,8 @@ The latest development version of the package can always be installed from GitHu
 devtools::install_github("jonclayden/RNifti")
 ```
 
+**Please note that the `RNifti` package is to be used for research purposes only, and is not a clinical tool. It comes with no warranty.**
+
 ## Usage
 
 The primary role of `RNifti` is in reading and writing NIfTI-1 files, either `gzip`-compressed or uncompressed, and providing access to image data and metadata. An image may be read into R using the `readNifti` function.
@@ -40,6 +42,14 @@ pixunits(image)
 
 So this image is of size 96 x 96 x 60 voxels, with each voxel representing 2.5 x 2.5 x 2.5 mm in real space. (The temporal unit, seconds here, only applies to the fourth dimension, if it is present.) Replacement versions of the latter functions are also available, for modifying the metadata.
 
+The package contains a basic image viewer, which can be used interactively or noninteractively to examine 2D or 3D images.
+
+```{r}
+view(image)
+```
+
+By default, the viewer shows labels indicating [image orientation](#image-orientation), crosshairs pinpointing the currently selected location, the numerical indices of the current location, and the value of the image at that location. Options allow each of these to be turned off, for the content of the bottom-right panel to be customised entirely, for the colour scale to be changed, and for additional images to be layered on top of the base image. See `?view` for details.
+
 A fuller list of the raw metadata stored in the file can be obtained using the `niftiHeader` function.
 
 ```{r}
@@ -53,7 +63,7 @@ image$intent_code <- 1
 image$intent_code
 ```
 
-If you need to modify multiple metadata elements at once, or replace metadata wholesale with new information from another image, the `updateNifti` function provides a more efficient interface. See `?updateNifti` for details.
+If you need to modify multiple metadata elements at once, or replace metadata wholesale with new information from another image, the `asNifti` function provides a more efficient interface. See `?asNifti` for details.
 
 An image can be written back to NIfTI-1 format using the `writeNifti` function. `gzip` compression will be used if the specified file name ends with ".gz".
 
@@ -81,19 +91,56 @@ In this case, the image is flipped along the x-axis relative to the canonical ax
 orientation(image)
 ```
 
-So, here, "LAS" means that the positive x-axis points left, the positive y-axis anterior and the positive z-axis superior. There is also a replacement version of the `orientation` function, which will reorient the image to align with the requested directions. This is a relatively complex operation, affecting the xform and the storage order of the data.
+So, here, "LAS" means that the positive x-axis points left, the positive y-axis anterior and the positive z-axis superior. This is the so-called "radiological" orientation convention, and can be requested when viewing images for those who are used to it:
 
 ```{r}
-image[30,30,20]
-orientation(image) <- "RAS"
-xform(image)
-image[30,30,20]
-image[67,30,20]
+view(image, radiological=TRUE)
 ```
 
-Notice that the sign of the top-left element of the xform has now flipped, and the value of the image at location (30,30,20) has changed because the data has been reordered. The equivalent x-location is now 67, which is the 30th element counting in the other direction (96 - 30 + 1 = 67).
+Notice the left (L) and right (R) labels, relative to the view shown above. Setting the `radiologicalView` option to `TRUE` will make this the default for all future views.
 
-This latter operation can be useful to ensure that indexing into several images with different native storage conventions will end up always having approximately the same meaning. It is non-destructive, because no interpolation of the data is performed. This means that the axes will not exactly align with the requested directions if the original image was oblique to the canonical axes, but conversely it ensures that no degradation in the image will result. (The [`RNiftyReg` package](https://github.com/jonclayden/RNiftyReg) can be used to apply an arbitrary rotation to an image and interpolate the data onto the new grid, if required.)
+There is a replacement version of the `orientation` function, which will reorient the image to align with the requested directions. This is a relatively complex operation, affecting the xform and the storage order of the data.
+
+```{r}
+image[50,39,23]
+orientation(image) <- "RAS"
+xform(image)
+image[50,39,23]
+image[47,39,23]
+```
+
+Notice that the sign of the top-left element of the xform has now flipped, and the value of the image at location (30,30,20) has changed because the data has been reordered. The equivalent x-location is now 67, which is the 30th element counting in the other direction (96 - 50 + 1 = 47).
+
+This latter operation can be useful to ensure that indexing into several images with different native storage conventions will end up always having approximately the same meaning (and it is performed internally by the viewer, if required). It is non-destructive, because no interpolation of the data is performed. This means that the axes will not exactly align with the requested directions if the original image was oblique to the canonical axes, but conversely it ensures that no degradation in the image will result. (The [`RNiftyReg` package](https://github.com/jonclayden/RNiftyReg) can be used to apply an arbitrary rotation to an image and interpolate the data onto the new grid, if required.)
+
+## Support for composite types
+
+The NIfTI-1 standard supports composite types such as complex-valued and RGB images, and support for these was added in version 1.0.0 of this package. Complex data is exposed to R using R's standard `complex` vector type:
+
+```{r}
+image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
+complexImage <- asNifti(image + 0i)
+print(complexImage)
+complexImage[50,39,23]
+```
+
+R's native representation for RGB values is [CSS-style hex strings](https://en.wikipedia.org/wiki/Web_colors) of character mode, which are reasonably space-efficient (8 or 10 bytes per value) but a little clunky to work with. For efficiency of interchange between R and the NIfTI-internal datatypes, `RNifti` uses a byte-packed representation of integer mode instead, which takes up 4 bytes per value. Of course, the viewer understands this format.
+
+```{r}
+rgbImage <- readNifti(system.file("extdata", "example_rgb.nii.gz", package="RNifti"))
+print(rgbImage)
+class(rgbImage)
+view(rgbImage)
+```
+
+Notice that values are shown in the viewer using conventional R's hex string format, but the data is of class `rgbArray`. The function of the same name can be used to create these arrays from strings or channel values, for the purposes of building RGB images from data, while the `as.character` method and `channels` function perform the opposite conversions.
+
+```{r}
+as.character(rgbImage, flatten=FALSE)[50,39,23]
+channels(rgbImage, "red")[50,39,23,1]
+```
+
+RGB images with an alpha (opacity) channel are also supported.
 
 ## Performance
 
@@ -115,11 +162,13 @@ microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
 
 With a median runtime of less than 2 ms, `RNifti` is typically at least ten times as fast as the alternatives to read this image into R. The exception is `ANTsRCore`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsR` has substantial dependencies, which may affect its suitability in some applications.
 
+Moreover, when reading the file into an "internal" image, which does not copy the pixel values into R data structures until they are required, the median runtime drops by a further 80%, to just 300 µs. This saves time and memory, while allowing data access through standard R indexing operations.
+
 ## Implementation details
 
-The package does not fully duplicate the NIfTI-1 structure's contents in R-visible objects. Instead, it passes key metadata back to R, such as the image dimensions and pixel dimensions, and it also passes back the pixel values where they are needed. It also creates an [external pointer](http://r-manuals.flakery.org/R-exts.html#External-pointers-and-weak-references) to the native data structure, which is stored in an attribute. This pointer is dereferenced whenever the object is passed back to the C++ code, thereby avoiding unnecessary duplication and ensuring that all metadata remains intact. The full NIfTI-1 header can be obtained using the `niftiHeader` R function, if it is needed.
+The package does not fully duplicate the NIfTI-1 structure's contents in R-visible objects. Instead, it passes key metadata back to R, such as the image dimensions and pixel dimensions, and it also passes back the pixel values where they are needed. Finally, it creates an [external pointer](http://r-manuals.flakery.org/R-exts.html#External-pointers-and-weak-references) to the native data structure, which is stored in an attribute. This pointer is dereferenced whenever the object is passed back to the C++ code, thereby avoiding unnecessary duplication and ensuring that all metadata remains intact. The full NIfTI-1 header can be obtained using the `niftiHeader` R function, if it is needed.
 
-This arrangement is efficient and generally works well, but many R operations strip attributes—in which case the external pointer will be removed. The internal structure will be built again when necessary, but using default metadata. In these cases, if it is important to keep the original metadata, the `updateNifti` function should be called explicitly, with a template object. This reconstructs the NIfTI-1 data structure, using the template as a starting point.
+This arrangement is efficient and generally works well, but many R operations strip attributes—in which case the external pointer will be removed. The internal structure will be built again when necessary, but using default metadata. In these cases, if it is important to keep the original metadata, the `asNifti` function should be called explicitly, with a template object. This reconstructs the NIfTI-1 data structure, using the template as a starting point.
 
 ## API
 
@@ -175,19 +224,7 @@ void myfunction (SEXP image_)
 
 ## Use in pure C++ projects
 
-Thanks to contributions from [@soolijoo](https://github.com/soolijoo), it is possible (as of package version 0.7.0) to use the `NiftiImage` C++ class in standalone C++ projects. You will need the following files:
-
-| Path                            | Purpose                                                                                             |
-| ------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `inst/include/lib/*.h`          | Headers defining the `NiftiImage` class itself, related functions and macros                        |
-| `inst/include/niftilib/*.h`     | Headers for the NIfTI-1 reference implementation                                                    |
-| `inst/include/znzlib/znzlib.h`  | Header for I/O functions from the NIfTI-1 reference implementation                                  |
-| `inst/include/zlib/*.h`         | `zlib` headers for reading and writing gzipped files (optional; system `zlib` can be used instead)  |
-| `src/niftilib/nifti1_io.c`      | Source file for the NIfTI-1 reference implementation                                                |
-| `src/znzlib/znzlib.c`           | Source for I/O functions from the NIfTI-1 reference implementation                                  |
-| `src/zlib/*`                    | `zlib` source files for reading and writing gzipped files (optional, as above)                      |
-
-Note that the `NiftiImage` and `NiftiImageData` classes are header-only, but C code from the NIfTI-1 reference implementation will need to be compiled and linked into the project. The `NiftiImage_print.h` header should be included before including `NiftiImage.h`, so that the R API is not used for printing error messages. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example.
+Thanks to contributions from [Matt Hall](https://github.com/soolijoo), it is possible (as of package version 0.7.0) to use the `NiftiImage` C++ class in standalone C++ projects. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example, and its contents can be copied to a new directory (including symlinked files) as a new project template.
 
 ## The NIfTI-2 format
 
