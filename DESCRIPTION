@@ -12,6 +12,7 @@ Authors@R: c(person("Jon","Clayden",role=c("cre","aut"),email="code@clayden.org"
              person("Mark","Adler",role="cph"))
 Imports: Rcpp (>= 0.11.0)
 Suggests: testthat (>= 0.11.0), covr, reportr, shades
+Enhances: oro.nifti, tractor.base
 LinkingTo: Rcpp
 Description: Provides very fast read and write access to images stored in the
     NIfTI-1 and ANALYZE-7.5 formats, with seamless synchronisation between
