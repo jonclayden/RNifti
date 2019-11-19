@@ -23,6 +23,10 @@
 #'   \code{\link{structure}}. For the \code{as.character} method, this argument
 #'   is ignored.
 #' @param x An \code{rgbArray} object.
+#' @param flatten Logical value. If \code{FALSE}, the dimensions of \code{x}
+#'   will be retained in the result. The default is \code{TRUE}, for
+#'   consistency with the usual behaviour of \code{as.character}, which strips
+#'   all attributes.
 #' @return \code{rgbArray} returns an integer-mode array of class
 #'   \code{"rgbArray"}. The \code{as.character} method returns a character-mode
 #'   vector of colour strings.
@@ -30,7 +34,7 @@
 #' @note The values of an \code{"rgbArray"} are not easily interpreted, and
 #'   may depend on the endianness of the platform. For manipulation or use as
 #'   colours they should generally be converted to character mode, or the
-#'   channels extracted using the \code{\link{extractChannels}} function.
+#'   channels extracted using the \code{\link{channels}} function.
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @export
@@ -82,9 +86,12 @@ rgbArray <- function (red, green, blue, alpha, max = NULL, dim = NULL, ...)
 
 #' @rdname rgbArray
 #' @export
-as.character.rgbArray <- function (x, ...)
+as.character.rgbArray <- function (x, flatten = TRUE, ...)
 {
-    .Call("rgbToStrings", x, PACKAGE="RNifti")
+    result <- .Call("rgbToStrings", x, PACKAGE="RNifti")
+    if (!flatten)
+        dim(result) <- dim(x)
+    return (result)
 }
 
 #' Extract channels from RGB data
@@ -103,7 +110,7 @@ as.character.rgbArray <- function (x, ...)
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @export
-extractChannels <- function (array, channels = c("red","green","blue","alpha"), raw = FALSE)
+channels <- function (array, channels = c("red","green","blue","alpha"), raw = FALSE)
 {
     if (!inherits(array,"niftiImage") && !inherits(array,"rgbArray"))
         array <- rgbArray(array)

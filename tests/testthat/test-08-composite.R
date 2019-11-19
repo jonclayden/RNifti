@@ -27,7 +27,7 @@ test_that("RGB datatypes are handled properly", {
     tempPath <- paste(tempfile(), "nii.gz", sep=".")
     
     expect_equal(as.character(rgbArray(diag(3))), c("#FF0000","#00FF00","#0000FF"))
-    expect_equivalent(extractChannels(diag(3),"red")[,1], c(255L,0L,0L))
+    expect_equivalent(channels(diag(3),"red")[,1], c(255L,0L,0L))
     
     k <- stats::kmeans(as.vector(image), 3L)
     data <- rgbArray(k$cluster==1, k$cluster==2, k$cluster==3, dim=dim(image))
@@ -40,7 +40,7 @@ test_that("RGB datatypes are handled properly", {
     expect_equal(rgbImage$datatype, 128L)
     expect_equal(rgbImage$bitpix, 24L)
     expect_equivalent(unclass(data), unclass(as.array(rgbImage)))
-    expect_equivalent(extractChannels(rgbImage,c("red","green","blue")[cluster])[40,40,30,1], 255L)
+    expect_equivalent(channels(rgbImage,c("red","green","blue")[cluster])[40,40,30,1], 255L)
     
     writeNifti(rgbImage, tempPath)
     header <- niftiHeader(tempPath)

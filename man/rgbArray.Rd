@@ -7,7 +7,7 @@
 \usage{
 rgbArray(red, green, blue, alpha, max = NULL, dim = NULL, ...)
 
-\method{as.character}{rgbArray}(x, ...)
+\method{as.character}{rgbArray}(x, flatten = TRUE, ...)
 }
 \arguments{
 \item{red}{A numeric vector (or array) of red channel values. If this is the
@@ -32,6 +32,11 @@ such as \code{pixdim}. These are passed directly to
 is ignored.}
 
 \item{x}{An \code{rgbArray} object.}
+
+\item{flatten}{Logical value. If \code{FALSE}, the dimensions of \code{x}
+will be retained in the result. The default is \code{TRUE}, for
+consistency with the usual behaviour of \code{as.character}, which strips
+all attributes.}
 }
 \value{
 \code{rgbArray} returns an integer-mode array of class
@@ -49,7 +54,7 @@ converted to standard R colour strings using the \code{as.character} method.
 The values of an \code{"rgbArray"} are not easily interpreted, and
   may depend on the endianness of the platform. For manipulation or use as
   colours they should generally be converted to character mode, or the
-  channels extracted using the \code{\link{extractChannels}} function.
+  channels extracted using the \code{\link{channels}} function.
 }
 \author{
 Jon Clayden <code@clayden.org>
