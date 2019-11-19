@@ -15,7 +15,8 @@
 #'   using \code{cbind}, and hence recycled as necessary. Alpha, or green and
 #'   blue, can be missing.
 #' @param max The maximum possible value for any channel. The default
-#'   is 255 when the data is of integer mode, and 1 otherwise.
+#'   is 255 when the data is of integer mode, and 1 otherwise. Values above
+#'   this, or below zero, will be clipped to the appropriate extreme.
 #' @param dim An integer vector of dimensions for the final array. The
 #'   dimensions of \code{red} are used if this is \code{NULL}.
 #' @param ... For \code{rgbArray}, additional attributes to set on the result,
