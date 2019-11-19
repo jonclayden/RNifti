@@ -5,7 +5,7 @@
     indices <- alist(i=, j=, k=, t=1, u=1, v=1, w=1)
     indices[axis] <- loc[axis]
     data <- do.call("[", c(layer["image"], indices[seq_len(ndim(layer$image))], list(drop=FALSE)))
-    dims <- dim(data)[-axis]
+    dims <- dim(data)[-c(axis,4:7)]
     dim(data) <- dims
     
     if (is.null(asp))
@@ -257,10 +257,10 @@ layer <- function (image, scale = "grey", min = NULL, max = NULL)
         colours <- window <- NULL
     else
     {
-        if (is.character(scale) && length(scale) == 1)
+        if (is.character(scale) && length(scale) == 1 && !inherits(scale,"AsIs"))
             colours <- switch(scale, grey=gray(0:99/99), gray=gray(0:99/99), greyscale=gray(0:99/99), grayscale=gray(0:99/99), heat=heat.colors(100), rainbow=rainbow(100,start=0.7,end=0.1), unclass(shades::gradient(scale,100)))
         else
-            colours <- scale
+            colours <- unclass(scale)
     
         if (is.null(min))
             min <- image$cal_min
