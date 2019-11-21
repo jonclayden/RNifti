@@ -2,14 +2,14 @@
 % Please edit documentation in R/viewer.R
 \name{view}
 \alias{view}
-\alias{layer}
+\alias{lyr}
 \title{A basic 3D image viewer}
 \usage{
 view(..., point = NULL, radiological = getOption("radiologicalView",
   FALSE), interactive = base::interactive(), crosshairs = TRUE,
   labels = TRUE, infoPanel = defaultInfoPanel)
 
-layer(image, scale = "grey", min = NULL, max = NULL)
+lyr(image, scale = "grey", min = NULL, max = NULL)
 }
 \arguments{
 \item{...}{One or more images, or \code{"viewLayer"} objects, to display.}
@@ -57,7 +57,7 @@ and 99th percentiles of the data are used, with values close to zero
 rounded to that extreme.}
 }
 \value{
-\code{layer} returns a list of class \code{"viewLayer"}, to be used
+\code{lyr} returns a list of class \code{"viewLayer"}, to be used
   in a view. \code{view} is called for its side-effect of showing a view.
 }
 \description{

@@ -72,7 +72,7 @@
 #'   no window stored in its header, or the two values are equal, then the 1st
 #'   and 99th percentiles of the data are used, with values close to zero
 #'   rounded to that extreme.
-#' @return \code{layer} returns a list of class \code{"viewLayer"}, to be used
+#' @return \code{lyr} returns a list of class \code{"viewLayer"}, to be used
 #'   in a view. \code{view} is called for its side-effect of showing a view.
 #' 
 #' @note Because of the way R's main run-loop interacts with graphics, it will
@@ -106,7 +106,7 @@ view <- function (..., point = NULL, radiological = getOption("radiologicalView"
         # Images need to be converted to layer objects
         if (!inherits(layers[[i]], "viewLayer"))
         {
-            layers[[i]] <- layer(layers[[i]])
+            layers[[i]] <- lyr(layers[[i]])
             layers[[i]]$label <- layerExpressions[i]
         }
         # The xform of the first image is used for indexing
@@ -248,7 +248,7 @@ view <- function (..., point = NULL, radiological = getOption("radiologicalView"
 
 #' @rdname view
 #' @export
-layer <- function (image, scale = "grey", min = NULL, max = NULL)
+lyr <- function (image, scale = "grey", min = NULL, max = NULL)
 {
     label <- deparse(substitute(image))
     image <- asNifti(image, internal=FALSE)
