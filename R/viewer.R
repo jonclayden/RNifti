@@ -93,7 +93,7 @@ view <- function (..., point = NULL, radiological = getOption("radiologicalView"
 {
     # Get the layers to display, and the expressions used to generate them
     layers <- list(...)
-    layerExpressions <- trimws(sapply(substitute(list(...)), deparse, control=NULL, nlines=1)[-1], whitespace="[ \"]")
+    layerExpressions <- sub("^[\\s\"]*(.+?)[\\s\"]*$", "\\1", sapply(substitute(list(...)), deparse, control=NULL, nlines=1)[-1], perl=TRUE)
     nLayers <- length(layers)
     if (nLayers == 0)
         stop("At least one image must be specified")
