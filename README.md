@@ -12,12 +12,12 @@ There are several packages available for reading and writing NIfTI-1 files in R,
 - [C/C++ API](#api), allowing access to NIfTI images in compiled code in other R packages, or even in [standalone C++ code](#use-in-pure-c-projects); and
 - modest dependencies, consisting of only R itself and the very widely-used [Rcpp](https://cran.r-project.org/package=Rcpp) C++ wrapper library.
 
-The latest development version of the package can always be installed from GitHub using the `devtools` package.
+The latest development version of the package can always be installed from GitHub using the `remotes` package.
 
 
 ```r
-## install.packages("devtools")
-devtools::install_github("jonclayden/RNifti")
+## install.packages("remotes")
+remotes::install_github("jonclayden/RNifti")
 ```
 
 **Please note that the `RNifti` package is to be used for research purposes only, and is not a clinical tool. It comes with no warranty.**
