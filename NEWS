@@ -2,6 +2,15 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.0.1
+
+- The package no longer has an undeclared requirement for C++11 support.
+  (Reported by John Muschelli, issue #16.)
+- String manipulation performed within the `view()` function is now compatible
+  with versions of R older than 3.6.0.
+
+===============================================================================
+
 VERSION 1.0.0
 
 R interface
