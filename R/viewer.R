@@ -1,17 +1,45 @@
+.is3DVector <- function (image)
+{
+    return (image$intent_code == 1007L && ndim(image) == 5L && dim(image)[5] == 3L)
+}
+
 .plotLayer <- function (layer, loc, asp = NULL, add = FALSE)
 {
+    is3DVector <- .is3DVector(layer$image)
+    
     # Extract the data for the appropriate plane
     axis <- which(!is.na(loc))
     indices <- alist(i=, j=, k=, t=1, u=1, v=1, w=1)
-    indices[axis] <- loc[axis]
+    if (is3DVector)
+        indices[[5]] <- (1:3)[-axis]
+    indices[[axis]] <- loc[axis]
     data <- do.call("[", c(layer["image"], indices[seq_len(ndim(layer$image))], list(drop=FALSE)))
-    dims <- dim(data)[-c(axis,4:7)]
+    if (is3DVector)
+        dims <- dim(data)[-c(axis,4,6,7)]
+    else
+        dims <- dim(data)[-c(axis,4:7)]
     dim(data) <- dims
     
     if (is.null(asp))
         asp <- dims[2] / dims[1]
     
-    if (inherits(layer$image, "rgbArray"))
+    if (is3DVector)
+    {
+        # Show 3D vector data as coloured line segments
+        if (!add)
+        {
+            oldPars <- par(mai=c(0,0,0,0))
+            on.exit(par(oldPars))
+            image(array(NA,dim=dims[1:2]), axes=FALSE, asp=asp, zlim=c(0,1))
+        }
+        sliceColours <- do.call("[", c(layer["colours"], indices[seq_len(ndim(layer$colours))]))
+        valid <- which(apply(data, 1:2, function(x) !any(is.na(x)) && !all(x==0)), arr.ind=TRUE)
+        segments((valid[,1]-1)/(dims[1]-1) - data[cbind(valid,1)]/(2*dims[1]*layer$window[2]),
+                 (valid[,2]-1)/(dims[2]-1) - data[cbind(valid,2)]/(2*dims[2]*layer$window[2]),
+                 (valid[,1]-1)/(dims[1]-1) + data[cbind(valid,1)]/(2*dims[1]*layer$window[2]),
+                 (valid[,2]-1)/(dims[2]-1) + data[cbind(valid,2)]/(2*dims[2]*layer$window[2]), col=sliceColours[valid], lwd=2)
+    }
+    else if (inherits(layer$image, "rgbArray"))
     {
         # RGB display is achieved by converting the data to an array of indices into a custom palette
         data <- as.character(structure(data, class="rgbArray"))
@@ -277,9 +305,14 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL)
                 window <- range(image, na.rm=TRUE)
             message("Setting window to (", signif(window[1],4), ", ", signif(window[2],4), ")")
         }
-    
-        image[image < window[1]] <- window[1]
-        image[image > window[2]] <- window[2]
+        
+        if (.is3DVector(image))
+            colours <- as.character(rgbArray(drop(abs(image)),max=window[2]), flatten=FALSE)
+        else
+        {
+            image[image < window[1]] <- window[1]
+            image[image > window[2]] <- window[2]
+        }
     }
     
     return (structure(list(image=image, label=label, colours=colours, window=window), class="viewLayer"))
