@@ -1212,6 +1212,22 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
             volStart += volSize;
         }
         
+        // Vector data needs to be reoriented to match the xform
+        if (image->intent_code == NIFTI_INTENT_VECTOR && image->dim[5] == 3)
+        {
+            internal::vec3 oldVec;
+            const size_t supervolSize = volSize * image->nt;
+            NiftiImageData::Iterator it = newData.begin();
+            for (size_t i=0; i<supervolSize; i++, ++it)
+            {
+                for (int j=0; j<3; j++)
+                    oldVec.v[j] = double(*(it + j*supervolSize));
+                const internal::vec3 newVec = internal::matrixVectorProduct(transform, oldVec);
+                for (int j=0; j<3; j++)
+                    *(it + j*supervolSize) = newVec.v[j];
+            }
+        }
+        
         // Replace the existing data in the image
         this->replaceData(newData);
     }
