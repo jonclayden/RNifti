@@ -318,6 +318,12 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL)
     return (structure(list(image=image, label=label, colours=colours, window=window), class="viewLayer"))
 }
 
+.quitInstructions <- function ()
+{
+    escapeToQuit <- isTRUE(names(dev.cur()) %in% c("quartz","RStudioGD"))
+    return (paste(ifelse(escapeToQuit,"Press Esc","Right click"), "to leave interactive mode", sep=" "))
+}
+
 #' The built-in viewer's default info panel
 #' 
 #' A default info panel for \code{\link{view}}, which shows the labels and
@@ -334,14 +340,11 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL)
 #' @export
 defaultInfoPanel <- function (point, data, labels)
 {
-    escapeToQuit <- isTRUE(names(dev.cur()) %in% c("quartz","RStudioGD"))
-    quitInstructions <- paste(ifelse(escapeToQuit,"Press Esc","Right click"), "to leave interactive mode", sep=" ")
-    
     plot(NA, xlim=c(0,1), ylim=c(0,1), xlab="", ylab="", xaxt="n", yaxt="n", bty="n", main=paste("Location: [", paste(point,collapse=","), "]", sep=""))
     nImages <- min(4, length(labels))
     yLocs <- 0.95 - cumsum(c(0,rep(c(0.1,0.13),nImages)))
     yLocs[length(yLocs)] <- -0.05
-    text <- quitInstructions
+    text <- .quitInstructions()
     for (i in seq_len(nImages))
     {
         text <- c(text, {
@@ -354,4 +357,20 @@ defaultInfoPanel <- function (point, data, labels)
         }, labels[i])
     }
     text(0.5, yLocs, rev(text), col=c(rep(c("white","red"),nImages),"grey70"), cex=pmin(1,1/strwidth(rev(text))), xpd=TRUE)
+}
+
+#' @rdname defaultInfoPanel
+#' @export
+timeSeriesPanel <- function (point, data, labels)
+{
+    lengths <- sapply(data, length)
+    suppressWarnings(range <- c(min(sapply(data,min,na.rm=TRUE)), max(sapply(data,max,na.rm=TRUE))))
+    range[is.infinite(range)] <- 0
+    plot(NA, xlim=c(1,max(lengths)), ylim=range, xlab=.quitInstructions(), ylab="intensity", col.lab="grey70", bty="n", main=paste("Location: [", paste(point,collapse=","), "]", sep=""))
+    
+    for (i in seq_along(data))
+    {
+        if (lengths[i] > 1)
+            lines(1:lengths[i], data[[i]], col="red", lwd=2)
+    }
 }
