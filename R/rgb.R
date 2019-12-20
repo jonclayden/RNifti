@@ -78,6 +78,8 @@ rgbArray <- function (red, green, blue, alpha, max = NULL, dim = NULL, ...)
     
     if (is.null(dim))
         dim <- dim(red)
+    if (is.null(dim))
+        dim <- length(red)
     if (is.null(max))
         max <- switch(storage.mode(source), integer=255, 1)
     
