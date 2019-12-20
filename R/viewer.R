@@ -11,7 +11,7 @@
     axis <- which(!is.na(loc))
     indices <- alist(i=, j=, k=, t=1, u=1, v=1, w=1)
     if (is3DVector)
-        indices[[5]] <- (1:3)[-axis]
+        indices[[5]] <- 1:3
     indices[[axis]] <- loc[axis]
     data <- do.call("[", c(layer["image"], indices[seq_len(ndim(layer$image))], list(drop=FALSE)))
     if (is3DVector)
@@ -32,12 +32,13 @@
             on.exit(par(oldPars))
             image(array(NA,dim=dims[1:2]), axes=FALSE, asp=asp, zlim=c(0,1))
         }
-        sliceColours <- do.call("[", c(layer["colours"], indices[seq_len(ndim(layer$colours))]))
         valid <- which(apply(data, 1:2, function(x) !any(is.na(x)) && !all(x==0)), arr.ind=TRUE)
+        colours <- as.character(rgbArray(abs(data[cbind(valid,1)]), abs(data[cbind(valid,2)]), abs(data[cbind(valid,3)]), max=layer$window[2]))
+        data <- data[,,-axis]
         segments((valid[,1]-1)/(dims[1]-1) - data[cbind(valid,1)]/(2*dims[1]*layer$window[2]),
                  (valid[,2]-1)/(dims[2]-1) - data[cbind(valid,2)]/(2*dims[2]*layer$window[2]),
                  (valid[,1]-1)/(dims[1]-1) + data[cbind(valid,1)]/(2*dims[1]*layer$window[2]),
-                 (valid[,2]-1)/(dims[2]-1) + data[cbind(valid,2)]/(2*dims[2]*layer$window[2]), col=sliceColours[valid], lwd=2)
+                 (valid[,2]-1)/(dims[2]-1) + data[cbind(valid,2)]/(2*dims[2]*layer$window[2]), col=colours, lwd=2)
     }
     else if (inherits(layer$image, "rgbArray"))
     {
@@ -306,9 +307,7 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL)
             message("Setting window to (", signif(window[1],4), ", ", signif(window[2],4), ")")
         }
         
-        if (.is3DVector(image))
-            colours <- as.character(rgbArray(drop(abs(image)),max=window[2]), flatten=FALSE)
-        else
+        if (!.is3DVector(image))
         {
             image[image < window[1]] <- window[1]
             image[image > window[2]] <- window[2]
