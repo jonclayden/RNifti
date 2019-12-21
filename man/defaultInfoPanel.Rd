@@ -2,9 +2,12 @@
 % Please edit documentation in R/viewer.R
 \name{defaultInfoPanel}
 \alias{defaultInfoPanel}
-\title{The built-in viewer's default info panel}
+\alias{timeSeriesPanel}
+\title{Info panels for the built-in viewer}
 \usage{
 defaultInfoPanel(point, data, labels)
+
+timeSeriesPanel(point, data, labels)
 }
 \arguments{
 \item{point}{A numeric vector giving the current point location.}
@@ -17,7 +20,8 @@ than one value per image.}
 }
 \description{
 A default info panel for \code{\link{view}}, which shows the labels and
-values of each image at the current point.
+values of each image at the current point, and a panel suitable for
+plotting four-dimensional time series images.
 }
 \seealso{
 \code{\link{view}}

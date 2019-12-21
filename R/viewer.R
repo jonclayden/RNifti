@@ -323,10 +323,11 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL)
     return (paste(ifelse(escapeToQuit,"Press Esc","Right click"), "to leave interactive mode", sep=" "))
 }
 
-#' The built-in viewer's default info panel
+#' Info panels for the built-in viewer
 #' 
 #' A default info panel for \code{\link{view}}, which shows the labels and
-#' values of each image at the current point.
+#' values of each image at the current point, and a panel suitable for
+#' plotting four-dimensional time series images.
 #' 
 #' @param point A numeric vector giving the current point location.
 #' @param data A list of data values for each image at the current point.
