@@ -193,22 +193,28 @@ view <- function (..., point = NULL, radiological = getOption("radiologicalView"
         if (ndim == 2)
         {
             starts <- ends <- rep(0:1, 2)
-            layout(matrix(c(2,1), nrow=1))
+            if (is.null(infoPanel))
+                layout(matrix(1))
+            else
+                layout(matrix(c(2,1), nrow=1))
         }
         else
-            layout(matrix(c(2,3,4,1), nrow=2, byrow=TRUE))
+            layout(matrix(c(2,3,4,1) - ifelse(is.null(infoPanel),1,0), nrow=2, byrow=TRUE))
         
-        # For each layer, extract the data values corresponding to the current point, and pass them to the info panel function
-        data <- lapply(layers, function(layer) {
-            indices <- alist(i=, j=, k=, t=, u=, v=, w=)
-            indices[seq_along(point)] <- reorientedPoint
-            result <- do.call("[", c(list(layer$image), indices[seq_len(ndim(layer$image))]))
-            if (inherits(layer$image, "rgbArray"))
-                return (as.character(structure(result, dim=c(1,length(result)), class="rgbArray")))
-            else
-                return (result)
-        })
-        infoPanel(point, data, sapply(layers,"[[","label"))
+        if (!is.null(infoPanel))
+        {
+            # For each layer, extract the data values corresponding to the current point, and pass them to the info panel function
+            data <- lapply(layers, function(layer) {
+                indices <- alist(i=, j=, k=, t=, u=, v=, w=)
+                indices[seq_along(point)] <- reorientedPoint
+                result <- do.call("[", c(list(layer$image), indices[seq_len(ndim(layer$image))]))
+                if (inherits(layer$image, "rgbArray"))
+                    return (as.character(structure(result, dim=c(1,length(result)), class="rgbArray")))
+                else
+                    return (result)
+            })
+            infoPanel(point, data, sapply(layers,"[[","label"))
+        }
         
         for (i in 1:3)
         {
