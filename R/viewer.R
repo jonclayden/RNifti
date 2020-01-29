@@ -1,3 +1,5 @@
+.State <- new.env()
+
 .is3DVector <- function (image)
 {
     return (image$intent_code == 1007L && ndim(image) == 5L && dim(image)[5] == 3L)
@@ -172,9 +174,11 @@ view <- function (..., point = NULL, radiological = getOption("radiologicalView"
     # Set some graphics parameters, and make sure they get reset
     oldPars <- par(bg="black", col="white", fg="white", col.axis="white", col.lab="white", col.main="white")
     oldOptions <- options(locatorBell=FALSE, preferRaster=TRUE)
+    .State$interactive <- interactive
     on.exit({
         par(oldPars)
         options(oldOptions)
+        .State$interactive <- FALSE
     })
     
     repeat
@@ -338,8 +342,13 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL)
 
 .quitInstructions <- function ()
 {
-    escapeToQuit <- isTRUE(names(dev.cur()) %in% c("quartz","RStudioGD"))
-    return (paste(ifelse(escapeToQuit,"Press Esc","Right click"), "to leave interactive mode", sep=" "))
+    if (!isTRUE(.State$interactive))
+        return ("")
+    else
+    {
+        escapeToQuit <- isTRUE(names(dev.cur()) %in% c("quartz","RStudioGD"))
+        return (paste(ifelse(escapeToQuit,"Press Esc","Right click"), "to leave interactive mode", sep=" "))
+    }
 }
 
 #' Info panels for the built-in viewer
