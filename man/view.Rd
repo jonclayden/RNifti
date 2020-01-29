@@ -9,7 +9,7 @@ view(..., point = NULL, radiological = getOption("radiologicalView",
   FALSE), interactive = base::interactive(), crosshairs = TRUE,
   labels = TRUE, infoPanel = defaultInfoPanel)
 
-lyr(image, scale = "grey", min = NULL, max = NULL)
+lyr(image, scale = "grey", min = NULL, max = NULL, mask = NULL)
 }
 \arguments{
 \item{...}{One or more images, or \code{"viewLayer"} objects, to display.}
@@ -37,7 +37,7 @@ orientation information is not available.}
 \item{infoPanel}{A function of three arguments, which must produce a plot
 for the information panel of the view. \code{\link{defaultInfoPanel}} is
 the default, which shows the labels and values of each image at the
-current point.}
+current point. A \code{NULL} value will suppress the panel.}
 
 \item{image}{The image being shown in this layer.}
 
@@ -45,7 +45,8 @@ current point.}
 string naming a predefined scale: \code{"grey"} or \code{"gray"} for
 greyscale, \code{"heat"} for a heatmap, \code{"rainbow"} for a rainbow
 scale, or any of the scales defined in the \code{shades} package (see
-\code{?shades::gradient}, if that package is installed). Ignored for RGB
+\code{?shades::gradient}, if that package is installed). A fixed colour
+can be used by wrapping a string in a call to \code{I}. Ignored for RGB
 images.}
 
 \item{min, max}{The window minimum and maximum for the layer, i.e., the black
@@ -54,7 +55,14 @@ and white points. These are ignored for RGB images. Otherwise, if
 \code{cal_max} NIfTI header fields. If either is \code{NA}, the image has
 no window stored in its header, or the two values are equal, then the 1st
 and 99th percentiles of the data are used, with values close to zero
-rounded to that extreme.}
+rounded to that extreme. If these values are still equal, the untrimmed
+range of the image data is used.}
+
+\item{mask}{A optional mask array, which may be of lower dimensionality than
+the main image. If specified, this is converted to logical mode and pixels
+that evaluate \code{FALSE} will be set to \code{NA} for that layer,
+meaning they will not be plotted. This operation is performed last, and so
+will not affect auto-windowing.}
 }
 \value{
 \code{lyr} returns a list of class \code{"viewLayer"}, to be used
@@ -74,6 +82,8 @@ Because of the way R's main run-loop interacts with graphics, it will
 \examples{
 im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
 view(im, interactive=FALSE)
+view(lyr(im, max=800), interactive=FALSE)
+view(lyr(im, mask=im<800), interactive=FALSE)
 
 }
 \seealso{

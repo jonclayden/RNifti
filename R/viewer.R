@@ -88,13 +88,14 @@
 #' @param infoPanel A function of three arguments, which must produce a plot
 #'   for the information panel of the view. \code{\link{defaultInfoPanel}} is
 #'   the default, which shows the labels and values of each image at the
-#'   current point.
+#'   current point. A \code{NULL} value will suppress the panel.
 #' @param image The image being shown in this layer.
 #' @param scale A character vector of colour values for the scale, or a single
 #'   string naming a predefined scale: \code{"grey"} or \code{"gray"} for
 #'   greyscale, \code{"heat"} for a heatmap, \code{"rainbow"} for a rainbow
 #'   scale, or any of the scales defined in the \code{shades} package (see
-#'   \code{?shades::gradient}, if that package is installed). Ignored for RGB
+#'   \code{?shades::gradient}, if that package is installed). A fixed colour
+#'   can be used by wrapping a string in a call to \code{I}. Ignored for RGB
 #'   images.
 #' @param min,max The window minimum and maximum for the layer, i.e., the black
 #'   and white points. These are ignored for RGB images. Otherwise, if
@@ -102,7 +103,13 @@
 #'   \code{cal_max} NIfTI header fields. If either is \code{NA}, the image has
 #'   no window stored in its header, or the two values are equal, then the 1st
 #'   and 99th percentiles of the data are used, with values close to zero
-#'   rounded to that extreme.
+#'   rounded to that extreme. If these values are still equal, the untrimmed
+#'   range of the image data is used.
+#' @param mask A optional mask array, which may be of lower dimensionality than
+#'   the main image. If specified, this is converted to logical mode and pixels
+#'   that evaluate \code{FALSE} will be set to \code{NA} for that layer,
+#'   meaning they will not be plotted. This operation is performed last, and so
+#'   will not affect auto-windowing.
 #' @return \code{lyr} returns a list of class \code{"viewLayer"}, to be used
 #'   in a view. \code{view} is called for its side-effect of showing a view.
 #' 
@@ -115,6 +122,8 @@
 #' @examples
 #' im <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
 #' view(im, interactive=FALSE)
+#' view(lyr(im, max=800), interactive=FALSE)
+#' view(lyr(im, mask=im<800), interactive=FALSE)
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{defaultInfoPanel}}, \code{\link{orientation}},
