@@ -283,7 +283,7 @@ view <- function (..., point = NULL, radiological = getOption("radiologicalView"
 
 #' @rdname view
 #' @export
-lyr <- function (image, scale = "grey", min = NULL, max = NULL)
+lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL)
 {
     label <- deparse(substitute(image))
     image <- asNifti(image, internal=FALSE)
@@ -318,6 +318,19 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL)
             image[image < window[1]] <- window[1]
             image[image > window[2]] <- window[2]
         }
+    }
+    
+    if (!is.null(mask) && ndim(mask) > 1)
+    {
+        repDims <- setdiff(seq_len(ndim(image)), seq_len(ndim(mask)))
+        if (length(repDims) > 0)
+        {
+            data <- apply(image, repDims, "[<-", !as.logical(mask), NA)
+            dim(data) <- dim(image)
+            image <- updateNifti(data, image)
+        }
+        else
+            image[!as.logical(mask)] <- NA
     }
     
     return (structure(list(image=image, label=label, colours=colours, window=window), class="viewLayer"))
