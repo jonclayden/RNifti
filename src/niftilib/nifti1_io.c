@@ -4209,14 +4209,7 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
       return NULL;
    }
    else if ( rv == 1 )  /* process special file type */
-   {
-#ifdef USING_R
-      LNI_FERR(fname, "The ASCII image type is not supported", hfile);
-      return NULL;
-#else
       return nifti_read_ascii_image( fp, hfile, filesize, read_data );
-#endif
-   }
 
    /* else, just process normally */
 
@@ -4249,12 +4242,10 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
       return NULL;
    }
 
-#ifndef USING_R
    if( g_opts.debug > 3 ){
       Rc_fprintf_stderr("+d nifti_image_read(), have nifti image:\n");
       if( g_opts.debug > 2 ) nifti_image_infodump(nim);
    }
-#endif
 
    /**- check for extensions (any errors here means no extensions) */
    if( NIFTI_ONEFILE(nhdr) ) remaining = nim->iname_offset - sizeof(nhdr);
@@ -4308,7 +4299,6 @@ static int has_ascii_header( znzFile fp )
 }
 
 
-#ifndef USING_R
 /*----------------------------------------------------------------------*/
 /*! nifti_read_ascii_image  - process as a type-3 .nia image file
 
@@ -4373,7 +4363,6 @@ nifti_image * nifti_read_ascii_image(znzFile fp, char *fname, int flen,
 
    return nim ;
 }
-#endif // !USING_R
 
 
 /*----------------------------------------------------------------------
@@ -5099,7 +5088,6 @@ int nifti_free_extensions( nifti_image *nim )
 }
 
 
-#ifndef USING_R
 /*--------------------------------------------------------------------------*/
 /*! Print to stdout some info about a nifti_image struct.
 *//*------------------------------------------------------------------------*/
@@ -5110,7 +5098,6 @@ void nifti_image_infodump( const nifti_image *nim )
    if( str != NULL ){ Rc_fputs_stderr(str) ; free(str) ; }
    return ;
 }
-#endif
 
 
 /*--------------------------------------------------------------------------
@@ -5748,11 +5735,7 @@ znzFile nifti_image_write_hdr_img2(nifti_image *nim, int write_opts,
    }
 
    if( nim->nifti_type == NIFTI_FTYPE_ASCII )   /* non-standard case */
-#ifdef USING_R
-      ERREX("Writing to ASCII format is not supported");
-#else
       return nifti_write_ascii_image(nim,NBL,opts,write_data,leave_open);
-#endif
 
    nhdr = nifti_convert_nim2nhdr(nim);    /* create the nifti1_header struct */
 
@@ -5823,7 +5806,6 @@ znzFile nifti_image_write_hdr_img2(nifti_image *nim, int write_opts,
 }
 
 
-#ifndef USING_R
 /*----------------------------------------------------------------------*/
 /*! write a nifti_image to disk in ASCII format
 *//*--------------------------------------------------------------------*/
@@ -5851,7 +5833,6 @@ znzFile nifti_write_ascii_image(nifti_image *nim, const nifti_brick_list * NBL,
    free(hstr);
    return fp;  /* returned but may be closed */
 }
-#endif
 
 
 /*--------------------------------------------------------------------------*/
@@ -6105,8 +6086,6 @@ static char *escapize_string( const char * str )
    return out ;
 }
 
-
-#ifndef USING_R
 /*---------------------------------------------------------------------------*/
 /*! Dump the information in a NIFTI image header to an XML-ish ASCII string
    that can later be converted back into a NIFTI header in
@@ -6344,8 +6323,6 @@ char *nifti_image_to_ascii( const nifti_image *nim )
    if( !buf ) Rc_fprintf_stderr("** NITA: failed to realloc %d bytes\n",nbuf+1);
    return buf ;
 }
-#endif // !USING_R
-
 
 /*---------------------------------------------------------------------------*/
 
@@ -6366,7 +6343,6 @@ int nifti_short_order(void)   /* determine this CPU's byte order */
 }
 
 /*---------------------------------------------------------------------------*/
-#ifndef USING_R
 
 #undef  QQNUM
 #undef  QNUM
@@ -6585,7 +6561,6 @@ nifti_image *nifti_image_from_ascii( const char *str, int * bytes_read )
 
    return nim ;
 }
-#endif // !USING_R
 
 
 /*---------------------------------------------------------------------------*/
