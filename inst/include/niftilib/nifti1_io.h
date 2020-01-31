@@ -302,16 +302,19 @@ int          nifti_read_subregion_image( nifti_image * nim,
 void         nifti_image_write   ( nifti_image * nim ) ;
 void         nifti_image_write_bricks(nifti_image * nim,
                                       const nifti_brick_list * NBL);
+#ifndef USING_R
 void         nifti_image_infodump( const nifti_image * nim ) ;
+#endif
 
 void         nifti_disp_lib_hist( void ) ;     /* to display library history */
 void         nifti_disp_lib_version( void ) ;  /* to display library version */
 int          nifti_disp_matrix_orient( const char * mesg, mat44 mat );
 int          nifti_disp_type_list( int which );
 
-
+#ifndef USING_R
 char *       nifti_image_to_ascii  ( const nifti_image * nim ) ;
 nifti_image *nifti_image_from_ascii( const char * str, int * bytes_read ) ;
+#endif
 
 size_t       nifti_get_volsize(const nifti_image *nim) ;
 
@@ -346,10 +349,12 @@ size_t  nifti_read_buffer(znzFile fp, void* datatptr, size_t ntot,
 int     nifti_write_all_data(znzFile fp, nifti_image * nim,
                              const nifti_brick_list * NBL);
 size_t  nifti_write_buffer(znzFile fp, const void * buffer, size_t numbytes);
+#ifndef USING_R
 nifti_image *nifti_read_ascii_image(znzFile fp, char *fname, int flen,
                          int read_data);
 znzFile nifti_write_ascii_image(nifti_image *nim, const nifti_brick_list * NBL,
                          const char * opts, int write_data, int leave_open);
+#endif
 
 
 void nifti_datatype_sizes( int datatype , int *nbyper, int *swapsize ) ;
