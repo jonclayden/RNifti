@@ -296,7 +296,7 @@ int          nifti_read_collapsed_image( nifti_image * nim, const int dims [8],
                                          void ** data );
 
 int          nifti_read_subregion_image( nifti_image * nim,
-                                         int *start_index, int *region_size,
+                                         const int *start_index, const int *region_size,
                                          void ** data );
 
 void         nifti_image_write   ( nifti_image * nim ) ;
@@ -336,12 +336,12 @@ int    valid_nifti_brick_list(nifti_image * nim , int nbricks,
                               const int * blist, int disp_error);
 
 /* znzFile operations */
-znzFile nifti_image_open(const char * hname, char * opts, nifti_image ** nim);
+znzFile nifti_image_open(const char * hname, const char * opts, nifti_image ** nim);
 znzFile nifti_image_write_hdr_img(nifti_image *nim, int write_data,
                                   const char* opts);
 znzFile nifti_image_write_hdr_img2( nifti_image *nim , int write_opts ,
                const char* opts, znzFile imgfile, const nifti_brick_list * NBL);
-size_t  nifti_read_buffer(znzFile fp, void* datatptr, size_t ntot,
+size_t  nifti_read_buffer(znzFile fp, void* dataptr, size_t ntot,
                          nifti_image *nim);
 int     nifti_write_all_data(znzFile fp, nifti_image * nim,
                              const nifti_brick_list * NBL);
@@ -432,7 +432,7 @@ int    valid_nifti_extensions(const nifti_image *nim);
 #define NIFTI_ECODE_DICOM            2  /* intended for raw DICOM attributes  */
 
 #define NIFTI_ECODE_AFNI             4  /* Robert W Cox: rwcox@nih.gov
-                                           http://afni.nimh.nih.gov/afni      */
+                                           https://afni.nimh.nih.gov/afni     */
 
 #define NIFTI_ECODE_COMMENT          6  /* plain ASCII text only              */
 
@@ -481,8 +481,12 @@ int    valid_nifti_extensions(const nifti_image *nim);
 /* http://www.mathworks.com/matlabcentral/fileexchange/42997-dicom-to-nifti-converter */
 #define NIFTI_ECODE_MATLAB          40  /* MATLAB extension */
 
+/* Quantiphyse extension
+   https://quantiphyse.readthedocs.io/en/latest/advanced/nifti_extension.html*/
+#define NIFTI_ECODE_QUANTIPHYSE     42  /* Quantiphyse extension */
 
-#define NIFTI_MAX_ECODE             40  /******* maximum extension code *******/
+
+#define NIFTI_MAX_ECODE             42  /******* maximum extension code *******/
 
 /* nifti_type file codes */
 #define NIFTI_FTYPE_ANALYZE   0
