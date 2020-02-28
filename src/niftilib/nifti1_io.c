@@ -449,7 +449,7 @@ static int     has_ascii_header(znzFile fp);
 
 
 /* for calling from some main program */
-
+#if 0
 /*----------------------------------------------------------------------*/
 /*! display the nifti library module history (via stdout)
 *//*--------------------------------------------------------------------*/
@@ -467,7 +467,7 @@ void nifti_disp_lib_version( void )
 {
    Rc_printf("%s, compiled %s\n", gni_version, __DATE__);
 }
-
+#endif
 
 /*----------------------------------------------------------------------*/
 /*! nifti_image_read_bricks        - read nifti data as array of bricks
@@ -1152,7 +1152,7 @@ int nifti_disp_matrix_orient( const char * mesg, mat44 mat )
    return 0;
 }
 
-
+#if 0
 /*----------------------------------------------------------------------*/
 /*! duplicate the given string (alloc length+1)
  *
@@ -2447,7 +2447,7 @@ int nifti_get_filesize( const char *pathname )
 }
 
 #endif /* USE_STAT */
-
+#endif /* #if 0 */
 
 /*----------------------------------------------------------------------*/
 /*! return the total volume size, in bytes
@@ -2465,7 +2465,7 @@ size_t nifti_get_volsize(const nifti_image *nim)
    - allows for gzipped files
 */
 
-
+#if 0
 /*----------------------------------------------------------------------*/
 /*! simple check for file existence
 
@@ -3044,7 +3044,7 @@ char * nifti_makeimgname(const char * prefix, int nifti_type, int check,
 
    return iname;
 }
-
+#endif
 
 /*----------------------------------------------------------------------*/
 /*! create and set new filenames, based on prefix and image type
@@ -3346,7 +3346,7 @@ int is_valid_nifti_type( int nifti_type )
    return 0;
 }
 
-
+#if 0
 /*--------------------------------------------------------------------------*/
 /*! check whether the given type is on the "approved" list
 
@@ -3376,7 +3376,7 @@ int nifti_is_valid_datatype( int dtype )
        dtype == NIFTI_TYPE_COMPLEX256 ) return 1;
    return 0;
 }
-
+#endif
 
 /*--------------------------------------------------------------------------*/
 /*! set the nifti_type field based on fname and iname
@@ -3436,7 +3436,7 @@ int nifti_set_type_from_names( nifti_image * nim )
    return -1;
 }
 
-
+#if 0
 /*--------------------------------------------------------------------------*/
 /*! Determine if this is a NIFTI-formatted file.
 
@@ -3595,7 +3595,7 @@ int disp_nifti_1_header( const char * info, const nifti_1_header * hp )
 
    return 0;
 }
-
+#endif
 
 #undef  ERREX
 #define ERREX(msg)                                           \
@@ -4730,7 +4730,7 @@ int valid_nifti_extensions(const nifti_image * nim)
    return 1;
 }
 
-
+#if 0
 /*----------------------------------------------------------------------*/
 /*! check whether the extension code is valid
 
@@ -4745,7 +4745,7 @@ int nifti_is_valid_ecode( int ecode )
 
    return 1;
 }
-
+#endif
 
 /*----------------------------------------------------------------------
  * check for valid size and code, as well as can be done
@@ -6342,6 +6342,7 @@ char *nifti_image_to_ascii( const nifti_image *nim )
 
 /*---------------------------------------------------------------------------*/
 
+#if 0
 /*----------------------------------------------------------------------*/
 /*! get the byte order for this CPU
 
@@ -6357,6 +6358,7 @@ int nifti_short_order(void)   /* determine this CPU's byte order */
 
    return (fred.ss == 1) ? LSB_FIRST : MSB_FIRST ;
 }
+#endif
 
 /*---------------------------------------------------------------------------*/
 
@@ -7210,6 +7212,7 @@ static int make_pivot_list(nifti_image * nim, const int dims[], int pivots[],
 }
 
 
+#if 0
 #undef ISEND
 #define ISEND(c) ( (c)==']' || (c)=='}' || (c)=='\0' )
 
@@ -7545,3 +7548,4 @@ int nifti_disp_type_list( int which )
 
     return 0;
 }
+#endif
