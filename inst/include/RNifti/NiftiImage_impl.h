@@ -823,7 +823,7 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
     if (imageObject.hasAttribute(".nifti_image_ptr"))
     {
         Rcpp::XPtr<NiftiImage> imagePtr(SEXP(imageObject.attr(".nifti_image_ptr")));
-        NiftiImage *ptr = imagePtr;
+        NiftiImage *ptr = imagePtr.get();
         if (ptr != NULL)
         {
             if (MAYBE_SHARED(object) && !readOnly)
