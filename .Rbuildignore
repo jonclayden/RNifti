@@ -4,4 +4,7 @@
 ^\.covrignore$
 ^README.Rmd$
 ^standalone$
+^scripts$
 ^revdep$
+^inst/include/RNiftiAPI.h.in$
+^src/main.cpp.in$

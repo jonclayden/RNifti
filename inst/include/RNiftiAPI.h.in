@@ -1,0 +1,45 @@
+#ifndef _RNIFTI_API_H_
+#define _RNIFTI_API_H_
+
+#include <R_ext/Rdynload.h>
+
+#include "niftilib/nifti1_io.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define NIFTILIB_WRAPPER_BODY(symbol, ...)  \
+    if (symbol == NULL)                     \
+        niftilib_register_all();            \
+    return symbol(...);
+
+#define NIFTILIB_WRAPPER_BODY_VOID(symbol)  \
+    if (symbol == NULL)                     \
+        niftilib_register_all();            \
+    return symbol();
+
+static int registered = 0;
+
+/* MARK - Declare pointers */
+
+void niftilib_register_all ()
+{
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+    if (!registered)
+    {
+        /* MARK - Map pointers */
+        
+        registered = 1;
+    }
+}
+
+/* MARK - Define wrappers */
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif
