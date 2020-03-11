@@ -12,6 +12,7 @@
 #define RNIFTI_VERSION 100
 
 #include "niftilib/nifti1_io.h"
+#include "niftilib/nifti2_io.h"
 
 #ifdef __cplusplus
 #include "RNifti/NiftiImage.h"

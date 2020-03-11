@@ -1,6 +1,5 @@
 #define _NIFTI2_IO_C_
 
-#define USING_NIFTI2_IMAGE
 #include "niftilib/nifti2_io.h"   /* typedefs, prototypes, macros, etc. */
 
 /*****===================================================================*****/

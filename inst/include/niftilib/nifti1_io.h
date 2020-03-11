@@ -17,6 +17,10 @@
 #endif
 #include "niftilib/nifti1.h"                  /*** NIFTI-1 header specification ***/
 
+#ifndef RNIFTI_NIFTILIB_VERSION
+#define RNIFTI_NIFTILIB_VERSION 1
+#endif
+
 #include "RNifti/NiftiImage_print.h"
 #include <znzlib/znzlib.h>
 
@@ -55,6 +59,8 @@ extern "C" {
 */
 
 /********************** Some sample data structures **************************/
+
+#if RNIFTI_NIFTILIB_VERSION == 1
 
 typedef struct {                   /** 4x4 matrix struct **/
   float m[4][4] ;
@@ -168,8 +174,8 @@ typedef struct {                /*!< Image storage struct **/
   nifti1_extension * ext_list ; /*!< array of extension structs (with data) */
   analyze_75_orient_code analyze75_orient; /*!< for old analyze files, orient */
 
-} nifti_image ;
-
+} nifti1_image ;
+#endif
 
 
 /* struct for return from nifti_image_read_bricks() */
@@ -177,14 +183,19 @@ typedef struct {
   int       nbricks;    /* the number of allocated pointers in 'bricks' */
   size_t    bsize;      /* the length of each data block, in bytes      */
   void   ** bricks;     /* array of pointers to data blocks             */
-} nifti_brick_list;
+} nifti1_brick_list;
 
+#if RNIFTI_NIFTILIB_VERSION == 1
+typedef nifti1_image        nifti_image;
+typedef nifti1_brick_list   nifti_brick_list;
+#endif
 
 /*****************************************************************************/
 /*------------------ NIfTI version of ANALYZE 7.5 structure -----------------*/
 
 /* (based on fsliolib/dbh.h, but updated for version 7.5) */
 
+#if RNIFTI_NIFTILIB_VERSION == 1
 typedef struct {
        /* header info fields - describes the header    overlap with NIfTI */
        /*                                              ------------------ */
@@ -240,7 +251,7 @@ typedef struct {
        int omax, omin;                  /* 184 + 8                        */
        int smax, smin;                  /* 192 + 8              200 bytes */
 } nifti_analyze75;                                   /* total:  348 bytes */
-
+#endif
 
 /*****************************************************************************/
 /*--------------- Prototypes of functions defined in this file --------------*/
@@ -263,20 +274,26 @@ float nifti_mat33_colnorm( mat33 A ) ;
 float nifti_mat33_determ ( mat33 R ) ;
 mat33 nifti_mat33_mul    ( mat33 A , mat33 B ) ;
 
+#if RNIFTI_NIFTILIB_VERSION == 1
 void  nifti_swap_2bytes ( size_t n , void *ar ) ;
 void  nifti_swap_4bytes ( size_t n , void *ar ) ;
 void  nifti_swap_8bytes ( size_t n , void *ar ) ;
 void  nifti_swap_16bytes( size_t n , void *ar ) ;
 void  nifti_swap_Nbytes ( size_t n , int siz , void *ar ) ;
+#endif
 
 int    nifti_datatype_is_valid   (int dtype, int for_nifti);
 int    nifti_datatype_from_string(const char * name);
 const char * nifti_datatype_to_string  (int dtype);
 
+#if RNIFTI_NIFTILIB_VERSION == 1
 int   nifti_get_filesize( const char *pathname ) ;
 void  swap_nifti_header ( struct nifti_1_header *h , int is_nifti ) ;
+#endif
 void  old_swap_nifti_header( struct nifti_1_header *h , int is_nifti );
+#if RNIFTI_NIFTILIB_VERSION == 1
 int   nifti_swap_as_analyze( nifti_analyze75 *h );
+#endif
 
 
 /* main read/write routines */
@@ -304,7 +321,9 @@ void         nifti_image_write_bricks(nifti_image * nim,
                                       const nifti_brick_list * NBL);
 void         nifti_image_infodump( const nifti_image * nim ) ;
 
+#if RNIFTI_NIFTILIB_VERSION == 1
 void         nifti_disp_lib_hist( void ) ;     /* to display library history */
+#endif
 void         nifti_disp_lib_version( void ) ;  /* to display library version */
 int          nifti_disp_matrix_orient( const char * mesg, mat44 mat );
 int          nifti_disp_type_list( int which );
@@ -489,11 +508,13 @@ int    valid_nifti_extensions(const nifti_image *nim);
 #define NIFTI_MAX_ECODE             42  /******* maximum extension code *******/
 
 /* nifti_type file codes */
+#if RNIFTI_NIFTILIB_VERSION == 1
 #define NIFTI_FTYPE_ANALYZE   0
 #define NIFTI_FTYPE_NIFTI1_1  1
 #define NIFTI_FTYPE_NIFTI1_2  2
 #define NIFTI_FTYPE_ASCII     3
 #define NIFTI_MAX_FTYPE       3    /* this should match the maximum code */
+#endif
 
 /*------------------------------------------------------------------------*/
 /*-- the rest of these apply only to nifti1_io.c, check for _NIFTI1_IO_C_ */

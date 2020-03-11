@@ -20,6 +20,10 @@
 #include "niftilib/nifti1.h"         /*** NIFTI-1 header specification ***/
 #include "niftilib/nifti2.h"         /*** NIFTI-2 header specification ***/
 
+#ifndef RNIFTI_NIFTILIB_VERSION
+#define RNIFTI_NIFTILIB_VERSION 2
+#endif
+
 #include "RNifti/NiftiImage_print.h"
 #include <znzlib/znzlib.h>
 
@@ -78,6 +82,7 @@ extern "C" {
 
 /********************** Some sample data structures **************************/
 
+#if RNIFTI_NIFTILIB_VERSION == 2
 typedef struct {                   /** 4x4 matrix struct **/
   float m[4][4] ;
 } mat44 ;
@@ -85,6 +90,7 @@ typedef struct {                   /** 4x4 matrix struct **/
 typedef struct {                   /** 3x3 matrix struct **/
   float m[3][3] ;
 } mat33 ;
+#endif
 
 typedef struct {                   /** 4x4 matrix struct (double) **/
   double m[4][4] ;
@@ -100,6 +106,7 @@ typedef struct {                   /** 3x3 matrix struct (double) **/
  *  \brief Old-style analyze75 orientation
  *         codes.
  */
+#if RNIFTI_NIFTILIB_VERSION == 2
 typedef enum _analyze75_orient_code {
   a75_transverse_unflipped = 0,
   a75_coronal_unflipped = 1,
@@ -109,6 +116,7 @@ typedef enum _analyze75_orient_code {
   a75_sagittal_flipped = 5,
   a75_orient_unknown = 6
 } analyze_75_orient_code;
+#endif
 
 /*! \struct nifti_image
     \brief High level data structure for open nifti datasets in the
@@ -214,6 +222,7 @@ typedef struct {                /*!< Image storage struct **/
 
 } nifti2_image ;
 
+#if RNIFTI_NIFTILIB_VERSION == 2
 typedef struct {
 
   int ndim ;                    /*!< last dimension greater than 1 (1..7) */
@@ -297,6 +306,7 @@ typedef struct {
   analyze_75_orient_code analyze75_orient; /*!< for old analyze files, orient */
 
 } nifti1_image ;
+#endif
 
 /* struct for return from nifti_image_read_bricks() */
 typedef struct {
@@ -305,7 +315,7 @@ typedef struct {
   void   ** bricks;     /* array of pointers to data blocks             */
 } nifti2_brick_list;
 
-#ifdef USING_NIFTI2_IMAGE
+#if RNIFTI_NIFTILIB_VERSION == 2
 typedef nifti2_image        nifti_image;
 typedef nifti2_brick_list   nifti_brick_list;
 #endif
@@ -315,6 +325,7 @@ typedef nifti2_brick_list   nifti_brick_list;
 
 /* (based on fsliolib/dbh.h, but updated for version 7.5) */
 
+#if RNIFTI_NIFTILIB_VERSION == 2
 typedef struct {
        /* header info fields - describes the header    overlap with NIfTI */
        /*                                              ------------------ */
@@ -370,7 +381,7 @@ typedef struct {
        int omax, omin;                  /* 184 + 8                        */
        int smax, smin;                  /* 192 + 8              200 bytes */
 } nifti_analyze75;                                   /* total:  348 bytes */
-
+#endif
 
 /*****************************************************************************/
 /*--------------- Prototypes of functions defined in this file --------------*/
@@ -407,21 +418,27 @@ float nifti_mat33_colnorm( mat33 A ) ;
 float nifti_mat33_determ ( mat33 R ) ;
 mat33 nifti_mat33_mul    ( mat33 A , mat33 B ) ;
 
+#if RNIFTI_NIFTILIB_VERSION == 2
 void  nifti_swap_2bytes ( int64_t n , void *ar ) ;
 void  nifti_swap_4bytes ( int64_t n , void *ar ) ;
 void  nifti_swap_8bytes ( int64_t n , void *ar ) ;
 void  nifti_swap_16bytes( int64_t n , void *ar ) ;
 void  nifti_swap_Nbytes ( int64_t n , int siz , void *ar ) ;
+#endif
 
 int    nifti_datatype_is_valid       (int dtype, int for_nifti);
 int    nifti_datatype_from_string    (const char * name);
 const char * nifti_datatype_to_string(int dtype);
 int    nifti_header_version          (const char * buf, size_t nbytes);
 
+#if RNIFTI_NIFTILIB_VERSION == 2
 int64_t nifti_get_filesize( const char *pathname ) ;
 void  swap_nifti_header ( void * hdr , int ni_ver ) ;
+#endif
 void  old_swap_nifti_header( struct nifti_1_header *h , int is_nifti );
+#if RNIFTI_NIFTILIB_VERSION == 2
 void  nifti_swap_as_analyze( nifti_analyze75 *h );
+#endif
 void  nifti_swap_as_nifti1( nifti_1_header *h );
 void  nifti_swap_as_nifti2( nifti_2_header *h );
 
@@ -450,7 +467,9 @@ void         nifti2_image_write_bricks(nifti_image * nim,
                                       const nifti_brick_list * NBL);
 void         nifti2_image_infodump( const nifti_image * nim ) ;
 
+#if RNIFTI_NIFTILIB_VERSION == 2
 void         nifti_disp_lib_hist( int ver ) ;  /* to display library history */
+#endif
 void         nifti_disp_lib_version( void ) ;  /* to display library version */
 int          nifti2_disp_matrix_orient( const char * mesg, nifti_dmat44 mat );
 int          nifti_disp_type_list( int which );
@@ -602,7 +621,7 @@ int    nifti_valid_header_size(int ni_ver, int whine);
 
 
 // Remap functions names that have NIfTI-2 variants
-#ifdef USING_NIFTI2_IMAGE
+#if (RNIFTI_NIFTILIB_VERSION == 2) && !defined(NO_REMAP_NIFTI2_FUNCTIONS)
 
 #define nifti_image_read_bricks         nifti2_image_read_bricks
 #define nifti_image_load_bricks         nifti2_image_load_bricks
@@ -723,6 +742,7 @@ int    nifti_valid_header_size(int ni_ver, int whine);
 #define NIFTI_MAX_ECODE             42  /******* maximum extension code *******/
 
 /* nifti_type file codes */
+#if RNIFTI_NIFTILIB_VERSION == 2
 #define NIFTI_FTYPE_ANALYZE   0         /* old ANALYZE */
 #define NIFTI_FTYPE_NIFTI1_1  1         /* NIFTI-1     */
 #define NIFTI_FTYPE_NIFTI1_2  2
@@ -730,6 +750,7 @@ int    nifti_valid_header_size(int ni_ver, int whine);
 #define NIFTI_FTYPE_NIFTI2_1  4         /* NIFTI-2     */
 #define NIFTI_FTYPE_NIFTI2_2  5
 #define NIFTI_MAX_FTYPE       5         /* this should match the maximum code */
+#endif
 
 /*------------------------------------------------------------------------*/
 /*-- the rest of these apply only to nifti2_io.c, check for _NIFTI2_IO_C_ */
