@@ -3,8 +3,6 @@
 
 #include <R_ext/Rdynload.h>
 
-#include "niftilib/nifti1_io.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
