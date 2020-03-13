@@ -449,7 +449,7 @@ static int     has_ascii_header(znzFile fp);
 
 
 /* for calling from some main program */
-#if 0
+#ifndef RNIFTI_NIFTILIB_DEDUPLICATE
 /*----------------------------------------------------------------------*/
 /*! display the nifti library module history (via stdout)
 *//*--------------------------------------------------------------------*/
@@ -1152,7 +1152,7 @@ int nifti_disp_matrix_orient( const char * mesg, mat44 mat )
    return 0;
 }
 
-#if 0
+#ifndef RNIFTI_NIFTILIB_DEDUPLICATE
 /*----------------------------------------------------------------------*/
 /*! duplicate the given string (alloc length+1)
  *
@@ -2447,7 +2447,7 @@ int nifti_get_filesize( const char *pathname )
 }
 
 #endif /* USE_STAT */
-#endif /* #if 0 */
+#endif /* RNIFTI_NIFTILIB_DEDUPLICATE */
 
 /*----------------------------------------------------------------------*/
 /*! return the total volume size, in bytes
@@ -2465,7 +2465,7 @@ size_t nifti_get_volsize(const nifti_image *nim)
    - allows for gzipped files
 */
 
-#if 0
+#ifndef RNIFTI_NIFTILIB_DEDUPLICATE
 /*----------------------------------------------------------------------*/
 /*! simple check for file existence
 
@@ -3346,7 +3346,7 @@ int is_valid_nifti_type( int nifti_type )
    return 0;
 }
 
-#if 0
+#ifndef RNIFTI_NIFTILIB_DEDUPLICATE
 /*--------------------------------------------------------------------------*/
 /*! check whether the given type is on the "approved" list
 
@@ -3436,7 +3436,7 @@ int nifti_set_type_from_names( nifti_image * nim )
    return -1;
 }
 
-#if 0
+#ifndef RNIFTI_NIFTILIB_DEDUPLICATE
 /*--------------------------------------------------------------------------*/
 /*! Determine if this is a NIFTI-formatted file.
 
@@ -4730,7 +4730,7 @@ int valid_nifti_extensions(const nifti_image * nim)
    return 1;
 }
 
-#if 0
+#ifndef RNIFTI_NIFTILIB_DEDUPLICATE
 /*----------------------------------------------------------------------*/
 /*! check whether the extension code is valid
 
@@ -6342,7 +6342,7 @@ char *nifti_image_to_ascii( const nifti_image *nim )
 
 /*---------------------------------------------------------------------------*/
 
-#if 0
+#ifndef RNIFTI_NIFTILIB_DEDUPLICATE
 /*----------------------------------------------------------------------*/
 /*! get the byte order for this CPU
 
@@ -7212,7 +7212,7 @@ static int make_pivot_list(nifti_image * nim, const int dims[], int pivots[],
 }
 
 
-#if 0
+#ifndef RNIFTI_NIFTILIB_DEDUPLICATE
 #undef ISEND
 #define ISEND(c) ( (c)==']' || (c)=='}' || (c)=='\0' )
 
