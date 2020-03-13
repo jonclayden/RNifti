@@ -446,6 +446,7 @@ inline std::string NiftiImage::xformToString (const mat44 matrix)
 
 inline int NiftiImage::fileVersion (const std::string &path)
 {
+#if RNIFTI_NIFTILIB_VERSION == 1
     nifti_1_header *header = nifti_read_header(internal::stringToPath(path), NULL, false);
     if (header == NULL)
         return -1;
@@ -471,6 +472,12 @@ inline int NiftiImage::fileVersion (const std::string &path)
         free(header);
         return version;
     }
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    int version;
+    void *header = nifti2_read_header(internal::stringToPath(path), &version, true);
+    free(header);
+    return version;
+#endif
 }
 
 inline void NiftiImage::acquire (nifti_image * const image)

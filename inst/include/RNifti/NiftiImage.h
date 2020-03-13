@@ -6,7 +6,8 @@
 
 #include <Rcpp.h>
 
-// Defined since R 3.1.0, according to Tomas Kalibera, but there's no reason to break compatibility with 3.0.x
+// Defined since R 3.1.0, according to Tomas Kalibera, but there's no reason to break
+// compatibility with 3.0.x
 #ifndef MAYBE_SHARED
 #define MAYBE_SHARED(x) (NAMED(x) > 1)
 #endif
@@ -29,9 +30,6 @@
 #include <limits>
 
 #endif
-
-
-#include "niftilib/nifti1_io.h"
 
 /**
  * @mainpage RNifti: Fast R and C++ Access to NIfTI Images
