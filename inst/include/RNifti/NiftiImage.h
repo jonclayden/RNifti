@@ -617,6 +617,99 @@ inline bool NiftiImageData::ConcreteTypeHandler<int>::hasNaN () const { return t
 #endif
 
 
+template <typename ElementType, int Length>
+class Vector
+{
+protected:
+    size_t length = Length;
+    ElementType elements[Length];
+    
+public:
+    Vector (const ElementType value = 0.0)
+    {
+        for (size_t i=0; i<Length; i++)
+            elements[i] = value;
+    }
+    
+    Vector (const ElementType * source)
+    {
+        std::copy(source, source + length, this->elements);
+    }
+    
+    const ElementType & operator[] (const size_t i) const { return elements[i]; }
+    
+    ElementType & operator[] (const size_t i) { return elements[i]; }
+};
+
+template <class NiftiType, typename ElementType, int Order>
+class SquareMatrix
+{
+protected:
+    size_t length = Order * Order;
+    ElementType elements[Order*Order];
+    
+    NiftiType * niftiPointer () const { return (NiftiType *) elements; }
+    NiftiType niftiCopy () const
+    {
+        NiftiType value;
+        std::copy(elements, elements + length, *value.m);
+        return value;
+    }
+    
+public:
+    typedef NiftiType NativeType;
+    typedef SquareMatrix<NiftiType,ElementType,Order> MatrixType;
+    typedef Vector<ElementType,Order> VectorType;
+    
+    SquareMatrix (const ElementType value = 0.0)
+    {
+        for (size_t i=0; i<Order*Order; i++)
+            elements[i] = value;
+    }
+    
+    SquareMatrix (const ElementType * source)
+    {
+        std::copy(source, source + length, this->elements);
+    }
+    
+    SquareMatrix (const NiftiType &source)
+    {
+        std::copy(*source.m, *source.m + length, this->elements);
+    }
+
+    operator const NiftiType () const { return niftiCopy(); }
+
+    operator NiftiType () { return niftiCopy(); }
+    
+    const ElementType * begin () const { return elements; }
+    
+    ElementType * begin () { return elements; }
+    
+    const ElementType * end () const { return elements + length; }
+    
+    ElementType * end () { return elements + length; }
+    
+    static MatrixType eye ()
+    {
+        MatrixType matrix;
+        for (int i=0; i<Order; i++)
+            matrix.elements[i + i*Order] = 1.0;
+        return matrix;
+    }
+    
+    MatrixType inverse () const;
+    MatrixType polar () const;
+    ElementType colnorm () const;
+    ElementType rownorm () const;
+    ElementType determ () const;
+    MatrixType multiply (const MatrixType &other) const;
+    VectorType multiply (const VectorType &vec) const;
+    
+    MatrixType operator* (const MatrixType &other) const { return multiply(other); }
+    VectorType operator* (const VectorType &vec) const { return multiply(vec); }
+};
+
+
 /**
  * Thin wrapper around a C-style \c nifti_image struct that allows C++-style destruction. Reference
  * counting is used to allow multiple \c NiftiImage objects to wrap the same \c nifti_image
@@ -703,6 +796,56 @@ public:
         **/
         template <typename TargetType>
         std::vector<TargetType> getData (const bool useSlope = true) const;
+    };
+    
+    class Xform
+    {
+    public:
+#if RNIFTI_NIFTILIB_VERSION == 1
+        typedef float Element;
+        typedef SquareMatrix<mat33,float,3> Matrix33;
+        typedef SquareMatrix<mat44,float,4> Matrix44;
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        typedef double Element;
+        typedef SquareMatrix<nifti_dmat33,double,3> Matrix33;
+        typedef SquareMatrix<nifti_dmat44,double,4> Matrix44;
+#endif
+        
+    protected:
+        Element *origin;
+        Matrix44 mat;
+        
+    public:
+        Xform (const Matrix44::NativeType &source)
+            : origin(NULL), mat(source) {}
+        
+        Xform (Matrix44::NativeType &source)
+            : origin(*source.m), mat(source) {}
+        
+        operator const Matrix44::NativeType () const { return mat; }
+        
+        operator Matrix44::NativeType () { return mat; }
+        
+        Xform & operator= (const Xform &source)
+        {
+            mat = source.mat;
+            if (origin != NULL)
+                std::copy(source.mat.begin(), source.mat.end(), origin);
+            return *this;
+        }
+        
+        Xform & operator= (const Matrix44 &source)
+        {
+            mat = source;
+            if (origin != NULL)
+                std::copy(source.begin(), source.end(), origin);
+            return *this;
+        }
+        
+        const Matrix44 & matrix () const { return mat; }
+        const Matrix33 submatrix () const;
+        const Vector<Element,4> quaternion () const;
+        const Vector<Element,3> offset () const;
     };
     
 #ifdef USING_R
