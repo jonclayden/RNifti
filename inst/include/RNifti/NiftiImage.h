@@ -1473,6 +1473,7 @@ public:
 };
 
 // Include implementations
+#include "RNifti/NiftiImage_matrix.h"
 #include "RNifti/NiftiImage_impl.h"
 
 } // main namespace
