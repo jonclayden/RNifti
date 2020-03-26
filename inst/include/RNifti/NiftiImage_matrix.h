@@ -108,7 +108,7 @@ inline Vector<ElementType,Order> SquareMatrix<NiftiType,ElementType,Order>::mult
     for (int i=0; i<Order; i++)
     {
         for (int j=0; j<Order; j++)
-            result.v[i] += elements[i + j*Order] * vec[j];
+            result[i] += elements[i + j*Order] * vec[j];
     }
     return result;
 }
