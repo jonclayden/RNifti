@@ -1436,40 +1436,23 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
 
 #endif // USING_R
 
-inline mat44 NiftiImage::xform (const bool preferQuaternion) const
+inline const NiftiImage::Xform NiftiImage::xform (const bool preferQuaternion) const
 {
     if (image == NULL)
-    {
-        mat44 matrix;
-        for (int i=0; i<4; i++)
-        {
-            for (int j=0; j<4; j++)
-                matrix.m[i][j] = 0.0;
-        }
-        return matrix;
-    }
+        return Xform();
     else if (image->qform_code <= 0 && image->sform_code <= 0)
     {
         // No qform or sform so use pixdim (NB: other software may assume differently)
-        mat44 matrix;
-        for (int i=0; i<4; i++)
-        {
-            for (int j=0; j<4; j++)
-            {
-                if (i != j)
-                    matrix.m[i][j] = 0.0;
-                else if (i == 3)
-                    matrix.m[3][3] = 1.0;
-                else
-                    matrix.m[i][j] = (image->pixdim[i+1]==0.0 ? 1.0 : image->pixdim[i+1]);
-            }
-        }
-        return matrix;
+        Xform::Matrix matrix;
+        for (int i=0; i<3; i++)
+            matrix(i,i) = (image->pixdim[i+1]==0.0 ? 1.0 : image->pixdim[i+1]);
+        matrix(3,3) = 1.0;
+        return Xform(matrix);
     }
     else if ((preferQuaternion && image->qform_code > 0) || image->sform_code <= 0)
-        return image->qto_xyz;
+        return qform();
     else
-        return image->sto_xyz;
+        return sform();
 }
 
 template <typename TargetType>

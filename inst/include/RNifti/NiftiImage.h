@@ -1366,7 +1366,15 @@ public:
      * @param preferQuaternion If \c true, use the qform matrix in preference to the sform
      * @return A 4x4 matrix
     **/
-    mat44 xform (const bool preferQuaternion = true) const;
+    const Xform xform (const bool preferQuaternion = true) const;
+    
+    const Xform qform (const bool preferQuaternion = true) const { return (image == NULL ? Xform() : Xform(image->qto_xyz)); }
+    
+    Xform qform (const bool preferQuaternion = true) { return (image == NULL ? Xform() : Xform(image->qto_xyz, image->qto_ijk, &image->quatern_b)); }
+    
+    const Xform sform (const bool preferQuaternion = true) const { return (image == NULL ? Xform() : Xform(image->sto_xyz)); }
+    
+    Xform sform (const bool preferQuaternion = true) { return (image == NULL ? Xform() : Xform(image->sto_xyz, image->sto_ijk)); }
     
     /**
      * Return the number of blocks in the image
