@@ -626,13 +626,20 @@ protected:
 public:
     Vector (const ElementType value = 0.0)
     {
-        for (size_t i=0; i<Length; i++)
-            elements[i] = value;
+        std::fill(elements, elements + Length, value);
     }
     
     Vector (const ElementType * source)
     {
         std::copy(source, source + Length, this->elements);
+    }
+    
+    Vector<ElementType,Length> operator- () const
+    {
+        Vector<ElementType,Length> result;
+        for (int i=0; i<Length; i++)
+            result.elements[i] = -elements[i];
+        return result;
     }
     
     const ElementType & operator[] (const size_t i) const { return elements[i]; }
@@ -661,8 +668,7 @@ public:
     
     SquareMatrix (const ElementType value = 0.0)
     {
-        for (size_t i=0; i<Order*Order; i++)
-            elements[i] = value;
+        std::fill(elements, elements + Order*Order, value);
     }
     
     SquareMatrix (const ElementType * source)
@@ -709,6 +715,10 @@ public:
     const ElementType & operator() (const int i, const int j) const { return elements[i + j*Order]; }
     ElementType & operator() (const int i, const int j) { return elements[i + j*Order]; }
 };
+
+
+// Include matrix implementations
+#include "RNifti/NiftiImage_matrix.h"
 
 
 /**
@@ -804,27 +814,39 @@ public:
     public:
 #if RNIFTI_NIFTILIB_VERSION == 1
         typedef float Element;
+        typedef Vector<float,4> Vector4;
+        typedef Vector<float,3> Vector3;
         typedef SquareMatrix<mat44,float,4> Matrix;
         typedef SquareMatrix<mat33,float,3> Submatrix;
 #elif RNIFTI_NIFTILIB_VERSION == 2
         typedef double Element;
+        typedef Vector<double,4> Vector4;
+        typedef Vector<double,3> Vector3;
         typedef SquareMatrix<nifti_dmat44,double,4> Matrix;
         typedef SquareMatrix<nifti_dmat33,double,3> Submatrix;
 #endif
         
     protected:
-        Element *origin;
+        Element *forward, *inverse, *qparams;
         Matrix mat;
+        
+        void replace (const Matrix &source);
         
     public:
         Xform ()
-            : origin(NULL), mat(Matrix::eye()) {}
+            : forward(NULL), inverse(NULL), qparams(NULL), mat() {}
+        
+        Xform (const Matrix &source)
+            : forward(NULL), inverse(NULL), qparams(NULL), mat(source) {}
         
         Xform (const Matrix::NativeType &source)
-            : origin(NULL), mat(source) {}
+            : forward(NULL), inverse(NULL), qparams(NULL), mat(source) {}
         
         Xform (Matrix::NativeType &source)
-            : origin(*source.m), mat(source) {}
+            : forward(*source.m), inverse(NULL), qparams(NULL), mat(source) {}
+        
+        Xform (Matrix::NativeType &source, Matrix::NativeType &inverse, Element *qparams = NULL)
+            : forward(*source.m), inverse(*inverse.m), qparams(qparams), mat(source) {}
         
         operator const Matrix::NativeType () const { return mat; }
         
@@ -832,25 +854,22 @@ public:
         
         Xform & operator= (const Xform &source)
         {
-            mat = source.mat;
-            if (origin != NULL)
-                std::copy(source.mat.begin(), source.mat.end(), origin);
+            replace(source.mat);
             return *this;
         }
         
         Xform & operator= (const Matrix &source)
         {
-            mat = source;
-            if (origin != NULL)
-                std::copy(source.begin(), source.end(), origin);
+            replace(source);
             return *this;
         }
         
         const Matrix & matrix () const { return mat; }
         Submatrix submatrix () const;
         Submatrix rotation () const;
-        Vector<Element,4> quaternion () const;
-        Vector<Element,3> offset () const;
+        Vector4 quaternion () const;
+        Vector3 offset () const;
+        std::string orientation () const;
     };
     
 #ifdef USING_R
@@ -1477,8 +1496,7 @@ public:
 
 };
 
-// Include implementations
-#include "RNifti/NiftiImage_matrix.h"
+// Include image implementations
 #include "RNifti/NiftiImage_impl.h"
 
 } // main namespace

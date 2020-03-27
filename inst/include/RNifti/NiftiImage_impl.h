@@ -414,6 +414,26 @@ inline NiftiImageData::Element & NiftiImageData::Element::operator= (const Nifti
     return *this;
 }
 
+inline void NiftiImage::Xform::replace (const Matrix &source)
+{
+    mat = source;
+    if (forward != NULL)
+        std::copy(source.begin(), source.end(), forward);
+    if (inverse != NULL)
+    {
+        Matrix inv = source.inverse();
+        std::copy(inv.begin(), inv.end(), inverse);
+    }
+    if (qparams != NULL)
+    {
+#if RNIFTI_NIFTILIB_VERSION == 1
+        nifti_mat44_to_quatern(mat, qparams, qparams+1, qparams+2, qparams+3, qparams+4, qparams+5, NULL, NULL, NULL, qparams+6);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        nifti_dmat44_to_quatern(mat, qparams, qparams+1, qparams+2, qparams+3, qparams+4, qparams+5, NULL, NULL, NULL, qparams+6);
+#endif
+    }
+}
+
 inline NiftiImage::Xform::Submatrix NiftiImage::Xform::submatrix () const
 {
     NiftiImage::Xform::Submatrix result;
@@ -427,7 +447,7 @@ inline NiftiImage::Xform::Submatrix NiftiImage::Xform::submatrix () const
 
 inline NiftiImage::Xform::Submatrix NiftiImage::Xform::rotation () const
 {
-    Vector<NiftiImage::Xform::Element,3> qbcd;
+    NiftiImage::Xform::Vector3 qbcd;
     NiftiImage::Xform::Element qfac;
 #if RNIFTI_NIFTILIB_VERSION == 1
     nifti_mat44_to_quatern(mat, &qbcd[0], &qbcd[1], &qbcd[2], NULL, NULL, NULL, NULL, NULL, NULL, &qfac);
@@ -439,9 +459,9 @@ inline NiftiImage::Xform::Submatrix NiftiImage::Xform::rotation () const
     return rotation.submatrix();
 }
 
-inline Vector<NiftiImage::Xform::Element,4> NiftiImage::Xform::quaternion () const
+inline NiftiImage::Xform::Vector4 NiftiImage::Xform::quaternion () const
 {
-    Vector<NiftiImage::Xform::Element,4> q;
+    NiftiImage::Xform::Vector4 q;
 #if RNIFTI_NIFTILIB_VERSION == 1
     nifti_mat44_to_quatern(mat, &q[1], &q[2], &q[3], NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 #elif RNIFTI_NIFTILIB_VERSION == 2

@@ -44,6 +44,21 @@ inline SquareMatrix<mat44,float,4> SquareMatrix<mat44,float,4>::inverse () const
 }
 
 // NB: niftilib v1 does not define nifti_mat44_mul
+template <>
+inline SquareMatrix<mat44,float,4> SquareMatrix<mat44,float,4>::multiply (const SquareMatrix<mat44,float,4> &other) const
+{
+    SquareMatrix<mat44,float,4> result;
+    for (int i=0; i < 4; i++)
+    {
+        for (int j=0; j < 4; j++)
+        {
+            result(i,j) = 0.0;
+            for (int k=0; k<4; k++)
+                result(i,j) += elements[i + k*4] * other(k,j);
+        }
+    }
+    return result;
+}
 
 #if RNIFTI_NIFTILIB_VERSION == 2
 template <>
