@@ -893,20 +893,6 @@ public:
 #endif
     
     /**
-     * Extract the pure rotation part of a 4x4 xform matrix
-     * @param matrix An xform matrix
-     * @return A 3x3 rotation matrix
-    **/
-    static mat33 xformToRotation (const mat44 matrix);
-    
-    /**
-     * Convert a 4x4 xform matrix to a string describing its canonical axes
-     * @param matrix An xform matrix
-     * @return A string containing three characters
-    **/
-    static std::string xformToString (const mat44 matrix);
-    
-    /**
      * Get the NIfTI format version used by the file at the specified path
      * @param path A string specifying a file path
      * @return An integer: -1 if the file is not present or not valid, 0 for ANALYZE-7.5, or

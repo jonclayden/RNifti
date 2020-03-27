@@ -404,11 +404,11 @@ BEGIN_RCPP
     ::mat44 xform = matrixToXform(_image, &isMatrix);
     
     if (isMatrix)
-        orientation = NiftiImage::xformToString(xform);
+        orientation = NiftiImage::Xform(xform).orientation();
     else
     {
         const NiftiImage image(_image, false, true);
-        orientation = NiftiImage::xformToString(image.xform(as<bool>(_preferQuaternion)));
+        orientation = image.xform(as<bool>(_preferQuaternion)).orientation();
     }
     
     return wrap(orientation);
@@ -448,23 +448,23 @@ END_RCPP
 RcppExport SEXP getRotation (SEXP _image, SEXP _preferQuaternion)
 {
 BEGIN_RCPP
-    ::mat33 rotation;
+    NiftiImage::Xform::Submatrix rotation;
     bool isMatrix = false;
     ::mat44 xform = matrixToXform(_image, &isMatrix);
     
     if (isMatrix)
-        rotation = NiftiImage::xformToRotation(xform);
+        rotation = NiftiImage::Xform(xform).rotation();
     else
     {
         const NiftiImage image(_image, false, true);
-        rotation = NiftiImage::xformToRotation(image.xform(as<bool>(_preferQuaternion)));
+        rotation = image.xform(as<bool>(_preferQuaternion)).rotation();
     }
     
     NumericMatrix matrix(3,3);
     for (int i=0; i<3; i++)
     {
         for (int j=0; j<3; j++)
-            matrix(i,j) = static_cast<double>(rotation.m[i][j]);
+            matrix(i,j) = static_cast<double>(rotation(i,j));
     }
     return matrix;
 END_RCPP

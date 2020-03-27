@@ -3,43 +3,6 @@
 
 namespace internal {
 
-struct vec3
-{
-    float v[3];
-
-    vec3 operator-() const
-    {
-        vec3 r;
-        r.v[0] = -v[0];
-        r.v[1] = -v[1];
-        r.v[2] = -v[2];
-        return r;
-    }
-};
-
-inline mat33 topLeftCorner (const mat44 &matrix)
-{
-    mat33 newMatrix;
-    for (int i=0; i<3; i++)
-    {
-        for (int j=0; j<3; j++)
-            newMatrix.m[i][j] = matrix.m[i][j];
-    }
-    return newMatrix;
-}
-
-inline vec3 matrixVectorProduct (const mat33 &matrix, const vec3 &vector)
-{
-    vec3 newVector;
-    for (int i=0; i<3; i++)
-    {
-        newVector.v[i] = 0.0;
-        for (int j=0; j<3; j++)
-            newVector.v[i] += matrix.m[i][j] * vector.v[j];
-    }
-    return newVector;
-}
-
 // A poor man's NaN check, but should work whenever proper IEEE arithmetic is being used
 template <typename Type>
 inline bool isNaN (const Type x) { return (x != x); }
@@ -471,26 +434,22 @@ inline NiftiImage::Xform::Vector4 NiftiImage::Xform::quaternion () const
     return q;
 }
 
-inline Vector<NiftiImage::Xform::Element,3> NiftiImage::Xform::offset () const
+inline NiftiImage::Xform::Vector3 NiftiImage::Xform::offset () const
 {
-    Vector<NiftiImage::Xform::Element,3> vec;
+    NiftiImage::Xform::Vector3 vec;
     for (int i=0; i<3; i++)
         vec[i] = mat(i,3);
     return vec;
 }
 
-inline mat33 NiftiImage::xformToRotation (const mat44 matrix)
-{
-    float qb, qc, qd, qfac;
-    nifti_mat44_to_quatern(matrix, &qb, &qc, &qd, NULL, NULL, NULL, NULL, NULL, NULL, &qfac);
-    mat44 rotationMatrix = nifti_quatern_to_mat44(qb, qc, qd, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, qfac);
-    return internal::topLeftCorner(rotationMatrix);
-}
-
-inline std::string NiftiImage::xformToString (const mat44 matrix)
+inline std::string NiftiImage::Xform::orientation () const
 {
     int icode, jcode, kcode;
-    nifti_mat44_to_orientation(matrix, &icode, &jcode, &kcode);
+#if RNIFTI_NIFTILIB_VERSION == 1
+    nifti_mat44_to_orientation(mat, &icode, &jcode, &kcode);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti_dmat44_to_orientation(mat, &icode, &jcode, &kcode);
+#endif
     
     int codes[3] = { icode, jcode, kcode };
     std::string result("---");
@@ -1017,42 +976,14 @@ inline void NiftiImage::updatePixdim (const std::vector<float> &pixdim)
     
     if (!std::equal(origPixdim.begin(), origPixdim.begin() + std::min(3,nDims), pixdim.begin()))
     {
-        mat33 scaleMatrix;
-        for (int i=0; i<3; i++)
-        {
-            for (int j=0; j<3; j++)
-            {
-                if (i != j)
-                    scaleMatrix.m[i][j] = 0.0;
-                else if (i >= pixdimLength)
-                    scaleMatrix.m[i][j] = 1.0;
-                else
-                    scaleMatrix.m[i][j] = pixdim[i] / origPixdim[i];
-            }
-        }
+        Xform::Matrix scaleMatrix = Xform::Matrix::eye();
+        for (int i=0; i<std::min(pixdimLength,3); i++)
+            scaleMatrix(i,i) = pixdim[i] / origPixdim[i];
         
         if (image->qform_code > 0)
-        {
-            mat33 prod = nifti_mat33_mul(scaleMatrix, internal::topLeftCorner(image->qto_xyz));
-            for (int i=0; i<3; i++)
-            {
-                for (int j=0; j<3; j++)
-                    image->qto_xyz.m[i][j] = prod.m[i][j];
-            }
-            image->qto_ijk = nifti_mat44_inverse(image->qto_xyz);
-            nifti_mat44_to_quatern(image->qto_xyz, &image->quatern_b, &image->quatern_c, &image->quatern_d, &image->qoffset_x, &image->qoffset_y, &image->qoffset_z, NULL, NULL, NULL, &image->qfac);
-        }
-        
+            this->qform() = qform().matrix() * scaleMatrix;
         if (image->sform_code > 0)
-        {
-            mat33 prod = nifti_mat33_mul(scaleMatrix, internal::topLeftCorner(image->sto_xyz));
-            for (int i=0; i<3; i++)
-            {
-                for (int j=0; j<3; j++)
-                    image->sto_xyz.m[i][j] = prod.m[i][j];
-            }
-            image->sto_ijk = nifti_mat44_inverse(image->sto_xyz);
-        }
+            this->sform() = sform().matrix() * scaleMatrix;
     }
 }
 
@@ -1124,51 +1055,52 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         throw std::runtime_error("Each canonical axis should be used exactly once");
     
     const int codes[3] = { icode, jcode, kcode };
-    const mat44 native = this->xform();
+    const Xform native = this->xform();
     
     // Calculate the origin, which requires inverting the current xform
     // Here we use a simplified formula that exploits blockwise inversion and the nature of xforms
-    internal::vec3 origin;
-    for (int i=0; i<3; i++)
-        origin.v[i] = native.m[i][3];
-    origin = -internal::matrixVectorProduct(nifti_mat33_inverse(internal::topLeftCorner(native)), origin);
+    Xform::Vector3 origin = -(native.submatrix().inverse() * native.offset());
     
     // Create a target xform (rotation matrix only)
-    mat33 target;
+    Xform::Submatrix target;
     for (int j=0; j<3; j++)
     {
         for (int i=0; i<3; i++)
-            target.m[i][j] = 0.0;
+            target(i,j) = 0.0;
         
         switch (codes[j])
         {
-            case NIFTI_L2R: target.m[0][j] =  1.0; break;
-            case NIFTI_R2L: target.m[0][j] = -1.0; break;
-            case NIFTI_P2A: target.m[1][j] =  1.0; break;
-            case NIFTI_A2P: target.m[1][j] = -1.0; break;
-            case NIFTI_I2S: target.m[2][j] =  1.0; break;
-            case NIFTI_S2I: target.m[2][j] = -1.0; break;
+            case NIFTI_L2R: target(0,j) =  1.0; break;
+            case NIFTI_R2L: target(0,j) = -1.0; break;
+            case NIFTI_P2A: target(1,j) =  1.0; break;
+            case NIFTI_A2P: target(1,j) = -1.0; break;
+            case NIFTI_I2S: target(2,j) =  1.0; break;
+            case NIFTI_S2I: target(2,j) = -1.0; break;
         }
     }
     
     // Extract (inverse of) canonical axis matrix from native xform
     int nicode, njcode, nkcode;
+#if RNIFTI_NIFTILIB_VERSION == 1
     nifti_mat44_to_orientation(native, &nicode, &njcode, &nkcode);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti_dmat44_to_orientation(native, &nicode, &njcode, &nkcode);
+#endif
     int ncodes[3] = { nicode, njcode, nkcode };
-    mat33 nativeAxesTransposed;
+    Xform::Submatrix nativeAxesTransposed;
     for (int i=0; i<3; i++)
     {
         for (int j=0; j<3; j++)
-            nativeAxesTransposed.m[i][j] = 0.0;
+            nativeAxesTransposed(i,j) = 0.0;
 
         switch (ncodes[i])
         {
-            case NIFTI_L2R: nativeAxesTransposed.m[i][0] =  1.0; break;
-            case NIFTI_R2L: nativeAxesTransposed.m[i][0] = -1.0; break;
-            case NIFTI_P2A: nativeAxesTransposed.m[i][1] =  1.0; break;
-            case NIFTI_A2P: nativeAxesTransposed.m[i][1] = -1.0; break;
-            case NIFTI_I2S: nativeAxesTransposed.m[i][2] =  1.0; break;
-            case NIFTI_S2I: nativeAxesTransposed.m[i][2] = -1.0; break;
+            case NIFTI_L2R: nativeAxesTransposed(i,0) =  1.0; break;
+            case NIFTI_R2L: nativeAxesTransposed(i,0) = -1.0; break;
+            case NIFTI_P2A: nativeAxesTransposed(i,1) =  1.0; break;
+            case NIFTI_A2P: nativeAxesTransposed(i,1) = -1.0; break;
+            case NIFTI_I2S: nativeAxesTransposed(i,2) =  1.0; break;
+            case NIFTI_S2I: nativeAxesTransposed(i,2) = -1.0; break;
         }
     }
     
@@ -1179,14 +1111,15 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
     // The transform is t(approx_old_xform) %*% target_xform
     // The new xform is old_xform %*% transform
     // NB: "transform" is really 4x4, but the last row is simple and the last column is filled below
-    mat33 transform = nifti_mat33_mul(nativeAxesTransposed, target);
-    mat44 result;
+    const Xform::Matrix &nativeMat = native.matrix();
+    Xform::Submatrix transform = nativeAxesTransposed * target;
+    Xform::Matrix result;
     for (int i=0; i<4; i++)
     {
         for (int j=0; j<3; j++)
-            result.m[i][j] = native.m[i][0] * transform.m[0][j] + native.m[i][1] * transform.m[1][j] + native.m[i][2] * transform.m[2][j];
+            result(i,j) = nativeMat(i,0) * transform(0,j) + nativeMat(i,1) * transform(1,j) + nativeMat(i,2) * transform(2,j);
         
-        result.m[3][i] = i == 3 ? 1.0 : 0.0;
+        result(3,i) = (i == 3 ? 1.0 : 0.0);
     }
     
     // Extract the mapping between dimensions and the signs
@@ -1194,13 +1127,13 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
     int locs[3], signs[3], newdim[3], revsigns[3];
     float newpixdim[3];
     double maxes[3] = { R_NegInf, R_NegInf, R_NegInf };
-    internal::vec3 offset;
+    Xform::Vector3 offset;
     for (int j=0; j<3; j++)
     {
         // Find the largest absolute value in each column, which gives the old dimension corresponding to each new dimension
         for (int i=0; i<3; i++)
         {
-            const double value = static_cast<double>(transform.m[i][j]);
+            const double value = static_cast<double>(transform(i,j));
             if (fabs(value) > maxes[j])
             {
                 maxes[j] = fabs(value);
@@ -1218,28 +1151,21 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         
         // Flip and/or permute the origin
         if (signs[j] < 0)
-            offset.v[j] = image->dim[locs[j]+1] - origin.v[locs[j]] - 1.0;
+            offset[j] = image->dim[locs[j]+1] - origin[locs[j]] - 1.0;
         else
-            offset.v[j] = origin.v[locs[j]];
+            offset[j] = origin[locs[j]];
     }
     
     // Convert the origin back to an xform offset and insert it
-    offset = -internal::matrixVectorProduct(internal::topLeftCorner(result), offset);
+    offset = -(Xform(result).submatrix() * offset);
     for (int i=0; i<3; i++)
-        result.m[i][3] = offset.v[i];
+        result(i,3) = offset[i];
     
     // Update the xforms with nonzero codes
     if (image->qform_code > 0)
-    {
-        image->qto_xyz = result;
-        image->qto_ijk = nifti_mat44_inverse(image->qto_xyz);
-        nifti_mat44_to_quatern(image->qto_xyz, &image->quatern_b, &image->quatern_c, &image->quatern_d, &image->qoffset_x, &image->qoffset_y, &image->qoffset_z, NULL, NULL, NULL, &image->qfac);
-    }
+        this->qform() = result;
     if (image->sform_code > 0)
-    {
-        image->sto_xyz = result;
-        image->sto_ijk = nifti_mat44_inverse(image->sto_xyz);
-    }
+        this->sform() = result;
     
     // Calculate strides: the step in target space associated with each dimension in source space
     ptrdiff_t strides[3];
@@ -1287,16 +1213,16 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         // Vector data needs to be reoriented to match the xform
         if (image->intent_code == NIFTI_INTENT_VECTOR && image->dim[5] == 3)
         {
-            internal::vec3 oldVec;
+            Xform::Vector3 oldVec;
             const size_t supervolSize = volSize * image->nt;
             NiftiImageData::Iterator it = newData.begin();
             for (size_t i=0; i<supervolSize; i++, ++it)
             {
                 for (int j=0; j<3; j++)
-                    oldVec.v[j] = double(*(it + j*supervolSize));
-                const internal::vec3 newVec = internal::matrixVectorProduct(transform, oldVec);
+                    oldVec[j] = double(*(it + j*supervolSize));
+                const Xform::Vector3 newVec = transform * oldVec;
                 for (int j=0; j<3; j++)
-                    *(it + j*supervolSize) = newVec.v[j];
+                    *(it + j*supervolSize) = newVec[j];
             }
         }
         
