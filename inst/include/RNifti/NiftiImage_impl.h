@@ -414,6 +414,51 @@ inline NiftiImageData::Element & NiftiImageData::Element::operator= (const Nifti
     return *this;
 }
 
+inline NiftiImage::Xform::Submatrix NiftiImage::Xform::submatrix () const
+{
+    NiftiImage::Xform::Submatrix result;
+    for (int i=0; i<3; i++)
+    {
+        for (int j=0; j<3; j++)
+            result(i,j) = mat(i,j);
+    }
+    return result;
+}
+
+inline NiftiImage::Xform::Submatrix NiftiImage::Xform::rotation () const
+{
+    Vector<NiftiImage::Xform::Element,3> qbcd;
+    NiftiImage::Xform::Element qfac;
+#if RNIFTI_NIFTILIB_VERSION == 1
+    nifti_mat44_to_quatern(mat, &qbcd[0], &qbcd[1], &qbcd[2], NULL, NULL, NULL, NULL, NULL, NULL, &qfac);
+    NiftiImage::Xform rotation = nifti_quatern_to_mat44(qbcd[0], qbcd[1], qbcd[2], 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, qfac);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti_dmat44_to_quatern(mat, &qbcd[0], &qbcd[1], &qbcd[2], NULL, NULL, NULL, NULL, NULL, NULL, &qfac);
+    NiftiImage::Xform rotation = nifti_quatern_to_dmat44(qbcd[0], qbcd[1], qbcd[2], 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, qfac);
+#endif
+    return rotation.submatrix();
+}
+
+inline Vector<NiftiImage::Xform::Element,4> NiftiImage::Xform::quaternion () const
+{
+    Vector<NiftiImage::Xform::Element,4> q;
+#if RNIFTI_NIFTILIB_VERSION == 1
+    nifti_mat44_to_quatern(mat, &q[1], &q[2], &q[3], NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti_dmat44_to_quatern(mat, &q[1], &q[2], &q[3], NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+#endif
+    q[0] = 1.0 - (q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
+    return q;
+}
+
+inline Vector<NiftiImage::Xform::Element,3> NiftiImage::Xform::offset () const
+{
+    Vector<NiftiImage::Xform::Element,3> vec;
+    for (int i=0; i<3; i++)
+        vec[i] = mat(i,3);
+    return vec;
+}
+
 inline mat33 NiftiImage::xformToRotation (const mat44 matrix)
 {
     float qb, qc, qd, qfac;

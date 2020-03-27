@@ -621,7 +621,6 @@ template <typename ElementType, int Length>
 class Vector
 {
 protected:
-    size_t length = Length;
     ElementType elements[Length];
     
 public:
@@ -633,7 +632,7 @@ public:
     
     Vector (const ElementType * source)
     {
-        std::copy(source, source + length, this->elements);
+        std::copy(source, source + Length, this->elements);
     }
     
     const ElementType & operator[] (const size_t i) const { return elements[i]; }
@@ -645,14 +644,13 @@ template <class NiftiType, typename ElementType, int Order>
 class SquareMatrix
 {
 protected:
-    size_t length = Order * Order;
     ElementType elements[Order*Order];
     
     NiftiType * niftiPointer () const { return (NiftiType *) elements; }
     NiftiType niftiCopy () const
     {
         NiftiType value;
-        std::copy(elements, elements + length, *value.m);
+        std::copy(elements, elements + Order*Order, *value.m);
         return value;
     }
     
@@ -669,12 +667,12 @@ public:
     
     SquareMatrix (const ElementType * source)
     {
-        std::copy(source, source + length, this->elements);
+        std::copy(source, source + Order*Order, this->elements);
     }
     
     SquareMatrix (const NiftiType &source)
     {
-        std::copy(*source.m, *source.m + length, this->elements);
+        std::copy(*source.m, *source.m + Order*Order, this->elements);
     }
 
     operator const NiftiType () const { return niftiCopy(); }
@@ -685,9 +683,9 @@ public:
     
     ElementType * begin () { return elements; }
     
-    const ElementType * end () const { return elements + length; }
+    const ElementType * end () const { return elements + Order*Order; }
     
-    ElementType * end () { return elements + length; }
+    ElementType * end () { return elements + Order*Order; }
     
     static MatrixType eye ()
     {
@@ -707,6 +705,9 @@ public:
     
     MatrixType operator* (const MatrixType &other) const { return multiply(other); }
     VectorType operator* (const VectorType &vec) const { return multiply(vec); }
+    
+    const ElementType & operator() (const int i, const int j) const { return elements[i + j*Order]; }
+    ElementType & operator() (const int i, const int j) { return elements[i + j*Order]; }
 };
 
 
@@ -803,28 +804,31 @@ public:
     public:
 #if RNIFTI_NIFTILIB_VERSION == 1
         typedef float Element;
-        typedef SquareMatrix<mat33,float,3> Matrix33;
-        typedef SquareMatrix<mat44,float,4> Matrix44;
+        typedef SquareMatrix<mat44,float,4> Matrix;
+        typedef SquareMatrix<mat33,float,3> Submatrix;
 #elif RNIFTI_NIFTILIB_VERSION == 2
         typedef double Element;
-        typedef SquareMatrix<nifti_dmat33,double,3> Matrix33;
-        typedef SquareMatrix<nifti_dmat44,double,4> Matrix44;
+        typedef SquareMatrix<nifti_dmat44,double,4> Matrix;
+        typedef SquareMatrix<nifti_dmat33,double,3> Submatrix;
 #endif
         
     protected:
         Element *origin;
-        Matrix44 mat;
+        Matrix mat;
         
     public:
-        Xform (const Matrix44::NativeType &source)
+        Xform ()
+            : origin(NULL), mat(Matrix::eye()) {}
+        
+        Xform (const Matrix::NativeType &source)
             : origin(NULL), mat(source) {}
         
-        Xform (Matrix44::NativeType &source)
+        Xform (Matrix::NativeType &source)
             : origin(*source.m), mat(source) {}
         
-        operator const Matrix44::NativeType () const { return mat; }
+        operator const Matrix::NativeType () const { return mat; }
         
-        operator Matrix44::NativeType () { return mat; }
+        operator Matrix::NativeType () { return mat; }
         
         Xform & operator= (const Xform &source)
         {
@@ -834,7 +838,7 @@ public:
             return *this;
         }
         
-        Xform & operator= (const Matrix44 &source)
+        Xform & operator= (const Matrix &source)
         {
             mat = source;
             if (origin != NULL)
@@ -842,10 +846,11 @@ public:
             return *this;
         }
         
-        const Matrix44 & matrix () const { return mat; }
-        const Matrix33 submatrix () const;
-        const Vector<Element,4> quaternion () const;
-        const Vector<Element,3> offset () const;
+        const Matrix & matrix () const { return mat; }
+        Submatrix submatrix () const;
+        Submatrix rotation () const;
+        Vector<Element,4> quaternion () const;
+        Vector<Element,3> offset () const;
     };
     
 #ifdef USING_R
