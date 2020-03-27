@@ -1306,7 +1306,11 @@ public:
     **/
     NiftiImage & dropData ()
     {
+#if RNIFTI_NIFTILIB_VERSION == 1
         nifti_image_unload(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        nifti2_image_unload(image);
+#endif
         return *this;
     }
     

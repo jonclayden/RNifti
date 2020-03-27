@@ -24,7 +24,12 @@ int main (int argc, char* argv[])
         RNifti::NiftiImage image(path, false);
         // Convert between struct types using niftilib
         // Note that a NiftiImage can be treated implicitly as a pointer to a nifti_image
+#if RNIFTI_NIFTILIB_VERSION == 1
         ::nifti_1_header header = nifti_convert_nim2nhdr(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        ::nifti_1_header header;
+        nifti_convert_nim2n1hdr(image, &header);
+#endif
         // Print the header information
         status = disp_nifti_1_header(NULL, &header);
     }

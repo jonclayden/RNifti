@@ -537,7 +537,11 @@ inline void NiftiImage::release ()
 #endif
             if (*this->refCount < 1)
             {
+#if RNIFTI_NIFTILIB_VERSION == 1
                 nifti_image_free(this->image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+                nifti2_image_free(this->image);
+#endif
                 this->image = NULL;
                 delete this->refCount;
                 this->refCount = NULL;
@@ -554,6 +558,7 @@ inline void NiftiImage::copy (const nifti_image *source)
         acquire(NULL);
     else
     {
+#if RNIFTI_NIFTILIB_VERSION == 1
         acquire(nifti_copy_nim_info(source));
         if (source->data != NULL)
         {
@@ -561,6 +566,15 @@ inline void NiftiImage::copy (const nifti_image *source)
             image->data = calloc(1, dataSize);
             memcpy(image->data, source->data, dataSize);
         }
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        acquire(nifti2_copy_nim_info(source));
+        if (source->data != NULL)
+        {
+            size_t dataSize = nifti2_get_volsize(source);
+            image->data = calloc(1, dataSize);
+            memcpy(image->data, source->data, dataSize);
+        }
+#endif
     }
 }
 
@@ -577,6 +591,7 @@ inline void NiftiImage::copy (const Block &source)
         acquire(NULL);
     else
     {
+#if RNIFTI_NIFTILIB_VERSION == 1
         acquire(nifti_copy_nim_info(sourceStruct));
         image->dim[0] = source.image->dim[0] - 1;
         image->dim[source.dimension] = 1;
@@ -589,6 +604,20 @@ inline void NiftiImage::copy (const Block &source)
             image->data = calloc(1, blockSize);
             memcpy(image->data, static_cast<char*>(source.image->data) + blockSize*source.index, blockSize);
         }
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        acquire(nifti2_copy_nim_info(sourceStruct));
+        image->dim[0] = source.image->dim[0] - 1;
+        image->dim[source.dimension] = 1;
+        image->pixdim[source.dimension] = 1.0;
+        nifti2_update_dims_from_array(image);
+        
+        if (sourceStruct->data != NULL)
+        {
+            size_t blockSize = nifti2_get_volsize(image);
+            image->data = calloc(1, blockSize);
+            memcpy(image->data, static_cast<char*>(source.image->data) + blockSize*source.index, blockSize);
+        }
+#endif
     }
 }
 
@@ -930,7 +959,11 @@ inline NiftiImage::NiftiImage (const std::vector<int> &dim, const std::string &d
 inline NiftiImage::NiftiImage (const std::string &path, const bool readData)
     : image(NULL), refCount(NULL)
 {
+#if RNIFTI_NIFTILIB_VERSION == 1
     acquire(nifti_image_read(internal::stringToPath(path), readData));
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    acquire(nifti2_image_read(internal::stringToPath(path), readData));
+#endif
     
     if (image == NULL)
         throw std::runtime_error("Failed to read image from path " + path);
@@ -947,7 +980,10 @@ inline NiftiImage::NiftiImage (const std::string &path, const std::vector<int> &
         throw std::runtime_error("The vector of volumes is empty");
     
     nifti_brick_list brickList;
-    acquire(nifti_image_read_bricks(internal::stringToPath(path), volumes.size(), &volumes[0], &brickList));
+    
+#if RNIFTI_NIFTILIB_VERSION == 1
+    acquire(nifti_image_read_bricks(internal::stringToPath(path), volumes.size(), &volumes.front(), &brickList));
+    
     if (image == NULL)
         throw std::runtime_error("Failed to read image from path " + path);
     
@@ -955,7 +991,22 @@ inline NiftiImage::NiftiImage (const std::string &path, const std::vector<int> &
     image->data = calloc(1, nifti_get_volsize(image));
     for (int i=0; i<brickList.nbricks; i++)
         memcpy((char *) image->data + i * brickSize, brickList.bricks[i], brickSize);
+    
     nifti_free_NBL(&brickList);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    const std::vector<int64_t> wideVolumes(volumes.begin(), volumes.end());
+    acquire(nifti2_image_read_bricks(internal::stringToPath(path), wideVolumes.size(), &wideVolumes.front(), &brickList));
+    
+    if (image == NULL)
+        throw std::runtime_error("Failed to read image from path " + path);
+    
+    size_t brickSize = image->nbyper * image->nx * image->ny * image->nz;
+    image->data = calloc(1, nifti2_get_volsize(image));
+    for (int i=0; i<brickList.nbricks; i++)
+        memcpy((char *) image->data + i * brickSize, brickList.bricks[i], brickSize);
+    
+    nifti2_free_NBL(&brickList);
+#endif
     
 #ifndef NDEBUG
     Rc_printf("Creating NiftiImage with pointer %p (from string and volume vector)\n", this->image);
@@ -1026,10 +1077,15 @@ inline NiftiImage & NiftiImage::rescale (const std::vector<float> &scales)
     }
     
     updatePixdim(pixdim);
-    nifti_update_dims_from_array(image);
     
     // Data vector is now the wrong size, so drop it
+#if RNIFTI_NIFTILIB_VERSION == 1
+    nifti_update_dims_from_array(image);
     nifti_image_unload(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti2_update_dims_from_array(image);
+    nifti2_image_unload(image);
+#endif
     
     image->scl_slope = 0.0;
     image->scl_inter = 0.0;
@@ -1177,7 +1233,7 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
     if (image->data != NULL)
     {    
         size_t volSize = size_t(image->nx * image->ny * image->nz);
-        size_t nVolumes = std::max(size_t(1), image->nvox / volSize);
+        size_t nVolumes = std::max(size_t(1), size_t(image->nvox) / volSize);
         
         const NiftiImageData oldData = this->data();
         NiftiImageData newData(oldData);
@@ -1234,7 +1290,11 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
     // NB: Old dims are used above, so this must happen last
     std::copy(newdim, newdim+3, image->dim+1);
     std::copy(newpixdim, newpixdim+3, image->pixdim+1);
+#if RNIFTI_NIFTILIB_VERSION == 1
     nifti_update_dims_from_array(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti2_update_dims_from_array(image);
+#endif
     
     return *this;
 }
@@ -1445,7 +1505,11 @@ inline NiftiImage & NiftiImage::replaceData (const NiftiImageData &data)
         return *this;
     else if (data.isEmpty())
     {
+#if RNIFTI_NIFTILIB_VERSION == 1
         nifti_image_unload(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        nifti2_image_unload(image);
+#endif
         return *this;
     }
     else if (data.length() != image->nvox)
@@ -1453,7 +1517,11 @@ inline NiftiImage & NiftiImage::replaceData (const NiftiImageData &data)
     
     // Copy the data
     NiftiImageData copy = data;
+#if RNIFTI_NIFTILIB_VERSION == 1
     nifti_image_unload(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti2_image_unload(image);
+#endif
     image->data = copy.blob();
     image->datatype = copy.datatype();
     image->scl_slope = static_cast<float>(copy.slope);
@@ -1479,11 +1547,18 @@ inline std::pair<std::string,std::string> NiftiImage::toFile (const std::string 
     
     if (changingDatatype)
         imageToWrite.changeDatatype(datatype, true);
-    
+
+#if RNIFTI_NIFTILIB_VERSION == 1
     const int status = nifti_set_filenames(imageToWrite, internal::stringToPath(fileName), false, true);
     if (status != 0)
         throw std::runtime_error("Failed to set filenames for NIfTI object");
     nifti_image_write(imageToWrite);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    const int status = nifti2_set_filenames(imageToWrite, internal::stringToPath(fileName), false, true);
+    if (status != 0)
+        throw std::runtime_error("Failed to set filenames for NIfTI object");
+    nifti2_image_write(imageToWrite);
+#endif
     
     return std::pair<std::string,std::string>(std::string(imageToWrite->fname), std::string(imageToWrite->iname));
 }
