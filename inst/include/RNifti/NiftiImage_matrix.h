@@ -43,6 +43,8 @@ inline SquareMatrix<mat44,float,4> SquareMatrix<mat44,float,4>::inverse () const
     return SquareMatrix<mat44,float,4>(nifti_mat44_inverse(*niftiPointer()));
 }
 
+#if RNIFTI_NIFTILIB_VERSION == 1
+
 // NB: niftilib v1 does not define nifti_mat44_mul
 template <>
 inline SquareMatrix<mat44,float,4> SquareMatrix<mat44,float,4>::multiply (const SquareMatrix<mat44,float,4> &other) const
@@ -60,7 +62,8 @@ inline SquareMatrix<mat44,float,4> SquareMatrix<mat44,float,4>::multiply (const 
     return result;
 }
 
-#if RNIFTI_NIFTILIB_VERSION == 2
+#elif RNIFTI_NIFTILIB_VERSION == 2
+
 template <>
 inline SquareMatrix<nifti_dmat33,double,3> SquareMatrix<nifti_dmat33,double,3>::inverse () const
 {
@@ -114,6 +117,7 @@ inline SquareMatrix<nifti_dmat44,double,4> SquareMatrix<nifti_dmat44,double,4>::
 {
     return SquareMatrix<nifti_dmat44,double,4>(nifti_dmat44_mul(*niftiPointer(), *other.niftiPointer()));
 }
+
 #endif
 
 template <class NiftiType, typename ElementType, int Order>
