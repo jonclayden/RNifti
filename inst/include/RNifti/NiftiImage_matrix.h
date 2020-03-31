@@ -56,7 +56,7 @@ inline SquareMatrix<mat44,float,4> SquareMatrix<mat44,float,4>::multiply (const 
         {
             result(i,j) = 0.0;
             for (int k=0; k<4; k++)
-                result(i,j) += elements[i + k*4] * other(k,j);
+                result(i,j) += (*this)(i,k) * other(k,j);
         }
     }
     return result;
@@ -127,7 +127,7 @@ inline Vector<ElementType,Order> SquareMatrix<NiftiType,ElementType,Order>::mult
     for (int i=0; i<Order; i++)
     {
         for (int j=0; j<Order; j++)
-            result[i] += elements[i + j*Order] * vec[j];
+            result[i] += (*this)(i,j) * vec[j];
     }
     return result;
 }

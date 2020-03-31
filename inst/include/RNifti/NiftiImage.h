@@ -712,8 +712,8 @@ public:
     MatrixType operator* (const MatrixType &other) const { return multiply(other); }
     VectorType operator* (const VectorType &vec) const { return multiply(vec); }
     
-    const ElementType & operator() (const int i, const int j) const { return elements[i + j*Order]; }
-    ElementType & operator() (const int i, const int j) { return elements[i + j*Order]; }
+    const ElementType & operator() (const int i, const int j) const { return elements[j + i*Order]; }
+    ElementType & operator() (const int i, const int j) { return elements[j + i*Order]; }
 };
 
 
