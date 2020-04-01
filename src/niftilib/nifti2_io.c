@@ -4552,7 +4552,9 @@ int disp_nifti_1_header( const char * info, const nifti_1_header * hp )
            hp->srow_z[0], hp->srow_z[1], hp->srow_z[2], hp->srow_z[3],
            hp->intent_name, hp->magic);
    Rc_fputs_stdout( "-------------------------------------------------------\n" );
+#ifndef USING_R
    fflush(stdout);
+#endif
 
    return 0;
 }
@@ -4566,77 +4568,81 @@ int disp_nifti_1_header( const char * info, const nifti_1_header * hp )
 *//*--------------------------------------------------------------------*/
 int disp_nifti_2_header( const char * info, const nifti_2_header * hp )
 {
-   FILE * fp = stdout;
    int    c;
 
-   fputs( "-------------------------------------------------------\n", fp );
-   if ( info )  fputs( info, fp );
-   if ( !hp  ){ fputs(" ** no nifti_2_header to display!\n",fp); return 1; }
+   Rc_fputs_stdout( "-------------------------------------------------------\n" );
+   if ( info )  Rc_fputs_stdout( info );
+   if ( !hp  ){ Rc_fputs_stdout(" ** no nifti_2_header to display!\n"); return 1; }
 
    /* print fields one by one, makes changing order and copying easier */
 
-   fprintf(fp," nifti_2_header :\n");
-   fprintf(fp,"    sizeof_hdr     = %d\n", hp->sizeof_hdr);
-   fprintf(fp,"    magic[8]       = '%-.4s' + ", hp->magic);
-   print_hex_vals(hp->magic+4, 4, fp); fputc('\n', fp);
+   Rc_fprintf_stdout(" nifti_2_header :\n");
+   Rc_fprintf_stdout("    sizeof_hdr     = %d\n", hp->sizeof_hdr);
+   Rc_fprintf_stdout("    magic[8]       = '%-.4s' + ", hp->magic);
+#ifndef USING_R
+   print_hex_vals(hp->magic+4, 4, stdout);
+#endif
+   Rc_fputc_stdout('\n');
 
-   fprintf(fp,"    datatype       = %d (%s)\n",
+   Rc_fprintf_stdout("    datatype       = %d (%s)\n",
            hp->datatype, nifti_datatype_to_string(hp->datatype));
-   fprintf(fp,"    bitpix         = %d\n", hp->bitpix);
-   fprintf(fp, "    dim[8]         =");
-   for ( c = 0; c < 8; c++ ) fprintf(fp," %" PRId64, hp->dim[c]);
-   fputc('\n', fp);
+   Rc_fprintf_stdout("    bitpix         = %d\n", hp->bitpix);
+   Rc_fprintf_stdout( "    dim[8]         =");
+   for ( c = 0; c < 8; c++ ) Rc_fprintf_stdout(" %" PRId64, hp->dim[c]);
+   Rc_fputc_stdout('\n');
 
-   fprintf(fp, "    intent_p1      = %lf\n", hp->intent_p1);
-   fprintf(fp, "    intent_p2      = %lf\n", hp->intent_p2);
-   fprintf(fp, "    intent_p3      = %lf\n", hp->intent_p3);
-   fprintf(fp, "    pixdim[8]      =");
-   for ( c = 0; c < 8; c++ ) fprintf(fp," %lf", hp->pixdim[c]);
-   fputc('\n', fp);
+   Rc_fprintf_stdout( "    intent_p1      = %lf\n", hp->intent_p1);
+   Rc_fprintf_stdout( "    intent_p2      = %lf\n", hp->intent_p2);
+   Rc_fprintf_stdout( "    intent_p3      = %lf\n", hp->intent_p3);
+   Rc_fprintf_stdout( "    pixdim[8]      =");
+   for ( c = 0; c < 8; c++ ) Rc_fprintf_stdout(" %lf", hp->pixdim[c]);
+   Rc_fputc_stdout('\n');
 
-   fprintf(fp, "    vox_offset     = %" PRId64 "\n", hp->vox_offset);
+   Rc_fprintf_stdout( "    vox_offset     = %" PRId64 "\n", hp->vox_offset);
 
-   fprintf(fp, "    scl_slope      = %lf\n", hp->scl_slope);
-   fprintf(fp, "    scl_inter      = %lf\n", hp->scl_inter);
-   fprintf(fp, "    cal_max        = %lf\n", hp->cal_max);
-   fprintf(fp, "    cal_min        = %lf\n", hp->cal_min);
-   fprintf(fp, "    slice_duration = %lf\n", hp->slice_duration);
-   fprintf(fp, "    toffset        = %lf\n", hp->toffset);
+   Rc_fprintf_stdout( "    scl_slope      = %lf\n", hp->scl_slope);
+   Rc_fprintf_stdout( "    scl_inter      = %lf\n", hp->scl_inter);
+   Rc_fprintf_stdout( "    cal_max        = %lf\n", hp->cal_max);
+   Rc_fprintf_stdout( "    cal_min        = %lf\n", hp->cal_min);
+   Rc_fprintf_stdout( "    slice_duration = %lf\n", hp->slice_duration);
+   Rc_fprintf_stdout( "    toffset        = %lf\n", hp->toffset);
 
-   fprintf(fp, "    slice_start    = %" PRId64 "\n", hp->slice_start);
-   fprintf(fp, "    slice_end      = %" PRId64 "\n", hp->slice_end);
+   Rc_fprintf_stdout( "    slice_start    = %" PRId64 "\n", hp->slice_start);
+   Rc_fprintf_stdout( "    slice_end      = %" PRId64 "\n", hp->slice_end);
 
-   fprintf(fp, "    descrip        = '%.80s'\n", hp->descrip);
-   fprintf(fp, "    aux_file       = '%.24s'\n", hp->aux_file);
+   Rc_fprintf_stdout( "    descrip        = '%.80s'\n", hp->descrip);
+   Rc_fprintf_stdout( "    aux_file       = '%.24s'\n", hp->aux_file);
 
-   fprintf(fp, "    qform_code     = %d\n", hp->qform_code);
-   fprintf(fp, "    sform_code     = %d\n", hp->sform_code);
+   Rc_fprintf_stdout( "    qform_code     = %d\n", hp->qform_code);
+   Rc_fprintf_stdout( "    sform_code     = %d\n", hp->sform_code);
 
-   fprintf(fp, "    quatern_b      = %lf\n", hp->quatern_b);
-   fprintf(fp, "    quatern_c      = %lf\n", hp->quatern_c);
-   fprintf(fp, "    quatern_d      = %lf\n", hp->quatern_d);
-   fprintf(fp, "    qoffset_x      = %lf\n", hp->qoffset_x);
-   fprintf(fp, "    qoffset_y      = %lf\n", hp->qoffset_y);
-   fprintf(fp, "    qoffset_z      = %lf\n", hp->qoffset_z);
-   fprintf(fp, "    srow_x[4]      = %lf, %lf, %lf, %lf\n",
+   Rc_fprintf_stdout( "    quatern_b      = %lf\n", hp->quatern_b);
+   Rc_fprintf_stdout( "    quatern_c      = %lf\n", hp->quatern_c);
+   Rc_fprintf_stdout( "    quatern_d      = %lf\n", hp->quatern_d);
+   Rc_fprintf_stdout( "    qoffset_x      = %lf\n", hp->qoffset_x);
+   Rc_fprintf_stdout( "    qoffset_y      = %lf\n", hp->qoffset_y);
+   Rc_fprintf_stdout( "    qoffset_z      = %lf\n", hp->qoffset_z);
+   Rc_fprintf_stdout( "    srow_x[4]      = %lf, %lf, %lf, %lf\n",
            hp->srow_x[0], hp->srow_x[1], hp->srow_x[2], hp->srow_x[3]);
-   fprintf(fp, "    srow_y[4]      = %lf, %lf, %lf, %lf\n",
+   Rc_fprintf_stdout( "    srow_y[4]      = %lf, %lf, %lf, %lf\n",
            hp->srow_y[0], hp->srow_y[1], hp->srow_y[2], hp->srow_y[3]);
-   fprintf(fp, "    srow_z[4]      = %lf, %lf, %lf, %lf\n",
+   Rc_fprintf_stdout( "    srow_z[4]      = %lf, %lf, %lf, %lf\n",
            hp->srow_z[0], hp->srow_z[1], hp->srow_z[2], hp->srow_z[3]);
 
-   fprintf(fp, "    slice_code     = %d\n", hp->slice_code);
-   fprintf(fp, "    xyzt_units     = %d\n", hp->xyzt_units);
-   fprintf(fp, "    intent_code    = %d\n", hp->intent_code);
+   Rc_fprintf_stdout( "    slice_code     = %d\n", hp->slice_code);
+   Rc_fprintf_stdout( "    xyzt_units     = %d\n", hp->xyzt_units);
+   Rc_fprintf_stdout( "    intent_code    = %d\n", hp->intent_code);
 
-   fprintf(fp, "    intent_name    = '%-.16s'\n", hp->intent_name);
-   fprintf(fp, "    dim_info       = 0x%02x\n",(unsigned char)hp->dim_info);
-   fprintf(fp, "    unused_str     = 0x ");
-   for ( c = 0; c < 15; c++ ) fprintf(fp," %02x", hp->unused_str[c]);
-   fputc('\n', fp);
+   Rc_fprintf_stdout( "    intent_name    = '%-.16s'\n", hp->intent_name);
+   Rc_fprintf_stdout( "    dim_info       = 0x%02x\n",(unsigned char)hp->dim_info);
+   Rc_fprintf_stdout( "    unused_str     = 0x ");
+   for ( c = 0; c < 15; c++ ) Rc_fprintf_stdout(" %02x", hp->unused_str[c]);
+   Rc_fputc_stdout('\n');
 
-   fputs( "-------------------------------------------------------\n", fp );
-   fflush(fp);
+   Rc_fputs_stdout( "-------------------------------------------------------\n" );
+#ifndef USING_R
+   fflush(stdout);
+#endif
 
    return 0;
 }
@@ -5491,8 +5497,9 @@ int nifti_hdr1_looks_good(const nifti_1_header * hdr)
          Rc_fprintf_stderr(
            "-- nhdr magic field implies ANALYZE: magic = '%.4s' : ",hdr->magic);
 #ifndef USING_R
-         print_hex_vals(hdr->magic, 4, stderr); Rc_fputc_stderr('\n');
+         print_hex_vals(hdr->magic, 4, stderr);
 #endif
+         Rc_fputc_stderr('\n');
       }
 
       if( ! nifti_datatype_is_valid(hdr->datatype, 0) ){
@@ -5615,8 +5622,9 @@ int nifti_hdr2_looks_good(const nifti_2_header * hdr)
          Rc_fprintf_stderr("-- header magic not NIFTI-2, magic = '%.4s' + ",
                          hdr->magic);
 #ifndef USING_R
-         print_hex_vals(hdr->magic+4, 4, stderr); Rc_fputc_stderr('\n');
+         print_hex_vals(hdr->magic+4, 4, stderr);
 #endif
+         Rc_fputc_stderr('\n');
       }
       errs++;
    }
