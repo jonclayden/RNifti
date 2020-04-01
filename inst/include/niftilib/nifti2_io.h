@@ -772,8 +772,13 @@ typedef struct {
 } nifti_type_ele;
 
 #undef  LNI_FERR /* local nifti file error, to be compact and repetative */
+#ifdef USING_R
 #define LNI_FERR(func,msg,file)                                      \
-            fprintf(stderr,"** ERROR (%s): %s '%s'\n",func,msg,file)
+            Rf_warning("%s: %s '%s'\n",func,msg,file)
+#else
+#define LNI_FERR(func,msg,file)                                      \
+            Rc_fprintf_stderr("** ERROR (%s): %s '%s'\n",func,msg,file)
+#endif
 
 #undef  swap_2
 #undef  swap_4

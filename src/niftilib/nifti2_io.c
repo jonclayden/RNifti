@@ -4481,10 +4481,14 @@ int disp_nifti_1_header( const char * info, const nifti_1_header * hp )
    Rc_fprintf_stdout(" nifti_1_header :\n"
            "    sizeof_hdr     = %d\n"
            "    data_type[10]  = ", hp->sizeof_hdr);
+#ifndef USING_R
    print_hex_vals(hp->data_type, 10, stdout);
+#endif
    Rc_fprintf_stdout("\n"
            "    db_name[18]    = ");
+#ifndef USING_R
    print_hex_vals(hp->db_name, 18, stdout);
+#endif
    Rc_fprintf_stdout("\n"
            "    extents        = %d\n"
            "    session_error  = %d\n"
@@ -5486,7 +5490,9 @@ int nifti_hdr1_looks_good(const nifti_1_header * hdr)
       if( g_opts.debug > 1 ) { /* maybe tell user it's an ANALYZE hdr */
          Rc_fprintf_stderr(
            "-- nhdr magic field implies ANALYZE: magic = '%.4s' : ",hdr->magic);
+#ifndef USING_R
          print_hex_vals(hdr->magic, 4, stderr); Rc_fputc_stderr('\n');
+#endif
       }
 
       if( ! nifti_datatype_is_valid(hdr->datatype, 0) ){
@@ -5608,7 +5614,9 @@ int nifti_hdr2_looks_good(const nifti_2_header * hdr)
       if( g_opts.debug > 0 ) {
          Rc_fprintf_stderr("-- header magic not NIFTI-2, magic = '%.4s' + ",
                          hdr->magic);
+#ifndef USING_R
          print_hex_vals(hdr->magic+4, 4, stderr); Rc_fputc_stderr('\n');
+#endif
       }
       errs++;
    }
@@ -6810,7 +6818,7 @@ int64_t nifti2_read_buffer(znzFile fp, void* dataptr, int64_t ntot,
     nifti_swap_Nbytes( (int)(ntot / nim->swapsize), nim->swapsize , dataptr ) ;
   }
 
-#ifdef isfinite
+#if defined(isfinite) && !defined(USING_R)
 {
   /* check input float arrays for goodness, and fix bad floats */
   int fix_count = 0 ;

@@ -3525,10 +3525,14 @@ int disp_nifti_1_header( const char * info, const nifti_1_header * hp )
    Rc_fprintf_stdout(" nifti_1_header :\n"
            "    sizeof_hdr     = %d\n"
            "    data_type[10]  = ", hp->sizeof_hdr);
+#ifndef USING_R
    print_hex_vals(hp->data_type, 10, stdout);
+#endif
    Rc_fprintf_stdout( "\n"
            "    db_name[18]    = ");
+#ifndef USING_R
    print_hex_vals(hp->db_name, 18, stdout);
+#endif
    Rc_fprintf_stdout( "\n"
            "    extents        = %d\n"
            "    session_error  = %d\n"
