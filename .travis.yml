@@ -8,6 +8,8 @@ install:
 script:
 - R CMD build .
 - R CMD check *tar.gz
+- R CMD check clients/nifti1c
+- R CMD check clients/nifti2cpp
 - cd standalone && make clean && make CC="$(R CMD config CC)" CXX="$(R CMD config CXX)" && ./nii_info ../inst/extdata/example.nii.gz && ./nii2_info ../inst/extdata/example.nii.gz
 
 after_success:
