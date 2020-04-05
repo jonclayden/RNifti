@@ -2,7 +2,8 @@ Package: nifti2cpp
 Version: 0.1.0
 Date: 2020-04-05
 Title: RNifti C++ Client Package
-Authors@R: person("Jon","Clayden",role=c("cre","aut"),email="code@clayden.org")
+Author: Jon Clayden
+Maintainer: Jon Clayden <code@clayden.org>
 Imports: Rcpp, RNifti
 LinkingTo: Rcpp, RNifti
 Description: A bare-bones test harness for the RNifti package. Uses C++, Rcpp
