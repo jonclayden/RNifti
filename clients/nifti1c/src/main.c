@@ -1,4 +1,5 @@
 #include <R.h>
+#include <Rinternals.h>
 
 #include "RNifti.h"
 #include "RNiftiAPI.h"
