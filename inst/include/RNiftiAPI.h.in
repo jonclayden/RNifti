@@ -10,7 +10,7 @@ extern "C" {
 #define NIFTILIB_WRAPPER_BODY(symbol, ...)  \
     if (symbol == NULL)                     \
         niftilib_register_all();            \
-    return symbol(...);
+    return symbol(__VA_ARGS__);
 
 #define NIFTILIB_WRAPPER_BODY_VOID(symbol)  \
     if (symbol == NULL)                     \
