@@ -24,7 +24,7 @@ for (version in 1:2) {
     # and find the type and name of each argument
     args <- ore.subst("^\\s*(.+?)\\s*$", "\\1", pieces[,3,])
     args <- ore.subst("\\s+([\\s,])", "\\1", args, all=TRUE)
-    argPieces <- groups(ore.search("(\\Avoid\\Z)|\\b([\\w\\s]+?\\**)\\s*(\\w+)\\s*(\\[\\])?(,|\\Z)", args, all=TRUE))
+    argPieces <- groups(ore.search("(\\Avoid\\Z)|\\b([\\w\\s]+?\\**)\\s*(\\w+)\\s*(\\[\\d*\\])?(,|\\Z)", args, all=TRUE))
     
     # Create shortened names for the R-internal callable functions
     abbreviatedSymbols <- ore.subst("nifti", "nii", symbols)
@@ -32,9 +32,9 @@ for (version in 1:2) {
     # Reconstruct the argument list: types only, names only and in full
     voidType <- sapply(argPieces, function(x) isTRUE(!is.na(x[,1])))
     argTypes <- ifelse(voidType, "void", NA_character_)
-    argTypes[!voidType] <- sapply(argPieces[!voidType], function(x) paste(x[,2],collapse=", "))
+    argTypes[!voidType] <- sapply(argPieces[!voidType], function(x) paste0(x[,2], ifelse(!is.na(x[,4]),x[,4],""), collapse=", "))
     argNames <- sapply(argPieces, function(x) paste(x[,3],collapse=", "))
-    args <- sapply(argPieces, function(x) paste(x[,2],x[,3],collapse=", "))
+    args <- sapply(argPieces, function(x) paste0(x[,2], " ", x[,3], ifelse(!is.na(x[,4]),x[,4],""), collapse=", "))
     
     # Construct code fragments required for each function
     registerCallables <- paste0("R_RegisterCCallable(\"RNifti\", \"", abbreviatedSymbols, "\", (DL_FUNC) &", symbols, ");")
