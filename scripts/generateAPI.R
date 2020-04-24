@@ -50,18 +50,21 @@ for (version in 1:2) {
     versions <- c(versions, list(list(registerCallables=registerCallables, declarePointers=declarePointers, mapPointers=mapPointers, defineWrappers=defineWrappers)))
 }
 
-replacePlaceholder <- function (file, labels, vars) {
+replacePlaceholder <- function (file, labels, vars, merge = FALSE) {
     lines <- readLines(paste0(file, ".in"))
     for (i in seq_along(labels)) {
         mark <- which(lines %~% es("^(\\s*)/\\* MARK - #{labels[i]} \\*/"))
         if (length(mark) == 1) {
             padding <- groups()
             strings <- lapply(1:2, function(version) paste0(ifelse(is.na(padding),"",padding), versions[[version]][[vars[i]]]))
-            lines <- c(lines[seq_len(mark-1)], "#if RNIFTI_NIFTILIB_VERSION == 1", strings[[1]], "#elif RNIFTI_NIFTILIB_VERSION == 2", strings[[2]], "#endif", lines[-seq_len(mark)])
+            if (merge)
+                lines <- c(lines[seq_len(mark-1)], unique(Reduce(c,strings)), lines[-seq_len(mark)])
+            else
+                lines <- c(lines[seq_len(mark-1)], "#if RNIFTI_NIFTILIB_VERSION == 1", strings[[1]], "#elif RNIFTI_NIFTILIB_VERSION == 2", strings[[2]], "#endif", lines[-seq_len(mark)])
         }
     }
     writeLines(lines, file)
 }
 
-replacePlaceholder(file.path("src","main.cpp"), "Register callables", "registerCallables")
+replacePlaceholder(file.path("src","main.cpp"), "Register callables", "registerCallables", merge=TRUE)
 replacePlaceholder(file.path("inst","include","RNiftiAPI.h"), c("Declare pointers", "Map pointers", "Define wrappers"), c("declarePointers", "mapPointers", "defineWrappers"))
