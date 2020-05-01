@@ -1,7 +1,7 @@
 #include <R.h>
 #include <Rinternals.h>
 
-#include "RNifti.h"
+#include "niftilib/nifti1_io.h"
 #include "RNiftiAPI.h"
 
 SEXP test (SEXP _path)

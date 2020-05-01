@@ -34,7 +34,8 @@
 //    nifti2_io.h", use the appropriate version of the library, and not worry about the clash. This
 //    will make most sense for existing code already written for one or other version of the
 //    NIfTI library. Standalone code will again need to link to the appropriate object file; R will
-//    handle linkage for packages.
+//    handle linkage for packages, but the API header "RNiftiAPI.h" must also be included. See the
+//    "clients" directory for an example of the latter.
 // 3. Code that explicitly wants to handle both versions of the library should define
 //    NO_REMAP_NIFTI2_FUNCTIONS to avoid name clashes, include both library headers, and use
 //    nifti2_* functions explicitly when required.
