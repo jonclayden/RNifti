@@ -171,7 +171,7 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
     copyIfPresent(list, names, "slice_start", header->slice_start);
     if (names.count("pixdim") == 1)
     {
-        std::vector<pixdim_t> pixdim = list["pixdim"];
+        std::vector<NiftiImage::pixdim_t> pixdim = list["pixdim"];
         if (pixdim.size() != 8)
             throw std::runtime_error("Field \"pixdim\" must contain 8 elements");
         for (size_t i=0; i<8; i++)

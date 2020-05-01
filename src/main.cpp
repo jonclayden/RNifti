@@ -9,8 +9,8 @@ using namespace Rcpp;
 using namespace RNifti;
 
 typedef std::vector<int> int_vector;
-typedef std::vector<dim_t> dim_vector;
-typedef std::vector<pixdim_t> pixdim_vector;
+typedef std::vector<NiftiImage::dim_t> dim_vector;
+typedef std::vector<NiftiImage::pixdim_t> pixdim_vector;
 
 ::mat44 matrixToXform (const SEXP _matrix, bool *valid = NULL)
 {

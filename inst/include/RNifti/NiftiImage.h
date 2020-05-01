@@ -44,16 +44,6 @@ namespace RNifti {
 typedef std::complex<float> complex64_t;
 typedef std::complex<double> complex128_t;
 
-#if RNIFTI_NIFTILIB_VERSION == 1
-typedef int dim_t;
-typedef float pixdim_t;
-typedef float scale_t;
-#elif RNIFTI_NIFTILIB_VERSION == 2
-typedef int64_t dim_t;
-typedef double pixdim_t;
-typedef double scale_t;
-#endif
-
 /**
  * Simple RGB(A) type encapsulating an 8-bit colour value with optional opacity, which can also be
  * set or retrieved as a single 32-bit integer. The default value is equivalent to zero, a fully
@@ -740,6 +730,16 @@ public:
 class NiftiImage
 {
 public:
+#if RNIFTI_NIFTILIB_VERSION == 1
+    typedef int dim_t;
+    typedef float pixdim_t;
+    typedef float scale_t;
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    typedef int64_t dim_t;
+    typedef double pixdim_t;
+    typedef double scale_t;
+#endif
+    
     /**
      * Inner class referring to a subset of an image. Currently must refer to the last
      * dimension in the image, i.e., a volume in a 4D parent image, or a slice in a 3D image
