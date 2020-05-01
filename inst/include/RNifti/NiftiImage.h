@@ -1358,13 +1358,13 @@ public:
     **/
     const Xform xform (const bool preferQuaternion = true) const;
     
-    const Xform qform (const bool preferQuaternion = true) const { return (image == NULL ? Xform() : Xform(image->qto_xyz)); }
+    const Xform qform () const { return (image == NULL ? Xform() : Xform(image->qto_xyz)); }
     
-    Xform qform (const bool preferQuaternion = true) { return (image == NULL ? Xform() : Xform(image->qto_xyz, image->qto_ijk, &image->quatern_b)); }
+    Xform qform () { return (image == NULL ? Xform() : Xform(image->qto_xyz, image->qto_ijk, &image->quatern_b)); }
     
-    const Xform sform (const bool preferQuaternion = true) const { return (image == NULL ? Xform() : Xform(image->sto_xyz)); }
+    const Xform sform () const { return (image == NULL ? Xform() : Xform(image->sto_xyz)); }
     
-    Xform sform (const bool preferQuaternion = true) { return (image == NULL ? Xform() : Xform(image->sto_xyz, image->sto_ijk)); }
+    Xform sform () { return (image == NULL ? Xform() : Xform(image->sto_xyz, image->sto_ijk)); }
     
     /**
      * Return the number of blocks in the image
