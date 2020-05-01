@@ -699,7 +699,11 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
     else
         throw std::runtime_error("Data type is not supported");
     
+#if RNIFTI_NIFTILIB_VERSION == 1
     acquire(nifti_convert_nhdr2nim(header, NULL));
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    acquire(nifti_convert_n1hdr2nim(header, NULL));
+#endif
     
     const SEXP data = PROTECT(object.slot(".Data"));
     if (!copyData || Rf_length(data) <= 1)
@@ -749,7 +753,15 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
     }
     
     if (this->image == NULL)
+    {
+#if RNIFTI_NIFTILIB_VERSION == 1
         acquire(nifti_make_new_nim(dims, datatype, FALSE));
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        int64_t dims64[8];
+        std::copy(dims, dims+8, dims64);
+        acquire(nifti2_make_new_nim(dims64, datatype, FALSE));
+#endif
+    }
     else
     {
         std::copy(dims, dims+8, this->image->dim);
@@ -782,20 +794,10 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
         this->image->qform_code = this->image->sform_code = 0;
     else
     {
-        mat44 matrix;
-        for (int i=0; i<4; i++)
-        {
-            for (int j=0; j<4; j++)
-                matrix.m[i][j] = static_cast<float>(xform(i,j));
-        }
-        
-        this->image->qto_xyz = matrix;
-        this->image->qto_ijk = nifti_mat44_inverse(image->qto_xyz);
-        nifti_mat44_to_quatern(image->qto_xyz, &image->quatern_b, &image->quatern_c, &image->quatern_d, &image->qoffset_x, &image->qoffset_y, &image->qoffset_z, NULL, NULL, NULL, &image->qfac);
-        
-        this->image->sto_xyz = matrix;
-        this->image->sto_ijk = nifti_mat44_inverse(image->sto_xyz);
-        
+        Xform::Matrix xformMatrix;
+        std::copy(xform.begin(), xform.end(), xformMatrix.begin());
+        this->qform() = xformMatrix;
+        this->sform() = xformMatrix;
         this->image->qform_code = this->image->sform_code = 2;
     }
 }
@@ -803,11 +805,15 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
 inline void NiftiImage::initFromList (const Rcpp::RObject &object)
 {
     Rcpp::List list(object);
+#if RNIFTI_NIFTILIB_VERSION == 1
     nifti_1_header *header = nifti_make_new_header(NULL, DT_FLOAT64);
-    
     internal::updateHeader(header, list);
-    
     acquire(nifti_convert_nhdr2nim(*header, NULL));
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti_1_header *header = nifti_make_new_n1_header(NULL, DT_FLOAT64);
+    internal::updateHeader(header, list);
+    acquire(nifti_convert_n1hdr2nim(*header, NULL));
+#endif
     this->image->data = NULL;
     free(header);
 }
@@ -828,7 +834,14 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
         const int channels = (object.hasAttribute("channels") ? object.attr("channels") : 3);
         datatype = (channels == 4 ? DT_RGBA32 : DT_RGB24);
     }
+    
+#if RNIFTI_NIFTILIB_VERSION == 1
     acquire(nifti_make_new_nim(dims, datatype, int(copyData)));
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    int64_t dims64[8];
+    std::copy(dims, dims+8, dims64);
+    acquire(nifti2_make_new_nim(dims64, datatype, int(copyData)));
+#endif
     
     if (copyData)
     {
@@ -866,7 +879,11 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
 inline void NiftiImage::initFromDims (const std::vector<int> &dim, const int datatype)
 {
     const int nDims = std::min(7, int(dim.size()));
+#if RNIFTI_NIFTILIB_VERSION == 1
     int dims[8] = { nDims, 0, 0, 0, 0, 0, 0, 0 };
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    int64_t dims[8] = { nDims, 0, 0, 0, 0, 0, 0, 0 };
+#endif
     std::copy(dim.begin(), dim.begin() + nDims, &dims[1]);
     acquire(nifti_make_new_nim(dims, datatype, 1));
     
@@ -1334,13 +1351,21 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
         nifti_1_header *header = NULL;
         if (this->isNull())
         {
+#if RNIFTI_NIFTILIB_VERSION == 1
             header = nifti_make_new_header(NULL, DT_FLOAT64);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+            header = nifti_make_new_n1_header(NULL, DT_FLOAT64);
+#endif
             internal::updateHeader(header, list, true);
         }
         else
         {
             header = (nifti_1_header *) calloc(1, sizeof(nifti_1_header));
+#if RNIFTI_NIFTILIB_VERSION == 1
             *header = nifti_convert_nim2nhdr(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+            nifti_convert_nim2n1hdr(image, header);
+#endif
             internal::updateHeader(header, list, true);
         }
         
@@ -1349,7 +1374,11 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
             // Retain the data pointer, but otherwise overwrite the stored object with one created from the header
             // The file names can't be preserved through the round-trip, so free them
             void *dataPtr = image->data;
+#if RNIFTI_NIFTILIB_VERSION == 1
             nifti_image *tempImage = nifti_convert_nhdr2nim(*header, NULL);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+            nifti_image *tempImage = nifti_convert_n1hdr2nim(*header, NULL);
+#endif
             
             if (image->fname != NULL)
                 free(image->fname);
@@ -1626,7 +1655,12 @@ inline Rcpp::RObject NiftiImage::headerToList () const
     if (this->image == NULL)
         return Rcpp::RObject();
     
-    nifti_1_header header = nifti_convert_nim2nhdr(this->image);
+    nifti_1_header header;
+#if RNIFTI_NIFTILIB_VERSION == 1
+    header = nifti_convert_nim2nhdr(this->image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti_convert_nim2n1hdr(this->image, &header);
+#endif
     Rcpp::List result;
     
     result["sizeof_hdr"] = header.sizeof_hdr;

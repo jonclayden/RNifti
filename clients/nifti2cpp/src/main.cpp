@@ -8,7 +8,8 @@
 SEXP test (SEXP _path)
 {
     RNifti::NiftiImage image(Rcpp::as<std::string>(_path));
-    nifti_1_header header = nifti_convert_nim2nhdr(image);
+    nifti_1_header header;
+    nifti_convert_nim2n1hdr(image, &header);
     int status = disp_nifti_1_header(NULL, &header);
     return Rcpp::wrap(status);
 }
