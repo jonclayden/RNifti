@@ -44,6 +44,16 @@ namespace RNifti {
 typedef std::complex<float> complex64_t;
 typedef std::complex<double> complex128_t;
 
+#if RNIFTI_NIFTILIB_VERSION == 1
+typedef int dim_t;
+typedef float pixdim_t;
+typedef float scale_t;
+#elif RNIFTI_NIFTILIB_VERSION == 2
+typedef int64_t dim_t;
+typedef double pixdim_t;
+typedef double scale_t;
+#endif
+
 /**
  * Simple RGB(A) type encapsulating an 8-bit colour value with optional opacity, which can also be
  * set or retrieved as a single 32-bit integer. The default value is equivalent to zero, a fully
@@ -738,7 +748,7 @@ public:
     {
         const NiftiImage &image;        /**< The parent image */
         const int dimension;            /**< The dimension along which the block applies (which should be the last) */
-        const int index;                /**< The location along \c dimension */
+        const dim_t index;              /**< The location along \c dimension */
         
         /**
          * Standard constructor for this class
@@ -747,7 +757,7 @@ public:
          * @param index The location along \c dimension
          * @exception runtime_error If \c dimension is not the last dimension in the image
         **/
-        Block (const NiftiImage &image, const int dimension, const int index)
+        Block (const NiftiImage &image, const int dimension, const dim_t index)
             : image(image), dimension(dimension), index(index)
         {
             if (dimension != image->ndim)
@@ -984,13 +994,13 @@ protected:
      * @param dim A vector of image dimensions
      * @param datatype A datatype code for the image data
     **/
-    void initFromDims (const std::vector<int> &dim, const int datatype);
+    void initFromDims (const std::vector<dim_t> &dim, const int datatype);
 
     /**
      * Modify the pixel dimensions, and potentially the xform matrices to match
      * @param pixdim Vector of new pixel dimensions
     **/
-    void updatePixdim (const std::vector<float> &pixdim);
+    void updatePixdim (const std::vector<pixdim_t> &pixdim);
     
     /**
      * Modify the pixel dimension units
@@ -1059,14 +1069,14 @@ public:
      * @param dim A vector of image dimensions
      * @param datatype A datatype code for the image data
     **/
-    NiftiImage (const std::vector<int> &dim, const int datatype);
+    NiftiImage (const std::vector<dim_t> &dim, const int datatype);
     
     /**
      * Initialise from basic metadata, allocating and zeroing pixel data
      * @param dim A vector of image dimensions
      * @param datatype A datatype string for the image data
     **/
-    NiftiImage (const std::vector<int> &dim, const std::string &datatype);
+    NiftiImage (const std::vector<dim_t> &dim, const std::string &datatype);
     
     /**
      * Initialise using a path string
@@ -1082,7 +1092,7 @@ public:
      * @param volumes The volumes to read in (squashing all dimensions above the third together)
      * @exception runtime_error If reading from the file fails, or \c volumes is empty
     **/
-    NiftiImage (const std::string &path, const std::vector<int> &volumes);
+    NiftiImage (const std::string &path, const std::vector<dim_t> &volumes);
     
 #ifdef USING_R
     /**
@@ -1203,24 +1213,24 @@ public:
      * Return the dimensions of the image
      * @return A vector of integers giving the width in each dimension
     **/
-    std::vector<int> dim () const
+    std::vector<dim_t> dim () const
     {
         if (image == NULL)
-            return std::vector<int>();
+            return std::vector<dim_t>();
         else
-            return std::vector<int>(image->dim+1, image->dim+image->ndim+1);
+            return std::vector<dim_t>(image->dim+1, image->dim+image->ndim+1);
     }
     
     /**
      * Return the dimensions of the pixels or voxels in the image
      * @return A vector of floating-point values giving the pixel width in each dimension
     **/
-    std::vector<float> pixdim () const
+    std::vector<pixdim_t> pixdim () const
     {
         if (image == NULL)
-            return std::vector<float>();
+            return std::vector<pixdim_t>();
         else
-            return std::vector<float>(image->pixdim+1, image->pixdim+image->ndim+1);
+            return std::vector<pixdim_t>(image->pixdim+1, image->pixdim+image->ndim+1);
     }
     
     /**
@@ -1320,7 +1330,7 @@ public:
      * @return Self, after rescaling the metadata
      * @note No interpolation is performed on the pixel data, which is simply dropped
     **/
-    NiftiImage & rescale (const std::vector<float> &scales);
+    NiftiImage & rescale (const std::vector<pixdim_t> &scales);
     
     /**
      * Reorient the image by permuting dimensions and potentially reversing some
@@ -1370,7 +1380,7 @@ public:
      * Return the number of blocks in the image
      * @return An integer giving the number of blocks in the image
     **/
-    int nBlocks () const { return (image == NULL ? 0 : image->dim[image->ndim]); }
+    dim_t nBlocks () const { return (image == NULL ? 0 : image->dim[image->ndim]); }
     
     /**
      * Extract a block from the image

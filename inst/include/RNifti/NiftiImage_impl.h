@@ -171,7 +171,7 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
     copyIfPresent(list, names, "slice_start", header->slice_start);
     if (names.count("pixdim") == 1)
     {
-        std::vector<float> pixdim = list["pixdim"];
+        std::vector<pixdim_t> pixdim = list["pixdim"];
         if (pixdim.size() != 8)
             throw std::runtime_error("Field \"pixdim\" must contain 8 elements");
         for (size_t i=0; i<8; i++)
@@ -204,7 +204,7 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
     
     if (names.count("srow_x") == 1)
     {
-        std::vector<float> srow_x = list["srow_x"];
+        std::vector<NiftiImage::Xform::Element> srow_x = list["srow_x"];
         if (srow_x.size() != 4)
             throw std::runtime_error("Field \"srow_x\" must contain 4 elements");
         for (size_t i=0; i<4; i++)
@@ -212,7 +212,7 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
     }
     if (names.count("srow_y") == 1)
     {
-        std::vector<float> srow_y = list["srow_y"];
+        std::vector<NiftiImage::Xform::Element> srow_y = list["srow_y"];
         if (srow_y.size() != 4)
             throw std::runtime_error("Field \"srow_y\" must contain 4 elements");
         for (size_t i=0; i<4; i++)
@@ -220,7 +220,7 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
     }
     if (names.count("srow_z") == 1)
     {
-        std::vector<float> srow_z = list["srow_z"];
+        std::vector<NiftiImage::Xform::Element> srow_z = list["srow_z"];
         if (srow_z.size() != 4)
             throw std::runtime_error("Field \"srow_z\" must contain 4 elements");
         for (size_t i=0; i<4; i++)
@@ -629,7 +629,7 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
     nifti_1_header header;
     header.sizeof_hdr = 348;
     
-    const std::vector<int> dims = object.slot("dim_");
+    const std::vector<dim_t> dims = object.slot("dim_");
     for (int i=0; i<8; i++)
         header.dim[i] = dims[i];
     
@@ -646,7 +646,7 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
     header.slice_code = Rcpp::as<int>(object.slot("slice_code"));
     header.slice_duration = object.slot("slice_duration");
     
-    const std::vector<float> pixdims = object.slot("pixdim");
+    const std::vector<pixdim_t> pixdims = object.slot("pixdim");
     for (int i=0; i<8; i++)
         header.pixdim[i] = pixdims[i];
     header.xyzt_units = Rcpp::as<int>(object.slot("xyzt_units"));
@@ -681,9 +681,9 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
     header.qoffset_y = object.slot("qoffset_y");
     header.qoffset_z = object.slot("qoffset_z");
     
-    const std::vector<float> srow_x = object.slot("srow_x");
-    const std::vector<float> srow_y = object.slot("srow_y");
-    const std::vector<float> srow_z = object.slot("srow_z");
+    const std::vector<Xform::Element> srow_x = object.slot("srow_x");
+    const std::vector<Xform::Element> srow_y = object.slot("srow_y");
+    const std::vector<Xform::Element> srow_z = object.slot("srow_z");
     for (int i=0; i<4; i++)
     {
         header.srow_x[i] = srow_x[i];
@@ -741,8 +741,8 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
     
     const int datatype = (Rf_isNull(data) ? DT_INT32 : sexpTypeToNiftiType(data.sexp_type()));
     
-    int dims[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-    const std::vector<int> dimVector = mriImage.field("imageDims");
+    dim_t dims[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+    const std::vector<dim_t> dimVector = mriImage.field("imageDims");
     const int nDims = std::min(7, int(dimVector.size()));
     dims[0] = nDims;
     size_t nVoxels = 1;
@@ -757,9 +757,7 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
 #if RNIFTI_NIFTILIB_VERSION == 1
         acquire(nifti_make_new_nim(dims, datatype, FALSE));
 #elif RNIFTI_NIFTILIB_VERSION == 2
-        int64_t dims64[8];
-        std::copy(dims, dims+8, dims64);
-        acquire(nifti2_make_new_nim(dims64, datatype, FALSE));
+        acquire(nifti2_make_new_nim(dims, datatype, FALSE));
 #endif
     }
     else
@@ -782,7 +780,7 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
     else
         this->image->data = NULL;
     
-    const std::vector<float> pixdimVector = mriImage.field("voxelDims");
+    const std::vector<pixdim_t> pixdimVector = mriImage.field("voxelDims");
     const int pixdimLength = pixdimVector.size();
     for (int i=0; i<std::min(pixdimLength,nDims); i++)
         this->image->pixdim[i+1] = std::abs(pixdimVector[i]);
@@ -820,8 +818,8 @@ inline void NiftiImage::initFromList (const Rcpp::RObject &object)
 
 inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool copyData)
 {
-    int dims[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-    const std::vector<int> dimVector = object.attr("dim");
+    dim_t dims[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+    const std::vector<dim_t> dimVector = object.attr("dim");
     
     const int nDims = std::min(7, int(dimVector.size()));
     dims[0] = nDims;
@@ -838,9 +836,7 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
 #if RNIFTI_NIFTILIB_VERSION == 1
     acquire(nifti_make_new_nim(dims, datatype, int(copyData)));
 #elif RNIFTI_NIFTILIB_VERSION == 2
-    int64_t dims64[8];
-    std::copy(dims, dims+8, dims64);
-    acquire(nifti2_make_new_nim(dims64, datatype, int(copyData)));
+    acquire(nifti2_make_new_nim(dims, datatype, int(copyData)));
 #endif
     
     if (copyData)
@@ -863,7 +859,7 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     
     if (object.hasAttribute("pixdim"))
     {
-        const std::vector<float> pixdimVector = object.attr("pixdim");
+        const std::vector<pixdim_t> pixdimVector = object.attr("pixdim");
         const int pixdimLength = pixdimVector.size();
         for (int i=0; i<std::min(pixdimLength,nDims); i++)
             this->image->pixdim[i+1] = pixdimVector[i];
@@ -876,16 +872,17 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     }
 }
 
-inline void NiftiImage::initFromDims (const std::vector<int> &dim, const int datatype)
+inline void NiftiImage::initFromDims (const std::vector<dim_t> &dim, const int datatype)
 {
     const int nDims = std::min(7, int(dim.size()));
-#if RNIFTI_NIFTILIB_VERSION == 1
-    int dims[8] = { nDims, 0, 0, 0, 0, 0, 0, 0 };
-#elif RNIFTI_NIFTILIB_VERSION == 2
-    int64_t dims[8] = { nDims, 0, 0, 0, 0, 0, 0, 0 };
-#endif
+    dim_t dims[8] = { nDims, 0, 0, 0, 0, 0, 0, 0 };
     std::copy(dim.begin(), dim.begin() + nDims, &dims[1]);
+    
+#if RNIFTI_NIFTILIB_VERSION == 1
     acquire(nifti_make_new_nim(dims, datatype, 1));
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    acquire(nifti2_make_new_nim(dims, datatype, 1));
+#endif
     
     if (image == NULL)
         throw std::runtime_error("Failed to create image from scratch");
@@ -955,7 +952,7 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
 
 #endif // USING_R
 
-inline NiftiImage::NiftiImage (const std::vector<int> &dim, const int datatype)
+inline NiftiImage::NiftiImage (const std::vector<dim_t> &dim, const int datatype)
     : image(NULL), refCount(NULL)
 {
     initFromDims(dim, datatype);
@@ -964,7 +961,7 @@ inline NiftiImage::NiftiImage (const std::vector<int> &dim, const int datatype)
 #endif
 }
 
-inline NiftiImage::NiftiImage (const std::vector<int> &dim, const std::string &datatype)
+inline NiftiImage::NiftiImage (const std::vector<dim_t> &dim, const std::string &datatype)
     : image(NULL), refCount(NULL)
 {
     initFromDims(dim, internal::stringToDatatype(datatype));
@@ -990,7 +987,7 @@ inline NiftiImage::NiftiImage (const std::string &path, const bool readData)
 #endif
 }
 
-inline NiftiImage::NiftiImage (const std::string &path, const std::vector<int> &volumes)
+inline NiftiImage::NiftiImage (const std::string &path, const std::vector<dim_t> &volumes)
     : image(NULL), refCount(NULL)
 {
     if (volumes.empty())
@@ -1006,20 +1003,19 @@ inline NiftiImage::NiftiImage (const std::string &path, const std::vector<int> &
     
     size_t brickSize = image->nbyper * image->nx * image->ny * image->nz;
     image->data = calloc(1, nifti_get_volsize(image));
-    for (int i=0; i<brickList.nbricks; i++)
+    for (dim_t i=0; i<brickList.nbricks; i++)
         memcpy((char *) image->data + i * brickSize, brickList.bricks[i], brickSize);
     
     nifti_free_NBL(&brickList);
 #elif RNIFTI_NIFTILIB_VERSION == 2
-    const std::vector<int64_t> wideVolumes(volumes.begin(), volumes.end());
-    acquire(nifti2_image_read_bricks(internal::stringToPath(path), wideVolumes.size(), &wideVolumes.front(), &brickList));
+    acquire(nifti2_image_read_bricks(internal::stringToPath(path), volumes.size(), &volumes.front(), &brickList));
     
     if (image == NULL)
         throw std::runtime_error("Failed to read image from path " + path);
     
     size_t brickSize = image->nbyper * image->nx * image->ny * image->nz;
     image->data = calloc(1, nifti2_get_volsize(image));
-    for (int i=0; i<brickList.nbricks; i++)
+    for (dim_t i=0; i<brickList.nbricks; i++)
         memcpy((char *) image->data + i * brickSize, brickList.bricks[i], brickSize);
     
     nifti2_free_NBL(&brickList);
@@ -1030,10 +1026,10 @@ inline NiftiImage::NiftiImage (const std::string &path, const std::vector<int> &
 #endif
 }
 
-inline void NiftiImage::updatePixdim (const std::vector<float> &pixdim)
+inline void NiftiImage::updatePixdim (const std::vector<pixdim_t> &pixdim)
 {
     const int nDims = image->dim[0];
-    const std::vector<float> origPixdim(image->pixdim+1, image->pixdim+4);
+    const std::vector<pixdim_t> origPixdim(image->pixdim+1, image->pixdim+4);
     
     for (int i=1; i<8; i++)
         image->pixdim[i] = 0.0;
@@ -1080,16 +1076,16 @@ inline void NiftiImage::setPixunits (const std::vector<std::string> &pixunits)
     }
 }
 
-inline NiftiImage & NiftiImage::rescale (const std::vector<float> &scales)
+inline NiftiImage & NiftiImage::rescale (const std::vector<pixdim_t> &scales)
 {
-    std::vector<float> pixdim(image->pixdim+1, image->pixdim+4);
+    std::vector<pixdim_t> pixdim(image->pixdim+1, image->pixdim+4);
     
     for (int i=0; i<std::min(3, int(scales.size())); i++)
     {
         if (scales[i] != 1.0)
         {
             pixdim[i] /= scales[i];
-            image->dim[i+1] = static_cast<int>(std::floor(image->dim[i+1] * scales[i]));
+            image->dim[i+1] = static_cast<dim_t>(std::floor(image->dim[i+1] * scales[i]));
         }
     }
     
@@ -1197,8 +1193,8 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
     
     // Extract the mapping between dimensions and the signs
     // These vectors are all indexed in the target space, except "revsigns"
-    int locs[3], signs[3], newdim[3], revsigns[3];
-    float newpixdim[3];
+    dim_t locs[3], signs[3], newdim[3], revsigns[3];
+    pixdim_t newpixdim[3];
     double maxes[3] = { R_NegInf, R_NegInf, R_NegInf };
     Xform::Vector3 offset;
     for (int j=0; j<3; j++)
@@ -1267,12 +1263,12 @@ inline NiftiImage & NiftiImage::reorient (const int icode, const int jcode, cons
         NiftiImageData::Iterator it = oldData.begin();
         for (size_t v=0; v<nVolumes; v++)
         {
-            for (int k=0; k<image->nz; k++)
+            for (dim_t k=0; k<image->nz; k++)
             {
                 ptrdiff_t offset = k * strides[2] * revsigns[2];
-                for (int j=0; j<image->ny; j++)
+                for (dim_t j=0; j<image->ny; j++)
                 {
-                    for (int i=0; i<image->nx; i++)
+                    for (dim_t i=0; i<image->nx; i++)
                     {
                         newData[volStart + offset] = *it++;
                         offset += strides[0] * revsigns[0];
@@ -1407,7 +1403,7 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
     
         if (object.hasAttribute("pixdim"))
         {
-            const std::vector<float> pixdimVector = object.attr("pixdim");
+            const std::vector<pixdim_t> pixdimVector = object.attr("pixdim");
             updatePixdim(pixdimVector);
         }
     
@@ -1553,14 +1549,14 @@ inline NiftiImage & NiftiImage::replaceData (const NiftiImageData &data)
 #endif
     image->data = copy.blob();
     image->datatype = copy.datatype();
-    image->scl_slope = static_cast<float>(copy.slope);
-    image->scl_inter = static_cast<float>(copy.intercept);
+    image->scl_slope = static_cast<scale_t>(copy.slope);
+    image->scl_inter = static_cast<scale_t>(copy.intercept);
     nifti_datatype_sizes(image->datatype, &image->nbyper, &image->swapsize);
     
     double min, max;
     copy.minmax(&min, &max);
-    image->cal_min = static_cast<float>(min);
-    image->cal_max = static_cast<float>(max);
+    image->cal_min = static_cast<scale_t>(min);
+    image->cal_max = static_cast<scale_t>(max);
     
     copy.disown();
     

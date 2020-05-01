@@ -9,7 +9,8 @@ using namespace Rcpp;
 using namespace RNifti;
 
 typedef std::vector<int> int_vector;
-typedef std::vector<float> float_vector;
+typedef std::vector<dim_t> dim_vector;
+typedef std::vector<pixdim_t> pixdim_vector;
 
 ::mat44 matrixToXform (const SEXP _matrix, bool *valid = NULL)
 {
@@ -124,7 +125,7 @@ BEGIN_RCPP
     const NiftiImage image(_object, true, true);
     const NiftiImageData data = image.data();
     const int_vector channels = as<int_vector>(_channels);
-    int_vector dim = image.dim();
+    dim_vector dim = image.dim();
     dim.push_back(channels.size());
     
     const size_t len = image.nVoxels();
@@ -546,14 +547,14 @@ BEGIN_RCPP
         const std::vector<int> dim = image.dim();
         const int nDims = indices.length();
         std::vector<size_t> strides(nDims);
-        std::vector<int_vector> locs(nDims);
+        std::vector<dim_vector> locs(nDims);
         int_vector sizes(nDims);
         std::vector<size_t> cumulativeSizes(nDims);
         size_t count = 1;
         for (int i=0; i<nDims; i++)
         {
             strides[i] = (i == 0 ? 1 : strides[i-1] * dim[i-1]);
-            locs[i] = as<int_vector>(indices[i]);
+            locs[i] = as<dim_vector>(indices[i]);
             sizes[i] = locs[i].size();
             cumulativeSizes[i] = (i == 0 ? 1 : cumulativeSizes[i-1] * sizes[i-1]);
             count *= sizes[i];
@@ -605,7 +606,7 @@ RcppExport SEXP rescaleImage (SEXP _image, SEXP _scales)
 {
 BEGIN_RCPP
     NiftiImage image(_image);
-    image.rescale(as<float_vector>(_scales));
+    image.rescale(as<pixdim_vector>(_scales));
     return image.toPointer("NIfTI image");
 END_RCPP
 }
