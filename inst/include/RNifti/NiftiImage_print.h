@@ -14,6 +14,7 @@
 #define Rc_fprintf_stderr(...) REprintf(__VA_ARGS__)
 #define Rc_fputs_stdout(str) Rprintf(str)
 #define Rc_fputs_stderr(str) REprintf(str)
+#define Rc_fputc_stdout(ch) Rprintf("%c", ch)
 #define Rc_fputc_stderr(ch) REprintf("%c", ch)
 
 #else
@@ -25,6 +26,7 @@
 #define Rc_fprintf_stderr(...) fprintf(stderr, __VA_ARGS__)
 #define Rc_fputs_stdout(str) fputs(str, stdout)
 #define Rc_fputs_stderr(str) fputs(str, stderr)
+#define Rc_fputc_stdout(ch) fputc(ch, stdout)
 #define Rc_fputc_stderr(ch) fputc(ch, stderr)
 #define Rf_warning(str) fprintf(stderr, "%s\n", str)
 #define Rprintf(...) fprintf(stderr, __VA_ARGS__)

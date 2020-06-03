@@ -1,0 +1,3 @@
+importFrom(Rcpp,evalCpp)
+import(RNifti)
+useDynLib(nifti2cpp)

@@ -1,0 +1,14 @@
+Package: nifti1c
+Version: 0.1.0
+Date: 2020-04-05
+Title: RNifti C Client Package
+Author: Jon Clayden
+Maintainer: Jon Clayden <code@clayden.org>
+Imports: RNifti
+LinkingTo: RNifti
+Description: A bare-bones test harness for the RNifti package. Uses plain C and
+     the first version of the NIfTI I/O library.
+License: GPL-2
+URL: https://github.com/jonclayden/RNifti
+BugReports: https://github.com/jonclayden/RNifti/issues
+Encoding: UTF-8
