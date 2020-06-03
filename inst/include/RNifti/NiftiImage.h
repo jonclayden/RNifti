@@ -651,6 +651,7 @@ template <class NiftiType, typename ElementType, int Order>
 class SquareMatrix
 {
 protected:
+    // Storage order is row-major, for consistency with (d)mat44
     ElementType elements[Order*Order];
     
     NiftiType * niftiPointer () const { return (NiftiType *) elements; }
@@ -680,6 +681,20 @@ public:
     {
         std::copy(*source.m, *source.m + Order*Order, this->elements);
     }
+    
+#ifdef USING_R
+    SquareMatrix (SEXP source)
+    {
+        Rcpp::NumericMatrix matrix(source);
+        if (matrix.cols() != Order && matrix.rows() != Order)
+            throw std::runtime_error("Matrix does not have the expected dimensions");
+        for (int i=0; i<Order; i++)
+        {
+            for (int j=0; j<Order; j++)
+                elements[j + i*Order] = matrix(i,j);
+        }
+    }
+#endif
 
     operator const NiftiType () const { return niftiCopy(); }
 
@@ -712,8 +727,22 @@ public:
     MatrixType operator* (const MatrixType &other) const { return multiply(other); }
     VectorType operator* (const VectorType &vec) const { return multiply(vec); }
     
+    // Indexing order is column-major
     const ElementType & operator() (const int i, const int j) const { return elements[j + i*Order]; }
     ElementType & operator() (const int i, const int j) { return elements[j + i*Order]; }
+    
+#ifdef USING_R
+    operator SEXP () const
+    {
+        Rcpp::NumericMatrix result(Order, Order);
+        for (int i=0; i<Order; i++)
+        {
+            for (int j=0; j<Order; j++)
+                result(i,j) = elements[j + i*Order];
+        }
+        return result;
+    }
+#endif
 };
 
 
@@ -857,6 +886,11 @@ public:
         
         Xform (Matrix::NativeType &source, Matrix::NativeType &inverse, Element *qparams = NULL)
             : forward(*source.m), inverse(*inverse.m), qparams(qparams), mat(source) {}
+        
+#ifdef USING_R
+        Xform (SEXP source)
+            : forward(NULL), inverse(NULL), qparams(NULL), mat(Matrix(source)) {}
+#endif
         
         operator const Matrix::NativeType () const { return mat; }
         
