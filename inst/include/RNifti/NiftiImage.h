@@ -911,8 +911,12 @@ public:
         const Matrix & matrix () const { return mat; }
         Submatrix submatrix () const;
         Submatrix rotation () const;
+        
+        Element handedness () const;
         Vector4 quaternion () const;
         Vector3 offset () const;
+        Vector3 spacing () const;
+        
         std::string orientation () const;
     };
     

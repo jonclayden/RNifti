@@ -422,6 +422,17 @@ inline NiftiImage::Xform::Submatrix NiftiImage::Xform::rotation () const
     return rotation.submatrix();
 }
 
+inline NiftiImage::Xform::Element NiftiImage::Xform::handedness () const
+{
+    NiftiImage::Xform::Element qfac;
+#if RNIFTI_NIFTILIB_VERSION == 1
+    nifti_mat44_to_quatern(mat, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &qfac);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti_dmat44_to_quatern(mat, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &qfac);
+#endif
+    return qfac;
+}
+
 inline NiftiImage::Xform::Vector4 NiftiImage::Xform::quaternion () const
 {
     NiftiImage::Xform::Vector4 q;
@@ -439,6 +450,17 @@ inline NiftiImage::Xform::Vector3 NiftiImage::Xform::offset () const
     NiftiImage::Xform::Vector3 vec;
     for (int i=0; i<3; i++)
         vec[i] = mat(i,3);
+    return vec;
+}
+
+inline NiftiImage::Xform::Vector3 NiftiImage::Xform::spacing () const
+{
+    NiftiImage::Xform::Vector3 vec;
+#if RNIFTI_NIFTILIB_VERSION == 1
+    nifti_mat44_to_quatern(mat, NULL, NULL, NULL, NULL, NULL, NULL, &vec[0], &vec[1], &vec[2], NULL);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    nifti_dmat44_to_quatern(mat, NULL, NULL, NULL, NULL, NULL, NULL, &vec[0], &vec[1], &vec[2], NULL);
+#endif
     return vec;
 }
 
