@@ -684,9 +684,12 @@ void R_init_RNifti (DllInfo *info)
     R_RegisterCCallable("RNifti", "nii_image_unload", (DL_FUNC) &nifti_image_unload);
     R_RegisterCCallable("RNifti", "nii_image_free", (DL_FUNC) &nifti_image_free);
     R_RegisterCCallable("RNifti", "nii_read_collapsed_image", (DL_FUNC) &nifti_read_collapsed_image);
+    R_RegisterCCallable("RNifti", "nii_read_subregion_image", (DL_FUNC) &nifti_read_subregion_image);
     R_RegisterCCallable("RNifti", "nii_image_write", (DL_FUNC) &nifti_image_write);
     R_RegisterCCallable("RNifti", "nii_image_write_bricks", (DL_FUNC) &nifti_image_write_bricks);
     R_RegisterCCallable("RNifti", "nii_image_infodump", (DL_FUNC) &nifti_image_infodump);
+    R_RegisterCCallable("RNifti", "nii_disp_lib_hist", (DL_FUNC) &nifti_disp_lib_hist);
+    R_RegisterCCallable("RNifti", "nii_disp_lib_version", (DL_FUNC) &nifti_disp_lib_version);
     R_RegisterCCallable("RNifti", "nii_disp_matrix_orient", (DL_FUNC) &nifti_disp_matrix_orient);
     R_RegisterCCallable("RNifti", "nii_disp_type_list", (DL_FUNC) &nifti_disp_type_list);
     R_RegisterCCallable("RNifti", "nii_image_to_ascii", (DL_FUNC) &nifti_image_to_ascii);
@@ -713,6 +716,10 @@ void R_init_RNifti (DllInfo *info)
     R_RegisterCCallable("RNifti", "nii_read_ascii_image", (DL_FUNC) &nifti_read_ascii_image);
     R_RegisterCCallable("RNifti", "nii_write_ascii_image", (DL_FUNC) &nifti_write_ascii_image);
     R_RegisterCCallable("RNifti", "nii_datatype_sizes", (DL_FUNC) &nifti_datatype_sizes);
+    R_RegisterCCallable("RNifti", "nii_mat44_to_quatern", (DL_FUNC) &nifti_mat44_to_quatern);
+    R_RegisterCCallable("RNifti", "nii_quatern_to_mat44", (DL_FUNC) &nifti_quatern_to_mat44);
+    R_RegisterCCallable("RNifti", "nii_make_orthog_mat44", (DL_FUNC) &nifti_make_orthog_mat44);
+    R_RegisterCCallable("RNifti", "nii_short_order", (DL_FUNC) &nifti_short_order);
     R_RegisterCCallable("RNifti", "nii_mat44_to_orientation", (DL_FUNC) &nifti_mat44_to_orientation);
     R_RegisterCCallable("RNifti", "nii_findhdrname", (DL_FUNC) &nifti_findhdrname);
     R_RegisterCCallable("RNifti", "nii_findimgname", (DL_FUNC) &nifti_findimgname);
@@ -787,6 +794,9 @@ void R_init_RNifti (DllInfo *info)
     R_RegisterCCallable("RNifti", "nii2_write_buffer", (DL_FUNC) &nifti2_write_buffer);
     R_RegisterCCallable("RNifti", "nii2_read_ascii_image", (DL_FUNC) &nifti2_read_ascii_image);
     R_RegisterCCallable("RNifti", "nii2_write_ascii_image", (DL_FUNC) &nifti2_write_ascii_image);
+    R_RegisterCCallable("RNifti", "nii_dmat44_to_quatern", (DL_FUNC) &nifti_dmat44_to_quatern);
+    R_RegisterCCallable("RNifti", "nii_quatern_to_dmat44", (DL_FUNC) &nifti_quatern_to_dmat44);
+    R_RegisterCCallable("RNifti", "nii_make_orthog_dmat44", (DL_FUNC) &nifti_make_orthog_dmat44);
     R_RegisterCCallable("RNifti", "nii_dmat44_to_orientation", (DL_FUNC) &nifti_dmat44_to_orientation);
     R_RegisterCCallable("RNifti", "nii_convert_nim2n1hdr", (DL_FUNC) &nifti_convert_nim2n1hdr);
     R_RegisterCCallable("RNifti", "nii_convert_nim2n2hdr", (DL_FUNC) &nifti_convert_nim2n2hdr);

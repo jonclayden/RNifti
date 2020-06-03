@@ -10,12 +10,15 @@ for (version in 1:2) {
     
     # Unwrap continuation lines
     wrapped <- which(lines %~% "^[^\\(]+\\)")
-    lines[wrapped-1] <- paste(lines[wrapped-1], lines[wrapped])
-    lines <- lines[-wrapped]
+    while (length(wrapped) > 0) {
+        lines[wrapped-1] <- paste(lines[wrapped-1], lines[wrapped])
+        lines <- lines[-wrapped]
+        wrapped <- which(lines %~% "^[^\\(]+\\)")
+    }
     
     # Pattern-match each declaration, identifying groups corresponding to the
     # return type, function name and function arguments
-    pieces <- groups(ore.search("^(\\w[\\w\\s]+?\\**)\\s*(\\w+)\\s*\\(([^\\)]+)\\)\\s*;\\s*$", lines))
+    pieces <- groups(ore.search("^(\\w[\\w\\s]+?\\**)\\s*(\\w+)\\s*\\(([^\\)]+)\\)\\s*;\\s*(/\\*[^*]+\\*/\\s*)?$", lines))
     values <- ore.subst("^\\s+(.+?)\\s+", "\\1", pieces[,1,])
     values <- ore.subst("\\s+(\\s)", "\\1", values, all=TRUE)
     symbols <- pieces[,2,]

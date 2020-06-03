@@ -2,6 +2,7 @@
 #define _RNIFTI_API_H_
 
 #include <R_ext/Rdynload.h>
+#include "RNifti.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,9 +55,12 @@ static int(*_nifti_image_load)(nifti_image *) = NULL;
 static void(*_nifti_image_unload)(nifti_image *) = NULL;
 static void(*_nifti_image_free)(nifti_image *) = NULL;
 static int(*_nifti_read_collapsed_image)(nifti_image *, const int[8], void **) = NULL;
+static int(*_nifti_read_subregion_image)(nifti_image *, const int *, const int *, void **) = NULL;
 static void(*_nifti_image_write)(nifti_image *) = NULL;
 static void(*_nifti_image_write_bricks)(nifti_image *, const nifti_brick_list *) = NULL;
 static void(*_nifti_image_infodump)(const nifti_image *) = NULL;
+static void(*_nifti_disp_lib_hist)(void) = NULL;
+static void(*_nifti_disp_lib_version)(void) = NULL;
 static int(*_nifti_disp_matrix_orient)(const char *, mat44) = NULL;
 static int(*_nifti_disp_type_list)(int) = NULL;
 static char *(*_nifti_image_to_ascii)(const nifti_image *) = NULL;
@@ -83,6 +87,10 @@ static size_t(*_nifti_write_buffer)(znzFile, const void *, size_t) = NULL;
 static nifti_image *(*_nifti_read_ascii_image)(znzFile, char *, int, int) = NULL;
 static znzFile(*_nifti_write_ascii_image)(nifti_image *, const nifti_brick_list *, const char *, int, int) = NULL;
 static void(*_nifti_datatype_sizes)(int, int *, int *) = NULL;
+static void(*_nifti_mat44_to_quatern)(mat44, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *) = NULL;
+static mat44(*_nifti_quatern_to_mat44)(float, float, float, float, float, float, float, float, float, float) = NULL;
+static mat44(*_nifti_make_orthog_mat44)(float, float, float, float, float, float, float, float, float) = NULL;
+static int(*_nifti_short_order)(void) = NULL;
 static void(*_nifti_mat44_to_orientation)(mat44, int *, int *, int *) = NULL;
 static char *(*_nifti_findhdrname)(const char*) = NULL;
 static char *(*_nifti_findimgname)(const char*, int) = NULL;
@@ -166,6 +174,8 @@ static int64_t(*_nifti2_read_subregion_image)(nifti_image *, const int64_t *, co
 static void(*_nifti2_image_write)(nifti_image *) = NULL;
 static void(*_nifti2_image_write_bricks)(nifti_image *, const nifti_brick_list *) = NULL;
 static void(*_nifti2_image_infodump)(const nifti_image *) = NULL;
+static void(*_nifti_disp_lib_hist)(int) = NULL;
+static void(*_nifti_disp_lib_version)(void) = NULL;
 static int(*_nifti2_disp_matrix_orient)(const char *, nifti_dmat44) = NULL;
 static int(*_nifti_disp_type_list)(int) = NULL;
 static char *(*_nifti2_image_to_ascii)(const nifti_image *) = NULL;
@@ -196,6 +206,13 @@ static int64_t(*_nifti2_write_buffer)(znzFile, const void *, int64_t) = NULL;
 static nifti_image *(*_nifti2_read_ascii_image)(znzFile, const char *, int, int) = NULL;
 static znzFile(*_nifti2_write_ascii_image)(nifti_image *, const nifti_brick_list *, const char *, int, int) = NULL;
 static void(*_nifti_datatype_sizes)(int, int *, int *) = NULL;
+static void(*_nifti_dmat44_to_quatern)(nifti_dmat44, double *, double *, double *, double *, double *, double *, double *, double *, double *, double *) = NULL;
+static nifti_dmat44(*_nifti_quatern_to_dmat44)(double, double, double, double, double, double, double, double, double, double) = NULL;
+static nifti_dmat44(*_nifti_make_orthog_dmat44)(double, double, double, double, double, double, double, double, double) = NULL;
+static void(*_nifti_mat44_to_quatern)(mat44, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *) = NULL;
+static mat44(*_nifti_quatern_to_mat44)(float, float, float, float, float, float, float, float, float, float) = NULL;
+static mat44(*_nifti_make_orthog_mat44)(float, float, float, float, float, float, float, float, float) = NULL;
+static int(*_nifti_short_order)(void) = NULL;
 static void(*_nifti_mat44_to_orientation)(mat44, int *, int *, int *) = NULL;
 static void(*_nifti_dmat44_to_orientation)(nifti_dmat44, int *, int *, int *) = NULL;
 static char *(*_nifti_findhdrname)(const char*) = NULL;
@@ -280,9 +297,12 @@ void niftilib_register_all ()
         _nifti_image_unload = (void(*)(nifti_image *)) R_GetCCallable("RNifti", "nii_image_unload");
         _nifti_image_free = (void(*)(nifti_image *)) R_GetCCallable("RNifti", "nii_image_free");
         _nifti_read_collapsed_image = (int(*)(nifti_image *, const int[8], void **)) R_GetCCallable("RNifti", "nii_read_collapsed_image");
+        _nifti_read_subregion_image = (int(*)(nifti_image *, const int *, const int *, void **)) R_GetCCallable("RNifti", "nii_read_subregion_image");
         _nifti_image_write = (void(*)(nifti_image *)) R_GetCCallable("RNifti", "nii_image_write");
         _nifti_image_write_bricks = (void(*)(nifti_image *, const nifti_brick_list *)) R_GetCCallable("RNifti", "nii_image_write_bricks");
         _nifti_image_infodump = (void(*)(const nifti_image *)) R_GetCCallable("RNifti", "nii_image_infodump");
+        _nifti_disp_lib_hist = (void(*)(void)) R_GetCCallable("RNifti", "nii_disp_lib_hist");
+        _nifti_disp_lib_version = (void(*)(void)) R_GetCCallable("RNifti", "nii_disp_lib_version");
         _nifti_disp_matrix_orient = (int(*)(const char *, mat44)) R_GetCCallable("RNifti", "nii_disp_matrix_orient");
         _nifti_disp_type_list = (int(*)(int)) R_GetCCallable("RNifti", "nii_disp_type_list");
         _nifti_image_to_ascii = (char *(*)(const nifti_image *)) R_GetCCallable("RNifti", "nii_image_to_ascii");
@@ -309,6 +329,10 @@ void niftilib_register_all ()
         _nifti_read_ascii_image = (nifti_image *(*)(znzFile, char *, int, int)) R_GetCCallable("RNifti", "nii_read_ascii_image");
         _nifti_write_ascii_image = (znzFile(*)(nifti_image *, const nifti_brick_list *, const char *, int, int)) R_GetCCallable("RNifti", "nii_write_ascii_image");
         _nifti_datatype_sizes = (void(*)(int, int *, int *)) R_GetCCallable("RNifti", "nii_datatype_sizes");
+        _nifti_mat44_to_quatern = (void(*)(mat44, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *)) R_GetCCallable("RNifti", "nii_mat44_to_quatern");
+        _nifti_quatern_to_mat44 = (mat44(*)(float, float, float, float, float, float, float, float, float, float)) R_GetCCallable("RNifti", "nii_quatern_to_mat44");
+        _nifti_make_orthog_mat44 = (mat44(*)(float, float, float, float, float, float, float, float, float)) R_GetCCallable("RNifti", "nii_make_orthog_mat44");
+        _nifti_short_order = (int(*)(void)) R_GetCCallable("RNifti", "nii_short_order");
         _nifti_mat44_to_orientation = (void(*)(mat44, int *, int *, int *)) R_GetCCallable("RNifti", "nii_mat44_to_orientation");
         _nifti_findhdrname = (char *(*)(const char*)) R_GetCCallable("RNifti", "nii_findhdrname");
         _nifti_findimgname = (char *(*)(const char*, int)) R_GetCCallable("RNifti", "nii_findimgname");
@@ -392,6 +416,8 @@ void niftilib_register_all ()
         _nifti2_image_write = (void(*)(nifti_image *)) R_GetCCallable("RNifti", "nii2_image_write");
         _nifti2_image_write_bricks = (void(*)(nifti_image *, const nifti_brick_list *)) R_GetCCallable("RNifti", "nii2_image_write_bricks");
         _nifti2_image_infodump = (void(*)(const nifti_image *)) R_GetCCallable("RNifti", "nii2_image_infodump");
+        _nifti_disp_lib_hist = (void(*)(int)) R_GetCCallable("RNifti", "nii_disp_lib_hist");
+        _nifti_disp_lib_version = (void(*)(void)) R_GetCCallable("RNifti", "nii_disp_lib_version");
         _nifti2_disp_matrix_orient = (int(*)(const char *, nifti_dmat44)) R_GetCCallable("RNifti", "nii2_disp_matrix_orient");
         _nifti_disp_type_list = (int(*)(int)) R_GetCCallable("RNifti", "nii_disp_type_list");
         _nifti2_image_to_ascii = (char *(*)(const nifti_image *)) R_GetCCallable("RNifti", "nii2_image_to_ascii");
@@ -422,6 +448,13 @@ void niftilib_register_all ()
         _nifti2_read_ascii_image = (nifti_image *(*)(znzFile, const char *, int, int)) R_GetCCallable("RNifti", "nii2_read_ascii_image");
         _nifti2_write_ascii_image = (znzFile(*)(nifti_image *, const nifti_brick_list *, const char *, int, int)) R_GetCCallable("RNifti", "nii2_write_ascii_image");
         _nifti_datatype_sizes = (void(*)(int, int *, int *)) R_GetCCallable("RNifti", "nii_datatype_sizes");
+        _nifti_dmat44_to_quatern = (void(*)(nifti_dmat44, double *, double *, double *, double *, double *, double *, double *, double *, double *, double *)) R_GetCCallable("RNifti", "nii_dmat44_to_quatern");
+        _nifti_quatern_to_dmat44 = (nifti_dmat44(*)(double, double, double, double, double, double, double, double, double, double)) R_GetCCallable("RNifti", "nii_quatern_to_dmat44");
+        _nifti_make_orthog_dmat44 = (nifti_dmat44(*)(double, double, double, double, double, double, double, double, double)) R_GetCCallable("RNifti", "nii_make_orthog_dmat44");
+        _nifti_mat44_to_quatern = (void(*)(mat44, float *, float *, float *, float *, float *, float *, float *, float *, float *, float *)) R_GetCCallable("RNifti", "nii_mat44_to_quatern");
+        _nifti_quatern_to_mat44 = (mat44(*)(float, float, float, float, float, float, float, float, float, float)) R_GetCCallable("RNifti", "nii_quatern_to_mat44");
+        _nifti_make_orthog_mat44 = (mat44(*)(float, float, float, float, float, float, float, float, float)) R_GetCCallable("RNifti", "nii_make_orthog_mat44");
+        _nifti_short_order = (int(*)(void)) R_GetCCallable("RNifti", "nii_short_order");
         _nifti_mat44_to_orientation = (void(*)(mat44, int *, int *, int *)) R_GetCCallable("RNifti", "nii_mat44_to_orientation");
         _nifti_dmat44_to_orientation = (void(*)(nifti_dmat44, int *, int *, int *)) R_GetCCallable("RNifti", "nii_dmat44_to_orientation");
         _nifti_findhdrname = (char *(*)(const char*)) R_GetCCallable("RNifti", "nii_findhdrname");
@@ -503,9 +536,12 @@ int nifti_image_load (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_image_lo
 void nifti_image_unload (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_image_unload, nim) }
 void nifti_image_free (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_image_free, nim) }
 int nifti_read_collapsed_image (nifti_image * nim, const int dims[8], void ** data) { NIFTILIB_WRAPPER_BODY(_nifti_read_collapsed_image, nim, dims, data) }
+int nifti_read_subregion_image (nifti_image * nim, const int * start_index, const int * region_size, void ** data) { NIFTILIB_WRAPPER_BODY(_nifti_read_subregion_image, nim, start_index, region_size, data) }
 void nifti_image_write (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_image_write, nim) }
 void nifti_image_write_bricks (nifti_image * nim, const nifti_brick_list * NBL) { NIFTILIB_WRAPPER_BODY(_nifti_image_write_bricks, nim, NBL) }
 void nifti_image_infodump (const nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_image_infodump, nim) }
+void nifti_disp_lib_hist () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_disp_lib_hist) }
+void nifti_disp_lib_version () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_disp_lib_version) }
 int nifti_disp_matrix_orient (const char * mesg, mat44 mat) { NIFTILIB_WRAPPER_BODY(_nifti_disp_matrix_orient, mesg, mat) }
 int nifti_disp_type_list (int which) { NIFTILIB_WRAPPER_BODY(_nifti_disp_type_list, which) }
 char * nifti_image_to_ascii (const nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_image_to_ascii, nim) }
@@ -532,6 +568,10 @@ size_t nifti_write_buffer (znzFile fp, const void * buffer, size_t numbytes) { N
 nifti_image * nifti_read_ascii_image (znzFile fp, char * fname, int flen, int read_data) { NIFTILIB_WRAPPER_BODY(_nifti_read_ascii_image, fp, fname, flen, read_data) }
 znzFile nifti_write_ascii_image (nifti_image * nim, const nifti_brick_list * NBL, const char * opts, int write_data, int leave_open) { NIFTILIB_WRAPPER_BODY(_nifti_write_ascii_image, nim, NBL, opts, write_data, leave_open) }
 void nifti_datatype_sizes (int datatype, int * nbyper, int * swapsize) { NIFTILIB_WRAPPER_BODY(_nifti_datatype_sizes, datatype, nbyper, swapsize) }
+void nifti_mat44_to_quatern (mat44 R, float * qb, float * qc, float * qd, float * qx, float * qy, float * qz, float * dx, float * dy, float * dz, float * qfac) { NIFTILIB_WRAPPER_BODY(_nifti_mat44_to_quatern, R, qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac) }
+mat44 nifti_quatern_to_mat44 (float qb, float qc, float qd, float qx, float qy, float qz, float dx, float dy, float dz, float qfac) { NIFTILIB_WRAPPER_BODY(_nifti_quatern_to_mat44, qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac) }
+mat44 nifti_make_orthog_mat44 (float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33) { NIFTILIB_WRAPPER_BODY(_nifti_make_orthog_mat44, r11, r12, r13, r21, r22, r23, r31, r32, r33) }
+int nifti_short_order () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_short_order) }
 void nifti_mat44_to_orientation (mat44 R, int * icod, int * jcod, int * kcod) { NIFTILIB_WRAPPER_BODY(_nifti_mat44_to_orientation, R, icod, jcod, kcod) }
 char * nifti_findhdrname (const char* fname) { NIFTILIB_WRAPPER_BODY(_nifti_findhdrname, fname) }
 char * nifti_findimgname (const char* fname, int nifti_type) { NIFTILIB_WRAPPER_BODY(_nifti_findimgname, fname, nifti_type) }
@@ -615,6 +655,8 @@ int64_t nifti2_read_subregion_image (nifti_image * nim, const int64_t * start_in
 void nifti2_image_write (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti2_image_write, nim) }
 void nifti2_image_write_bricks (nifti_image * nim, const nifti_brick_list * NBL) { NIFTILIB_WRAPPER_BODY(_nifti2_image_write_bricks, nim, NBL) }
 void nifti2_image_infodump (const nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti2_image_infodump, nim) }
+void nifti_disp_lib_hist (int ver) { NIFTILIB_WRAPPER_BODY(_nifti_disp_lib_hist, ver) }
+void nifti_disp_lib_version () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_disp_lib_version) }
 int nifti2_disp_matrix_orient (const char * mesg, nifti_dmat44 mat) { NIFTILIB_WRAPPER_BODY(_nifti2_disp_matrix_orient, mesg, mat) }
 int nifti_disp_type_list (int which) { NIFTILIB_WRAPPER_BODY(_nifti_disp_type_list, which) }
 char * nifti2_image_to_ascii (const nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti2_image_to_ascii, nim) }
@@ -645,6 +687,13 @@ int64_t nifti2_write_buffer (znzFile fp, const void * buffer, int64_t numbytes) 
 nifti_image * nifti2_read_ascii_image (znzFile fp, const char * fname, int flen, int read_data) { NIFTILIB_WRAPPER_BODY(_nifti2_read_ascii_image, fp, fname, flen, read_data) }
 znzFile nifti2_write_ascii_image (nifti_image * nim, const nifti_brick_list * NBL, const char * opts, int write_data, int leave_open) { NIFTILIB_WRAPPER_BODY(_nifti2_write_ascii_image, nim, NBL, opts, write_data, leave_open) }
 void nifti_datatype_sizes (int datatype, int * nbyper, int * swapsize) { NIFTILIB_WRAPPER_BODY(_nifti_datatype_sizes, datatype, nbyper, swapsize) }
+void nifti_dmat44_to_quatern (nifti_dmat44 R, double * qb, double * qc, double * qd, double * qx, double * qy, double * qz, double * dx, double * dy, double * dz, double * qfac) { NIFTILIB_WRAPPER_BODY(_nifti_dmat44_to_quatern, R, qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac) }
+nifti_dmat44 nifti_quatern_to_dmat44 (double qb, double qc, double qd, double qx, double qy, double qz, double dx, double dy, double dz, double qfac) { NIFTILIB_WRAPPER_BODY(_nifti_quatern_to_dmat44, qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac) }
+nifti_dmat44 nifti_make_orthog_dmat44 (double r11, double r12, double r13, double r21, double r22, double r23, double r31, double r32, double r33) { NIFTILIB_WRAPPER_BODY(_nifti_make_orthog_dmat44, r11, r12, r13, r21, r22, r23, r31, r32, r33) }
+void nifti_mat44_to_quatern (mat44 R, float * qb, float * qc, float * qd, float * qx, float * qy, float * qz, float * dx, float * dy, float * dz, float * qfac) { NIFTILIB_WRAPPER_BODY(_nifti_mat44_to_quatern, R, qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac) }
+mat44 nifti_quatern_to_mat44 (float qb, float qc, float qd, float qx, float qy, float qz, float dx, float dy, float dz, float qfac) { NIFTILIB_WRAPPER_BODY(_nifti_quatern_to_mat44, qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac) }
+mat44 nifti_make_orthog_mat44 (float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33) { NIFTILIB_WRAPPER_BODY(_nifti_make_orthog_mat44, r11, r12, r13, r21, r22, r23, r31, r32, r33) }
+int nifti_short_order () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_short_order) }
 void nifti_mat44_to_orientation (mat44 R, int * icod, int * jcod, int * kcod) { NIFTILIB_WRAPPER_BODY(_nifti_mat44_to_orientation, R, icod, jcod, kcod) }
 void nifti_dmat44_to_orientation (nifti_dmat44 R, int * icod, int * jcod, int * kcod) { NIFTILIB_WRAPPER_BODY(_nifti_dmat44_to_orientation, R, icod, jcod, kcod) }
 char * nifti_findhdrname (const char* fname) { NIFTILIB_WRAPPER_BODY(_nifti_findhdrname, fname) }
