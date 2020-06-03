@@ -12,39 +12,12 @@ typedef std::vector<int> int_vector;
 typedef std::vector<NiftiImage::dim_t> dim_vector;
 typedef std::vector<NiftiImage::pixdim_t> pixdim_vector;
 
-::mat44 matrixToXform (const SEXP _matrix, bool *valid = NULL)
+inline bool isXformMatrix (const SEXP object)
 {
-    ::mat44 xform;
-    
-    if (valid != NULL)
-        *valid = false;
-    
-    if (Rf_isMatrix(_matrix))
-    {
-        NumericMatrix matrix(_matrix);
-        if (matrix.cols() == 4 && matrix.rows() == 4)
-        {
-            if (valid != NULL)
-                *valid = true;
-            for (int i=0; i<4; i++)
-            {
-                for (int j=0; j<4; j++)
-                    xform.m[i][j] = static_cast<float>(matrix(i,j));
-            }
-        }
-    }
-    return xform;
-}
-
-NumericMatrix xformToMatrix (const ::mat44 xform)
-{
-    NumericMatrix matrix(4,4);
-    for (int i=0; i<4; i++)
-    {
-        for (int j=0; j<4; j++)
-            matrix(i,j) = static_cast<double>(xform.m[i][j]);
-    }
-    return matrix;
+    if (!Rf_isMatrix(object))
+        return false;
+    NumericMatrix matrix(object);
+    return (matrix.cols() == 4 && matrix.rows() == 4);
 }
 
 inline unsigned char clip (const double &value)
@@ -292,17 +265,13 @@ END_RCPP
 RcppExport SEXP getXform (SEXP _image, SEXP _preferQuaternion)
 {
 BEGIN_RCPP
-    bool isMatrix = false;
-    matrixToXform(_image, &isMatrix);
-    
-    if (isMatrix)
+    if (isXformMatrix(_image))
         return _image;
     else
     {
         const NiftiImage image(_image, false, true);
         const bool preferQuaternion = as<bool>(_preferQuaternion);
-        ::mat44 xform = image.xform(preferQuaternion);
-        NumericMatrix matrix = xformToMatrix(xform);
+        NumericMatrix matrix = wrap(image.xform(preferQuaternion).matrix());
         if (image.isNull())
             matrix.attr("code") = 0;
         else
@@ -316,10 +285,7 @@ RcppExport SEXP setXform (SEXP _image, SEXP _matrix, SEXP _isQform)
 {
 BEGIN_RCPP
     NumericMatrix matrix(_matrix);
-    if (matrix.cols() != 4 || matrix.rows() != 4)
-        throw std::runtime_error("Specified affine matrix does not have dimensions of 4x4");
-    
-    ::mat44 xform = matrixToXform(_matrix);
+    NiftiImage::Xform xform(_matrix);
     
     int code = -1;
     if (!Rf_isNull(matrix.attr("code")))
@@ -374,18 +340,13 @@ BEGIN_RCPP
         {
             if (as<bool>(_isQform))
             {
-                image->qto_xyz = xform;
-                image->qto_ijk = nifti_mat44_inverse(image->qto_xyz);
-                nifti_mat44_to_quatern(image->qto_xyz, &image->quatern_b, &image->quatern_c, &image->quatern_d, &image->qoffset_x, &image->qoffset_y, &image->qoffset_z, NULL, NULL, NULL, &image->qfac);
-            
+                image.qform() = xform;
                 if (code >= 0)
                     image->qform_code = code;
             }
             else
             {
-                image->sto_xyz = xform;
-                image->sto_ijk = nifti_mat44_inverse(image->sto_xyz);
-            
+                image.sform() = xform;
                 if (code >= 0)
                     image->sform_code = code;
             }
@@ -401,11 +362,9 @@ RcppExport SEXP getOrientation (SEXP _image, SEXP _preferQuaternion)
 {
 BEGIN_RCPP
     std::string orientation;
-    bool isMatrix = false;
-    ::mat44 xform = matrixToXform(_image, &isMatrix);
     
-    if (isMatrix)
-        orientation = NiftiImage::Xform(xform).orientation();
+    if (isXformMatrix(_image))
+        orientation = NiftiImage::Xform(_image).orientation();
     else
     {
         const NiftiImage image(_image, false, true);
@@ -419,23 +378,18 @@ END_RCPP
 RcppExport SEXP setOrientation (SEXP _image, SEXP _axes)
 {
 BEGIN_RCPP
-    bool isMatrix = false;
-    ::mat44 xform = matrixToXform(_image, &isMatrix);
-    
-    if (isMatrix)
+    if (isXformMatrix(_image))
     {
         // Create an empty image for temporary purposes
         nifti_image *ptr = nifti_make_new_nim(NULL, DT_UNSIGNED_CHAR, 0);
         NiftiImage image(ptr);
         
         // Set the qform matrix
-        image->qto_xyz = xform;
-        image->qto_ijk = nifti_mat44_inverse(image->qto_xyz);
-        nifti_mat44_to_quatern(image->qto_xyz, &image->quatern_b, &image->quatern_c, &image->quatern_d, &image->qoffset_x, &image->qoffset_y, &image->qoffset_z, NULL, NULL, NULL, &image->qfac);
+        image.qform() = NiftiImage::Xform(_image);
         image->qform_code = 2;
         
         image.reorient(as<std::string>(_axes));
-        return xformToMatrix(image->qto_xyz);
+        return image.qform().matrix();
     }
     else
     {
@@ -449,25 +403,13 @@ END_RCPP
 RcppExport SEXP getRotation (SEXP _image, SEXP _preferQuaternion)
 {
 BEGIN_RCPP
-    NiftiImage::Xform::Submatrix rotation;
-    bool isMatrix = false;
-    ::mat44 xform = matrixToXform(_image, &isMatrix);
-    
-    if (isMatrix)
-        rotation = NiftiImage::Xform(xform).rotation();
+    if (isXformMatrix(_image))
+        return NiftiImage::Xform(_image).rotation();
     else
     {
         const NiftiImage image(_image, false, true);
-        rotation = image.xform(as<bool>(_preferQuaternion)).rotation();
+        return image.xform(as<bool>(_preferQuaternion)).rotation();
     }
-    
-    NumericMatrix matrix(3,3);
-    for (int i=0; i<3; i++)
-    {
-        for (int j=0; j<3; j++)
-            matrix(i,j) = static_cast<double>(rotation(i,j));
-    }
-    return matrix;
 END_RCPP
 }
 
