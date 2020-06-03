@@ -2,6 +2,7 @@
 #define _RNIFTI_API_H_
 
 #include <R_ext/Rdynload.h>
+#include "RNifti.h"
 
 #ifdef __cplusplus
 extern "C" {
