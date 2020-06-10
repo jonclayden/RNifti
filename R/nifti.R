@@ -74,7 +74,15 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto")
     if (is.array(image) && !is.null(template))
         image <- asNifti(image, template)
     
-    invisible(.Call("writeNifti", image, file, tolower(datatype), PACKAGE="RNifti"))
+    invisible(.Call("writeNifti", image, file, tolower(datatype), "nifti1", PACKAGE="RNifti"))
+}
+
+writeAnalyze <- function (image, file, template = NULL, datatype = "auto")
+{
+    if (is.array(image) && !is.null(template))
+        image <- asNifti(image, template)
+    
+    invisible(.Call("writeNifti", image, file, tolower(datatype), "analyze", PACKAGE="RNifti"))
 }
 
 #' Create or modify an NIfTI image object
