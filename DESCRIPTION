@@ -2,14 +2,15 @@ Package: RNifti
 Version: 1.1.0
 Date: 2020-01-31
 Title: Fast R and C++ Access to NIfTI Images
-Authors@R: c(person("Jon","Clayden",role=c("cre","aut"),email="code@clayden.org"),
-             person("Bob","Cox",role="aut"),
-             person("Mark","Jenkinson",role="aut"),
-             person("Matt","Hall",role="ctb"),
-             person("Rick","Reynolds",role="ctb"),
-             person("Kate","Fissell",role="ctb"),
-             person("Jean-loup","Gailly",role="cph"),
-             person("Mark","Adler",role="cph"))
+Authors@R: c(person("Jon", "Clayden", role=c("cre","aut"),
+    email="code@clayden.org", comment=c(ORCID="0000-0002-6608-0619")),
+             person("Bob", "Cox", role="aut"),
+             person("Mark", "Jenkinson", role="aut"),
+             person("Matt", "Hall", role="ctb"),
+             person("Rick", "Reynolds", role="ctb"),
+             person("Kate", "Fissell", role="ctb"),
+             person("Jean-loup", "Gailly", role="cph"),
+             person("Mark", "Adler", role="cph"))
 Imports: Rcpp (>= 0.11.0)
 Suggests: testthat (>= 0.11.0), covr, reportr, shades
 Enhances: oro.nifti, tractor.base
