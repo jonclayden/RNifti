@@ -4,8 +4,7 @@
 \alias{channels}
 \title{Extract channels from RGB data}
 \usage{
-channels(array, channels = c("red", "green", "blue", "alpha"),
-  raw = FALSE)
+channels(array, channels = c("red", "green", "blue", "alpha"), raw = FALSE)
 }
 \arguments{
 \item{array}{An image, an \code{rgbArray}, or another array that can be

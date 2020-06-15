@@ -34,8 +34,9 @@
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{writeNifti}}
 #' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
-#' @export
-readNifti <- function (file, internal = FALSE, volumes = NULL)
+#' @aliases readAnalyze
+#' @export readNifti readAnalyze
+readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL)
 {
     if (!is.character(file))
         stop("File name(s) must be specified in a character vector")
@@ -71,18 +72,14 @@ readNifti <- function (file, internal = FALSE, volumes = NULL)
 #' @export
 writeNifti <- function (image, file, template = NULL, datatype = "auto")
 {
-    if (is.array(image) && !is.null(template))
-        image <- asNifti(image, template)
-    
-    invisible(.Call("writeNifti", image, file, tolower(datatype), "nifti1", PACKAGE="RNifti"))
+    invisible(.Call("writeNifti", asNifti(image,template,internal=TRUE), file, tolower(datatype), "nifti1", PACKAGE="RNifti"))
 }
 
+#' @rdname writeNifti
+#' @export
 writeAnalyze <- function (image, file, template = NULL, datatype = "auto")
 {
-    if (is.array(image) && !is.null(template))
-        image <- asNifti(image, template)
-    
-    invisible(.Call("writeNifti", image, file, tolower(datatype), "analyze", PACKAGE="RNifti"))
+    invisible(.Call("writeNifti", asNifti(image,template,internal=TRUE), file, tolower(datatype), "analyze", PACKAGE="RNifti"))
 }
 
 #' Create or modify an NIfTI image object
@@ -125,7 +122,7 @@ writeAnalyze <- function (image, file, template = NULL, datatype = "auto")
 #' interfaces to this function, which behave like the pre-existing functions of
 #' the same names. They may be removed in future.
 #' 
-#' @param image Any suitable object (see Details).
+#' @param x Any suitable object (see Details).
 #' @param reference An image, or a named list of NIfTI-1 properties like that
 #'   produced by \code{\link{niftiHeader}}. The default of \code{NULL} will
 #'   have no effect.
@@ -157,9 +154,16 @@ writeAnalyze <- function (image, file, template = NULL, datatype = "auto")
 #'   \code{\link{dim.internalImage}}, \code{\link{pixdim}}, \code{\link{xform}}
 #' @aliases retrieveNifti updateNifti
 #' @export
-asNifti <- function (image, reference = NULL, datatype = "auto", internal = NA)
+asNifti <- function (x, reference = NULL, ...)
 {
-    .Call("asNifti", image, reference, datatype, internal, PACKAGE="RNifti")
+    UseMethod("asNifti")
+}
+
+#' @rdname asNifti
+#' @export
+asNifti.default <- function (x, reference = NULL, datatype = "auto", internal = NA, ...)
+{
+    .Call("asNifti", x, reference, datatype, internal, PACKAGE="RNifti")
 }
 
 #' @export
@@ -216,14 +220,14 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
 #' @export niftiHeader dumpNifti
 niftiHeader <- dumpNifti <- function (image = list())
 {
-    .Call("niftiHeader", image, PACKAGE="RNifti")
+    .Call("niftiHeader", asNifti(image,internal=TRUE), PACKAGE="RNifti")
 }
 
 #' @rdname niftiHeader
 #' @export
 analyzeHeader <- function (image = list())
 {
-    .Call("analyzeHeader", image, PACKAGE="RNifti")
+    .Call("analyzeHeader", asNifti(image,internal=TRUE), PACKAGE="RNifti")
 }
 
 #' @rdname niftiHeader

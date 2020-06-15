@@ -2,6 +2,7 @@
 % Please edit documentation in R/nifti.R
 \name{readNifti}
 \alias{readNifti}
+\alias{readAnalyze}
 \title{Read a NIfTI-1 format file}
 \usage{
 readNifti(file, internal = FALSE, volumes = NULL)

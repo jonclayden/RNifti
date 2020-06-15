@@ -2,9 +2,12 @@
 % Please edit documentation in R/nifti.R
 \name{writeNifti}
 \alias{writeNifti}
+\alias{writeAnalyze}
 \title{Write a NIfTI-1 format file}
 \usage{
 writeNifti(image, file, template = NULL, datatype = "auto")
+
+writeAnalyze(image, file, template = NULL, datatype = "auto")
 }
 \arguments{
 \item{image}{An image, in any acceptable form (see \code{\link{asNifti}}).}
