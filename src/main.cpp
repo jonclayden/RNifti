@@ -198,21 +198,8 @@ END_RCPP
 RcppExport SEXP analyzeHeader (SEXP _image)
 {
 BEGIN_RCPP
-    nifti_1_header header;
-    
-    if (Rf_isString(_image))
-    {
-        const std::string path = as<std::string>(_image);
-        nifti_1_header *ptr = nifti_read_header(path.c_str(), NULL, true);
-        header = *ptr;
-        free(ptr);
-    }
-    else
-    {
-        const NiftiImage image(_image, false, true);
-        header = nifti_convert_nim2nhdr(image);
-    }
-    
+    const NiftiImage image(_image, false, true);
+    nifti_1_header header = nifti_convert_nim2nhdr(image);
     nifti_analyze75 *analyze = (nifti_analyze75 *) &header;
     List result;
     
