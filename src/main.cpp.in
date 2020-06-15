@@ -191,7 +191,64 @@ RcppExport SEXP niftiHeader (SEXP _image)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, false, true);
-    return image.headerToList();
+    nifti_1_header header = nifti_convert_nim2nhdr(image);
+    List result;
+    
+    result["sizeof_hdr"] = header.sizeof_hdr;
+    
+    result["dim_info"] = int(header.dim_info);
+    result["dim"] = std::vector<short>(header.dim, header.dim+8);
+    
+    result["intent_p1"] = header.intent_p1;
+    result["intent_p2"] = header.intent_p2;
+    result["intent_p3"] = header.intent_p3;
+    result["intent_code"] = header.intent_code;
+    
+    result["datatype"] = header.datatype;
+    result["bitpix"] = header.bitpix;
+    
+    result["slice_start"] = header.slice_start;
+    result["pixdim"] = std::vector<float>(header.pixdim, header.pixdim+8);
+    result["vox_offset"] = header.vox_offset;
+    result["scl_slope"] = header.scl_slope;
+    result["scl_inter"] = header.scl_inter;
+    result["slice_end"] = header.slice_end;
+    result["slice_code"] = int(header.slice_code);
+    result["xyzt_units"] = int(header.xyzt_units);
+    result["cal_max"] = header.cal_max;
+    result["cal_min"] = header.cal_min;
+    result["slice_duration"] = header.slice_duration;
+    result["toffset"] = header.toffset;
+    result["descrip"] = std::string(header.descrip, 80);
+    result["aux_file"] = std::string(header.aux_file, 24);
+    
+    result["qform_code"] = header.qform_code;
+    result["sform_code"] = header.sform_code;
+    result["quatern_b"] = header.quatern_b;
+    result["quatern_c"] = header.quatern_c;
+    result["quatern_d"] = header.quatern_d;
+    result["qoffset_x"] = header.qoffset_x;
+    result["qoffset_y"] = header.qoffset_y;
+    result["qoffset_z"] = header.qoffset_z;
+    result["srow_x"] = std::vector<float>(header.srow_x, header.srow_x+4);
+    result["srow_y"] = std::vector<float>(header.srow_y, header.srow_y+4);
+    result["srow_z"] = std::vector<float>(header.srow_z, header.srow_z+4);
+    
+    result["intent_name"] = std::string(header.intent_name, 16);
+    result["magic"] = std::string(header.magic, 4);
+    
+    List strings;
+    strings["datatype"] = nifti_datatype_string(header.datatype);
+    strings["intent_code"] = nifti_intent_string(header.intent_code);
+    strings["qform_code"] = nifti_xform_string(header.qform_code);
+    strings["sform_code"] = nifti_xform_string(header.sform_code);
+    strings["slice_code"] = nifti_slice_string(header.slice_code);
+    
+    RNifti::internal::addAttributes(result, image, false, false);
+    result.attr("class") = CharacterVector::create("niftiHeader");
+    result.attr("strings") = strings;
+    
+    return result;
 END_RCPP
 }
 

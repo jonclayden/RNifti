@@ -1532,12 +1532,6 @@ public:
     **/
     Rcpp::RObject toArrayOrPointer (const bool internal, const std::string label) const;
     
-    /**
-     * Create an R list containing raw image metadata
-     * @return An R list
-    **/
-    Rcpp::RObject headerToList () const;
-    
 #endif
 
 };
