@@ -760,13 +760,13 @@ class NiftiImage
 {
 public:
 #if RNIFTI_NIFTILIB_VERSION == 1
-    typedef int dim_t;
-    typedef float pixdim_t;
-    typedef float scale_t;
+    typedef int dim_t;                  /**< Type used for dimension elements */
+    typedef float pixdim_t;             /**< Type used for pixel dimension elements */
+    typedef float scale_t;              /**< Type used for scale elements */
 #elif RNIFTI_NIFTILIB_VERSION == 2
-    typedef int64_t dim_t;
-    typedef double pixdim_t;
-    typedef double scale_t;
+    typedef int64_t dim_t;              /**< Type used for dimension elements */
+    typedef double pixdim_t;            /**< Type used for pixel dimension elements */
+    typedef double scale_t;             /**< Type used for scale elements */
 #endif
     
     /**
@@ -848,60 +848,104 @@ public:
         std::vector<TargetType> getData (const bool useSlope = true) const;
     };
     
+    /**
+     * Inner class representing an xform matrix, indicating the orientation of an image.
+     * Specifically, an xform is an affine transformation in 3D space, representing the conversion
+     * from the image's coordinate system to canonical "real-world" space. The header file
+     * \c nifti1.h contains authoritative documentation.
+    **/
     class Xform
     {
     public:
 #if RNIFTI_NIFTILIB_VERSION == 1
-        typedef float Element;
-        typedef Vector<float,4> Vector4;
-        typedef Vector<float,3> Vector3;
-        typedef SquareMatrix<mat44,float,4> Matrix;
-        typedef SquareMatrix<mat33,float,3> Submatrix;
+        typedef float Element;                                      /**< Scalar element type */
+        typedef Vector<float,4> Vector4;                            /**< 4-element vector type */
+        typedef Vector<float,3> Vector3;                            /**< 3-element vector type */
+        typedef SquareMatrix<mat44,float,4> Matrix;                 /**< 4x4 matrix type */
+        typedef SquareMatrix<mat33,float,3> Submatrix;              /**< 3x3 matrix type */
 #elif RNIFTI_NIFTILIB_VERSION == 2
-        typedef double Element;
-        typedef Vector<double,4> Vector4;
-        typedef Vector<double,3> Vector3;
-        typedef SquareMatrix<nifti_dmat44,double,4> Matrix;
-        typedef SquareMatrix<nifti_dmat33,double,3> Submatrix;
+        typedef double Element;                                     /**< Scalar element type */
+        typedef Vector<double,4> Vector4;                           /**< 4-element vector type */
+        typedef Vector<double,3> Vector3;                           /**< 3-element vector type */
+        typedef SquareMatrix<nifti_dmat44,double,4> Matrix;         /**< 4x4 matrix type */
+        typedef SquareMatrix<nifti_dmat33,double,3> Submatrix;      /**< 3x3 matrix type */
 #endif
         
     protected:
-        Element *forward, *inverse, *qparams;
-        Matrix mat;
+        Element *forward, *inverse, *qparams;                       /**< Pointers to linked C-style arrays */
+        Matrix mat;                                                 /**< The full xform matrix underpinning this object */
         
+        /**
+         * Replace the current matrix with a new one. This function propagates the changes to the
+         * linked arrays, if they are not \c NULL.
+        **/
         void replace (const Matrix &source);
         
     public:
+        /**
+         * Default constructor
+        **/
         Xform ()
             : forward(NULL), inverse(NULL), qparams(NULL), mat() {}
         
+        /**
+         * Initialise from a 4x4 \ref SquareMatrix
+        **/
         Xform (const Matrix &source)
             : forward(NULL), inverse(NULL), qparams(NULL), mat(source) {}
         
+        /**
+         * Initialise from a constant NIfTI \c mat44 or \c dmat44
+        **/
         Xform (const Matrix::NativeType &source)
             : forward(NULL), inverse(NULL), qparams(NULL), mat(source) {}
         
+        /**
+         * Initialise from a NIfTI \c mat44 or \c dmat44. The data in the linked matrix will be
+         * replaced if this object is updated.
+        **/
         Xform (Matrix::NativeType &source)
             : forward(*source.m), inverse(NULL), qparams(NULL), mat(source) {}
         
+        /**
+         * Initialise from forward and backward matrices, and optionally quaternion parameters.
+         * These will all be linked to the new object and replaced if it is updated.
+        **/
         Xform (Matrix::NativeType &source, Matrix::NativeType &inverse, Element *qparams = NULL)
             : forward(*source.m), inverse(*inverse.m), qparams(qparams), mat(source) {}
         
 #ifdef USING_R
+        /**
+         * Initialise from an R numeric matrix object
+        **/
         Xform (SEXP source)
             : forward(NULL), inverse(NULL), qparams(NULL), mat(Matrix(source)) {}
 #endif
         
+        /**
+         * Allows an \c Xform to be treated as a constant NIfTI matrix implicitly, making it
+         * directly compatible with API functions
+        **/
         operator const Matrix::NativeType () const { return mat; }
         
-        operator Matrix::NativeType () { return mat; }
+        /**
+         * Allows an \c Xform to be treated as a NIfTI matrix implicitly, making it directly
+         * compatible with API functions
+        **/
+       operator Matrix::NativeType () { return mat; }
         
+        /**
+         * Copy assignment operator, taking an \c Xform and replacing linked data
+        **/
         Xform & operator= (const Xform &source)
         {
             replace(source.mat);
             return *this;
         }
         
+        /**
+         * Copy assignment operator, taking a \c SquareMatrix and replacing linked data
+        **/
         Xform & operator= (const Matrix &source)
         {
             replace(source);
@@ -1349,7 +1393,8 @@ public:
     NiftiImage & replaceData (const NiftiImageData &data);
     
     /**
-     * Drop the data from the image, retaining only the metadata
+     * Drop the data from the image, retaining only the metadata. This method invalidates any
+     * \ref NiftiImageData objects referencing the old data
      * @return Self, after dropping the data
     **/
     NiftiImage & dropData ()
@@ -1401,17 +1446,34 @@ public:
     
     /**
      * Obtain an xform matrix, indicating the orientation of the image
-     * @param preferQuaternion If \c true, use the qform matrix in preference to the sform
-     * @return A 4x4 matrix
+     * @param preferQuaternion If \c true, use the qform matrix in preference to the sform;
+     * otherwise prefer the sform
+     * @return An \ref Xform object
     **/
     const Xform xform (const bool preferQuaternion = true) const;
     
+    /**
+     * Access the qform matrix
+     * @return An \ref Xform object
+    **/
     const Xform qform () const { return (image == NULL ? Xform() : Xform(image->qto_xyz)); }
     
+    /**
+     * Access the qform matrix
+     * @return An \ref Xform object
+    **/
     Xform qform () { return (image == NULL ? Xform() : Xform(image->qto_xyz, image->qto_ijk, &image->quatern_b)); }
     
+    /**
+     * Access the sform matrix
+     * @return An \ref Xform object
+    **/
     const Xform sform () const { return (image == NULL ? Xform() : Xform(image->sto_xyz)); }
     
+    /**
+     * Access the sform matrix
+     * @return An \ref Xform object
+    **/
     Xform sform () { return (image == NULL ? Xform() : Xform(image->sto_xyz, image->sto_ijk)); }
     
     /**

@@ -18,6 +18,8 @@ asNifti(x, reference = NULL, ...)
 produced by \code{\link{niftiHeader}}. The default of \code{NULL} will
 have no effect.}
 
+\item{...}{Additional parameters to methods.}
+
 \item{datatype}{The NIfTI datatype to use within the internal image. The
 default, \code{"auto"} uses the R type. Other possibilities are
 \code{"float"}, \code{"int16"}, etc., which may be preferred to reduce

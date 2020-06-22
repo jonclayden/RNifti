@@ -126,6 +126,7 @@ writeAnalyze <- function (image, file, template = NULL, datatype = "auto")
 #' @param reference An image, or a named list of NIfTI-1 properties like that
 #'   produced by \code{\link{niftiHeader}}. The default of \code{NULL} will
 #'   have no effect.
+#' @param ... Additional parameters to methods.
 #' @param datatype The NIfTI datatype to use within the internal image. The
 #'   default, \code{"auto"} uses the R type. Other possibilities are
 #'   \code{"float"}, \code{"int16"}, etc., which may be preferred to reduce
