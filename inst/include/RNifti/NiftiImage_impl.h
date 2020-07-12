@@ -863,7 +863,11 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     
     if (copyData)
     {
+#if RNIFTI_NIFTILIB_VERSION == 1
         const size_t dataSize = nifti_get_volsize(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        const size_t dataSize = nifti2_get_volsize(image);
+#endif
         if (datatype == DT_INT32 || datatype == DT_RGBA32)
             memcpy(this->image->data, INTEGER(object), dataSize);
         else if (datatype == DT_RGB24)
@@ -944,7 +948,11 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
         else if (Rf_isString(object))
         {
             const std::string path = Rcpp::as<std::string>(object);
+#if RNIFTI_NIFTILIB_VERSION == 1
             acquire(nifti_image_read(internal::stringToPath(path), readData));
+#elif RNIFTI_NIFTILIB_VERSION == 2
+            acquire(nifti2_image_read(internal::stringToPath(path), readData));
+#endif
             if (this->image == NULL)
                 throw std::runtime_error("Failed to read image from path " + path);
         }
@@ -965,7 +973,13 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
     }
     
     if (this->image != NULL)
+    {
+#if RNIFTI_NIFTILIB_VERSION == 1
         nifti_update_dims_from_array(this->image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        nifti2_update_dims_from_array(this->image);
+#endif
+    }
     
 #ifndef NDEBUG
     Rc_printf("Creating NiftiImage with pointer %p (from SEXP)\n", this->image);
@@ -1408,7 +1422,11 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
             image->ext_list = NULL;
             image->data = dataPtr;
             
+#if RNIFTI_NIFTILIB_VERSION == 1
             nifti_image_free(tempImage);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+            nifti2_image_free(tempImage);
+#endif
             free(header);
         }
     }
@@ -1435,8 +1453,12 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
             setPixunits(pixunitsVector);
         }
     
-        // This NIfTI-1 library function clobbers dim[0] if the last dimension is unitary; we undo that here
+        // This library function clobbers dim[0] if the last dimension is unitary; we undo that here
+#if RNIFTI_NIFTILIB_VERSION == 1
         nifti_update_dims_from_array(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        nifti2_update_dims_from_array(image);
+#endif
         image->dim[0] = image->ndim = nDims;
     
         image->datatype = NiftiImage::sexpTypeToNiftiType(object.sexp_type());
@@ -1446,10 +1468,15 @@ inline NiftiImage & NiftiImage::update (const Rcpp::RObject &object)
             image->datatype = (channels == 4 ? DT_RGBA32 : DT_RGB24);
         }
         nifti_datatype_sizes(image->datatype, &image->nbyper, NULL);
-    
+        
+#if RNIFTI_NIFTILIB_VERSION == 1
         nifti_image_unload(image);
-    
         const size_t dataSize = nifti_get_volsize(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        nifti2_image_unload(image);
+        const size_t dataSize = nifti2_get_volsize(image);
+#endif
+        
         image->data = calloc(1, dataSize);
         if (image->datatype == DT_INT32 || image->datatype == DT_RGBA32)
             memcpy(image->data, INTEGER(object), dataSize);
