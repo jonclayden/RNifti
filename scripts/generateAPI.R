@@ -69,5 +69,5 @@ replacePlaceholder <- function (file, labels, vars, merge = FALSE) {
     writeLines(lines, file)
 }
 
-replacePlaceholder(file.path("src","main.cpp"), "Register callables", "registerCallables", merge=TRUE)
+replacePlaceholder(file.path("src","zzz.c"), "Register callables", "registerCallables", merge=TRUE)
 replacePlaceholder(file.path("inst","include","RNiftiAPI.h"), c("Declare pointers", "Map pointers", "Define wrappers"), c("declarePointers", "mapPointers", "defineWrappers"))
