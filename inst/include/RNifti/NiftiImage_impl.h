@@ -266,6 +266,7 @@ inline void addAttributes (const SEXP pointer, const NiftiImage &source, const b
             imagePtr->dropData();
         Rcpp::XPtr<NiftiImage> xptr(imagePtr);
         object.attr(".nifti_image_ptr") = xptr;
+        object.attr(".nifti_image_ver") = RNIFTI_NIFTILIB_VERSION;
     }
 }
 

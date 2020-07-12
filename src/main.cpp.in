@@ -1,8 +1,10 @@
 #include <R_ext/Rdynload.h>
 #include <Rcpp.h>
 
-#include "niftilib/nifti1_io.h"
+#define RNIFTI_NIFTILIB_VERSION 2
+#define NO_REMAP_NIFTI2_FUNCTIONS
 #include "niftilib/nifti2_io.h"
+#include "niftilib/nifti1_io.h"
 #include "RNifti/NiftiImage.h"
 
 using namespace Rcpp;
@@ -164,7 +166,7 @@ BEGIN_RCPP
     }
     else
     {
-        std::vector<int> volumes;
+        dim_vector volumes;
         IntegerVector volumesR(_volumes);
         for (int i=0; i<volumesR.length(); i++)
             volumes.push_back(volumesR[i] - 1);
@@ -191,7 +193,8 @@ RcppExport SEXP niftiHeader (SEXP _image)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, false, true);
-    nifti_1_header header = nifti_convert_nim2nhdr(image);
+    nifti_1_header header;
+    nifti_convert_nim2n1hdr(image, &header);
     List result;
     
     result["sizeof_hdr"] = header.sizeof_hdr;
@@ -256,7 +259,8 @@ RcppExport SEXP analyzeHeader (SEXP _image)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, false, true);
-    nifti_1_header header = nifti_convert_nim2nhdr(image);
+    nifti_1_header header;
+    nifti_convert_nim2n1hdr(image, &header);
     nifti_analyze75 *analyze = (nifti_analyze75 *) &header;
     List result;
     
@@ -346,18 +350,18 @@ BEGIN_RCPP
         if (MAYBE_SHARED(_image))
             image = Rf_duplicate(image);
         
-        float qbcd[3], qxyz[3], dxyz[3], qfac;
-        nifti_mat44_to_quatern(xform, &qbcd[0], &qbcd[1], &qbcd[2], &qxyz[0], &qxyz[1], &qxyz[2], &dxyz[0], &dxyz[1], &dxyz[2], &qfac);
+        double qbcd[3], qxyz[3], dxyz[3], qfac;
+        nifti_dmat44_to_quatern(xform, &qbcd[0], &qbcd[1], &qbcd[2], &qxyz[0], &qxyz[1], &qxyz[2], &dxyz[0], &dxyz[1], &dxyz[2], &qfac);
         
         if (as<bool>(_isQform))
         {
-            *REAL(image["quatern_b"]) = static_cast<double>(qbcd[0]);
-            *REAL(image["quatern_c"]) = static_cast<double>(qbcd[1]);
-            *REAL(image["quatern_d"]) = static_cast<double>(qbcd[2]);
-            *REAL(image["qoffset_x"]) = static_cast<double>(qxyz[0]);
-            *REAL(image["qoffset_y"]) = static_cast<double>(qxyz[1]);
-            *REAL(image["qoffset_z"]) = static_cast<double>(qxyz[2]);
-            REAL(image["pixdim"])[0] = static_cast<double>(qfac);
+            *REAL(image["quatern_b"]) = qbcd[0];
+            *REAL(image["quatern_c"]) = qbcd[1];
+            *REAL(image["quatern_d"]) = qbcd[2];
+            *REAL(image["qoffset_x"]) = qxyz[0];
+            *REAL(image["qoffset_y"]) = qxyz[1];
+            *REAL(image["qoffset_z"]) = qxyz[2];
+            REAL(image["pixdim"])[0] = qfac;
             if (code >= 0)
                 *INTEGER(image["qform_code"]) = code;
         }
@@ -375,7 +379,7 @@ BEGIN_RCPP
         
         const int dimensionality = INTEGER(image["dim"])[0];
         for (int i=0; i<std::min(3,dimensionality); i++)
-            REAL(image["pixdim"])[i+1] = static_cast<double>(dxyz[i]);
+            REAL(image["pixdim"])[i+1] = dxyz[i];
         
         return image;
     }
@@ -429,7 +433,7 @@ BEGIN_RCPP
     if (isXformMatrix(_image))
     {
         // Create an empty image for temporary purposes
-        nifti_image *ptr = nifti_make_new_nim(NULL, DT_UNSIGNED_CHAR, 0);
+        nifti2_image *ptr = nifti2_make_new_nim(NULL, DT_UNSIGNED_CHAR, 0);
         NiftiImage image(ptr);
         
         // Set the qform matrix
@@ -470,7 +474,7 @@ BEGIN_RCPP
     else
     {
         std::ostringstream imageString, dataString;
-        imageString << (const nifti_image *) image;
+        imageString << (const nifti2_image *) image;
         dataString << image->data;
         return CharacterVector::create(Named("image")=imageString.str(), Named("data")=dataString.str());
     }
@@ -534,7 +538,7 @@ BEGIN_RCPP
     else
     {
         const List indices(_indices);
-        const std::vector<int> dim = image.dim();
+        const dim_vector dim = image.dim();
         const int nDims = indices.length();
         std::vector<size_t> strides(nDims);
         std::vector<dim_vector> locs(nDims);
