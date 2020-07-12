@@ -8,4 +8,4 @@
 ^scripts$
 ^revdep$
 ^inst/include/RNiftiAPI.h.in$
-^src/main.cpp.in$
+^src/zzz.c.in$
