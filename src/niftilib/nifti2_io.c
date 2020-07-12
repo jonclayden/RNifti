@@ -4291,7 +4291,7 @@ static int compare_strlist(const char * str, char ** strlist, int len)
     \return 1 if nifti_type is valid, 0 otherwise
     \sa NIFTI_FTYPE_* codes in nifti1_io.h
 *//*------------------------------------------------------------------------*/
-int is_valid_nifti_type( int nifti_type )
+int is_valid_nifti2_type( int nifti_type )
 {
    if( nifti_type >= NIFTI_FTYPE_ANALYZE &&   /* smallest type, 0 */
        nifti_type <= NIFTI_MAX_FTYPE )
