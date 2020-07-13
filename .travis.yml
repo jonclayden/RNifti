@@ -14,4 +14,4 @@ script:
 - cd standalone && make clean && make CC="$(R CMD config CC)" CXX="$(R CMD config CXX)" && ./nii_info ../inst/extdata/example.nii.gz && ./nii2_info ../inst/extdata/example.nii.gz
 
 after_success:
-  - Rscript -e 'covr::coveralls()'
+  - Rscript -e 'covr::codecov()'
