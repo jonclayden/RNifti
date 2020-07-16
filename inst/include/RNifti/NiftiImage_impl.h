@@ -90,6 +90,108 @@ inline int stringToDatatype (const std::string &datatype)
         return datatypeCodes[lowerCaseDatatype];
 }
 
+struct ImageBuffers
+{
+    char *source;
+    char *target;
+};
+
+template <typename SourceType, typename TargetType>
+inline void castElements (ImageBuffers &buffers, const size_t n)
+{
+    const SourceType *source = reinterpret_cast<const SourceType*>(buffers.source);
+    TargetType *target = reinterpret_cast<TargetType*>(buffers.target);
+    for (size_t i=0; i<n; i++)
+        *(target + i) = static_cast<TargetType>(*(source + i));
+    buffers.source += sizeof(SourceType) * n;
+    buffers.target += sizeof(TargetType) * n;
+}
+
+template <typename Type>
+inline void copyElements (ImageBuffers &buffers, const size_t n)
+{
+    memcpy(buffers.target, buffers.source, sizeof(Type) * n);
+    buffers.source += sizeof(Type) * n;
+    buffers.target += sizeof(Type) * n;
+}
+
+#if RNIFTI_NIFTILIB_VERSION == 1
+
+// Byte-by-byte conversion of nifti2_image struct to a nifti1_image
+// By nature this is a risky operation, which has to make assumptions about the layout of the structs in memory
+inline nifti1_image * convertImageV2to1 (void *image)
+{
+    // A rudimentary check that byte alignment is working as expected
+    if (sizeof(nifti1_image) != 644 + 4 * sizeof(void*))
+        throw std::runtime_error("Stored image version cannot be changed");
+    
+    nifti1_image *result = (nifti1_image *) calloc(1, sizeof(nifti1_image));
+    ImageBuffers buffers = { static_cast<char*>(image), reinterpret_cast<char*>(result) };
+    
+    castElements<int64_t,int>(buffers, 16);
+    castElements<int64_t,size_t>(buffers, 1);
+    copyElements<int>(buffers, 2);
+    castElements<double,float>(buffers, 19);
+    copyElements<int>(buffers, 6);
+    castElements<int64_t,int>(buffers, 2);
+    castElements<double,float>(buffers, 73);
+    copyElements<int>(buffers, 4);
+    castElements<double,float>(buffers, 3);
+    copyElements<char>(buffers, 120);
+    copyElements<char*>(buffers, 2);
+    castElements<int64_t,int>(buffers, 1);
+    copyElements<int>(buffers, 2);
+    copyElements<void*>(buffers, 1);
+    copyElements<int>(buffers, 1);
+    copyElements<nifti1_extension*>(buffers, 1);
+    copyElements<analyze_75_orient_code>(buffers, 1);
+    
+    // Check the result looks plausible
+    if (!nifti_nim_is_valid(result, 0))
+        throw std::runtime_error("Conversion between image versions failed");
+    
+    free(image);
+    return result;
+}
+
+#elif RNIFTI_NIFTILIB_VERSION == 2
+
+// Byte-by-byte conversion of nifti1_image struct to a nifti2_image
+inline nifti2_image * convertImageV1to2 (void *image)
+{
+    if (sizeof(nifti2_image) != 1104 + 4 * sizeof(void*))
+        throw std::runtime_error("Stored image version cannot be changed");
+    
+    nifti2_image *result = (nifti2_image *) calloc(1, sizeof(nifti2_image));
+    ImageBuffers buffers = { static_cast<char*>(image), reinterpret_cast<char*>(result) };
+    
+    castElements<int,int64_t>(buffers, 16);
+    castElements<size_t,int64_t>(buffers, 1);
+    copyElements<int>(buffers, 2);
+    castElements<float,double>(buffers, 19);
+    copyElements<int>(buffers, 6);
+    castElements<int,int64_t>(buffers, 2);
+    castElements<float,double>(buffers, 73);
+    copyElements<int>(buffers, 4);
+    castElements<float,double>(buffers, 3);
+    copyElements<char>(buffers, 120);
+    copyElements<char*>(buffers, 2);
+    castElements<int,int64_t>(buffers, 1);
+    copyElements<int>(buffers, 2);
+    copyElements<void*>(buffers, 1);
+    copyElements<int>(buffers, 1);
+    copyElements<nifti1_extension*>(buffers, 1);
+    copyElements<analyze_75_orient_code>(buffers, 1);
+    
+    if (!nifti2_nim_is_valid(result, 0))
+        throw std::runtime_error("Conversion between image versions failed");
+    
+    free(image);
+    return result;
+}
+
+#endif // RNIFTI_NIFTILIB_VERSION
+
 #ifdef USING_R
 inline const char * stringToPath (const std::string &str) { return R_ExpandFileName(str.c_str()); }
 #else
@@ -927,6 +1029,14 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
         NiftiImage *ptr = imagePtr.get();
         if (ptr != NULL)
         {
+#if RNIFTI_NIFTILIB_VERSION == 1
+            if (imageObject.hasAttribute(".nifti_image_ver") && int(imageObject.attr(".nifti_image_ver")) == 2)
+                ptr->image = internal::convertImageV2to1(ptr->image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+            if (!imageObject.hasAttribute(".nifti_image_ver") || int(imageObject.attr(".nifti_image_ver")) == 1)
+                ptr->image = internal::convertImageV1to2(ptr->image);
+#endif
+            
             if (MAYBE_SHARED(object) && !readOnly)
                 copy(*ptr);
             else
