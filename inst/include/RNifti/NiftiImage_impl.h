@@ -121,12 +121,12 @@ inline void copyElements (ImageBuffers &buffers, const size_t n)
 // By nature this is a risky operation, which has to make assumptions about the layout of the structs in memory
 inline nifti1_image * convertImageV2to1 (void *image)
 {
-    // A rudimentary check that byte alignment is working as expected
-    if (sizeof(nifti1_image) != 644 + 4 * sizeof(void*))
-        throw std::runtime_error("Stored image version cannot be changed");
-    
     nifti1_image *result = (nifti1_image *) calloc(1, sizeof(nifti1_image));
     ImageBuffers buffers = { static_cast<char*>(image), reinterpret_cast<char*>(result) };
+    
+    // Check that byte alignment is as expected, up to the data block
+    if (reinterpret_cast<char*>(&result->data) != buffers.target + 640 + 2 * sizeof(void*))
+        throw std::runtime_error("Stored image version cannot be changed");
     
     castElements<int64_t,int>(buffers, 16);
     castElements<int64_t,size_t>(buffers, 1);
@@ -142,9 +142,11 @@ inline nifti1_image * convertImageV2to1 (void *image)
     castElements<int64_t,int>(buffers, 1);
     copyElements<int>(buffers, 2);
     copyElements<void*>(buffers, 1);
-    copyElements<int>(buffers, 1);
-    copyElements<nifti1_extension*>(buffers, 1);
-    copyElements<analyze_75_orient_code>(buffers, 1);
+    
+    // There may be byte-alignment issues here, so reset the last few fields
+    result->num_ext = 0;
+    result->ext_list = NULL;
+    result->analyze75_orient = a75_orient_unknown;
     
     // Check the result looks plausible
     if (!nifti_nim_is_valid(result, 0))
@@ -159,11 +161,11 @@ inline nifti1_image * convertImageV2to1 (void *image)
 // Byte-by-byte conversion of nifti1_image struct to a nifti2_image
 inline nifti2_image * convertImageV1to2 (void *image)
 {
-    if (sizeof(nifti2_image) != 1104 + 4 * sizeof(void*))
-        throw std::runtime_error("Stored image version cannot be changed");
-    
     nifti2_image *result = (nifti2_image *) calloc(1, sizeof(nifti2_image));
     ImageBuffers buffers = { static_cast<char*>(image), reinterpret_cast<char*>(result) };
+    
+    if (reinterpret_cast<char*>(&result->data) != buffers.target + 1096 + 2 * sizeof(void*))
+        throw std::runtime_error("Stored image version cannot be changed");
     
     castElements<int,int64_t>(buffers, 16);
     castElements<size_t,int64_t>(buffers, 1);
@@ -179,9 +181,10 @@ inline nifti2_image * convertImageV1to2 (void *image)
     castElements<int,int64_t>(buffers, 1);
     copyElements<int>(buffers, 2);
     copyElements<void*>(buffers, 1);
-    copyElements<int>(buffers, 1);
-    copyElements<nifti1_extension*>(buffers, 1);
-    copyElements<analyze_75_orient_code>(buffers, 1);
+    
+    result->num_ext = 0;
+    result->ext_list = NULL;
+    result->analyze75_orient = a75_orient_unknown;
     
     if (!nifti2_nim_is_valid(result, 0))
         throw std::runtime_error("Conversion between image versions failed");
