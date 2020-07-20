@@ -41,6 +41,7 @@
 //    nifti2_* functions explicitly when required.
 #if !defined(RNIFTI_NIFTILIB_VERSION) || (RNIFTI_NIFTILIB_VERSION == 1)
 #include "niftilib/nifti1_io.h"
+#include "niftilib/nifti2_image.h"
 #else
 #include "niftilib/nifti2_io.h"
 #endif
