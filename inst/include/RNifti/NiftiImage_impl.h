@@ -650,7 +650,7 @@ inline void NiftiImage::acquire (nifti_image * const image)
             (*this->refCount)++;
         
 #ifndef NDEBUG
-        Rc_printf("Acquiring pointer %p (reference count is %d)\n", this->image, *this->refCount);
+        Rc_printf("Acquiring pointer %p (v%d; reference count is %d)\n", this->image, RNIFTI_NIFTILIB_VERSION, *this->refCount);
 #endif
     }
 }
@@ -663,7 +663,7 @@ inline void NiftiImage::release ()
         {
             (*this->refCount)--;
 #ifndef NDEBUG
-            Rc_printf("Releasing pointer %p (reference count is %d)\n", this->image, *this->refCount);
+            Rc_printf("Releasing pointer %p (v%d; reference count is %d)\n", this->image, RNIFTI_NIFTILIB_VERSION, *this->refCount);
 #endif
             if (*this->refCount < 1)
             {
@@ -711,6 +711,7 @@ inline void NiftiImage::copy (const nifti_image *source)
 inline void NiftiImage::copy (const NiftiImage &source)
 {
     const nifti_image *sourceStruct = source;
+
     copy(sourceStruct);
 }
 
@@ -1099,7 +1100,7 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
     }
     
 #ifndef NDEBUG
-    Rc_printf("Creating NiftiImage with pointer %p (from SEXP)\n", this->image);
+    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from SEXP)\n", RNIFTI_NIFTILIB_VERSION, this->image);
 #endif
 }
 
@@ -1110,7 +1111,7 @@ inline NiftiImage::NiftiImage (const std::vector<dim_t> &dim, const int datatype
 {
     initFromDims(dim, datatype);
 #ifndef NDEBUG
-    Rc_printf("Creating NiftiImage with pointer %p (from dims)\n", this->image);
+    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from dims)\n", RNIFTI_NIFTILIB_VERSION, this->image);
 #endif
 }
 
@@ -1119,7 +1120,7 @@ inline NiftiImage::NiftiImage (const std::vector<dim_t> &dim, const std::string 
 {
     initFromDims(dim, internal::stringToDatatype(datatype));
 #ifndef NDEBUG
-    Rc_printf("Creating NiftiImage with pointer %p (from dims)\n", this->image);
+    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from dims)\n", RNIFTI_NIFTILIB_VERSION, this->image);
 #endif
 }
 
@@ -1136,7 +1137,7 @@ inline NiftiImage::NiftiImage (const std::string &path, const bool readData)
         throw std::runtime_error("Failed to read image from path " + path);
     
 #ifndef NDEBUG
-    Rc_printf("Creating NiftiImage with pointer %p (from string)\n", this->image);
+    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from string)\n", RNIFTI_NIFTILIB_VERSION, this->image);
 #endif
 }
 
@@ -1175,7 +1176,7 @@ inline NiftiImage::NiftiImage (const std::string &path, const std::vector<dim_t>
 #endif
     
 #ifndef NDEBUG
-    Rc_printf("Creating NiftiImage with pointer %p (from string and volume vector)\n", this->image);
+    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from string and volume vector)\n", RNIFTI_NIFTILIB_VERSION, this->image);
 #endif
 }
 

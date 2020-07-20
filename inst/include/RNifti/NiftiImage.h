@@ -1111,7 +1111,7 @@ public:
         else
             acquire(source);
 #ifndef NDEBUG
-        Rc_printf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
+        Rc_printf("Creating NiftiImage (v%d) with pointer %p (from NiftiImage)\n", RNIFTI_NIFTILIB_VERSION, this->image);
 #endif
     }
     
@@ -1124,7 +1124,7 @@ public:
     {
         this->copy(source);
 #ifndef NDEBUG
-        Rc_printf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
+        Rc_printf("Creating NiftiImage (v%d) with pointer %p (from Block)\n", RNIFTI_NIFTILIB_VERSION, this->image);
 #endif
     }
     
@@ -1142,7 +1142,7 @@ public:
         else
             acquire(image);
 #ifndef NDEBUG
-        Rc_printf("Creating NiftiImage with pointer %p (from pointer)\n", this->image);
+        Rc_printf("Creating NiftiImage (v%d) with pointer %p (from pointer)\n", RNIFTI_NIFTILIB_VERSION, this->image);
 #endif
     }
     
@@ -1224,7 +1224,7 @@ public:
     {
         copy(source);
 #ifndef NDEBUG
-        Rc_printf("Creating NiftiImage with pointer %p (from NiftiImage)\n", this->image);
+        Rc_printf("Creating NiftiImage (v%d), with pointer %p (from NiftiImage)\n", RNIFTI_NIFTILIB_VERSION, this->image);
 #endif
         return *this;
     }
@@ -1238,7 +1238,7 @@ public:
     {
         copy(source);
 #ifndef NDEBUG
-        Rc_printf("Creating NiftiImage with pointer %p (from Block)\n", this->image);
+        Rc_printf("Creating NiftiImage (v%d) with pointer %p (from Block)\n", RNIFTI_NIFTILIB_VERSION, this->image);
 #endif
         return *this;
     }
