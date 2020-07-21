@@ -130,10 +130,6 @@ inline nifti1_image * convertImageV2to1 (nifti2_image *image)
     std::copy(&image->swapsize, &image->swapsize + 2, &result->swapsize);
     result->analyze75_orient = image->analyze75_orient;
     
-    // Extensions don't carry over (since we don't currently support them anyway)
-    result->num_ext = 0;
-    result->ext_list = NULL;
-    
     // Copy buffers, since the memory-freeing logic isn't portable between struct versions
     result->fname = nifti_strdup(image->fname);
     result->iname = nifti_strdup(image->iname);
@@ -141,6 +137,17 @@ inline nifti1_image * convertImageV2to1 (nifti2_image *image)
     {
         result->data = calloc(result->nvox, result->nbyper);
         memcpy(result->data, image->data, result->nvox * result->nbyper);
+    }
+    
+    // Copy extensions
+    result->num_ext = image->num_ext;
+    result->ext_list = result->num_ext == 0 ? NULL : (nifti1_extension *) calloc(result->num_ext, sizeof(nifti1_extension));
+    for (int i=0; i<result->num_ext; i++)
+    {
+        result->ext_list[i].esize = image->ext_list[i].esize;
+        result->ext_list[i].ecode = image->ext_list[i].ecode;
+        result->ext_list[i].edata = (char *) calloc(result->ext_list[i].esize - 8, sizeof(char));
+        memcpy(result->ext_list[i].edata, image->ext_list[i].edata, result->ext_list[i].esize - 8);
     }
     
     // Check the result looks plausible
@@ -178,15 +185,22 @@ inline nifti2_image * convertImageV1to2 (nifti1_image *image)
     std::copy(&image->swapsize, &image->swapsize + 2, &result->swapsize);
     result->analyze75_orient = image->analyze75_orient;
     
-    result->num_ext = 0;
-    result->ext_list = NULL;
-    
     result->fname = nifti_strdup(image->fname);
     result->iname = nifti_strdup(image->iname);
     if (image->data != NULL)
     {
         result->data = calloc(result->nvox, result->nbyper);
         memcpy(result->data, image->data, result->nvox * result->nbyper);
+    }
+    
+    result->num_ext = image->num_ext;
+    result->ext_list = result->num_ext == 0 ? NULL : (nifti1_extension *) calloc(result->num_ext, sizeof(nifti1_extension));
+    for (int i=0; i<result->num_ext; i++)
+    {
+        result->ext_list[i].esize = image->ext_list[i].esize;
+        result->ext_list[i].ecode = image->ext_list[i].ecode;
+        result->ext_list[i].edata = (char *) calloc(result->ext_list[i].esize - 8, sizeof(char));
+        memcpy(result->ext_list[i].edata, image->ext_list[i].edata, result->ext_list[i].esize - 8);
     }
     
     if (!nifti2_nim_is_valid(result, 0))
