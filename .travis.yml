@@ -7,7 +7,7 @@ install:
 
 script:
 - R CMD build .
-- R CMD check *tar.gz && Rscript -e 'covr::codecov()'
+- R CMD check *tar.gz && Rscript -e 'covr::coveralls()'
 - R CMD INSTALL *tar.gz
 - R CMD check clients/nifti1c || ( cat nifti1c.Rcheck/00install.out; exit 1 )
 - R CMD check clients/nifti2cpp || ( cat nifti2cpp.Rcheck/00install.out; exit 1 )
