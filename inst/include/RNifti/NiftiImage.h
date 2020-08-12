@@ -617,6 +617,10 @@ inline bool NiftiImageData::ConcreteTypeHandler<int>::hasNaN () const { return t
 #endif
 
 
+/**
+ * A simple object-oriented wrapper around a fixed-length array.
+ * @author Jon Clayden (<code@clayden.org>)
+**/
 template <typename ElementType, int Length>
 class Vector
 {
@@ -624,16 +628,25 @@ protected:
     ElementType elements[Length];
     
 public:
+    /**
+     * Initialise with a fixed element value, defaulting to zero
+    **/
     Vector (const ElementType value = 0.0)
     {
         std::fill(elements, elements + Length, value);
     }
     
+    /**
+     * Initialise from a C-style array of the appropriate type and length
+    **/
     Vector (const ElementType * source)
     {
         std::copy(source, source + Length, this->elements);
     }
     
+    /**
+     * Unary negation operator, which reverses the signs of all elements
+    **/
     Vector<ElementType,Length> operator- () const
     {
         Vector<ElementType,Length> result;
@@ -647,14 +660,28 @@ public:
     ElementType & operator[] (const size_t i) { return elements[i]; }
 };
 
+
+/**
+ * Class representing a numeric square matrix of a fixed order. Provides object-based encapsulation
+ * and version agnosticism for certain NIfTI-relevant matrix operations, as well as other
+ * conveniences such as iterators and conversion to/from R matrices.
+ * @author Jon Clayden (<code@clayden.org>)
+**/
 template <class NiftiType, typename ElementType, int Order>
 class SquareMatrix
 {
 protected:
-    // Storage order is row-major, for consistency with (d)mat44
-    ElementType elements[Order*Order];
+    ElementType elements[Order*Order];          /**< The underlying raw data elements, stored row-major for consistency with niftilib */
     
+    /**
+     * Obtain a pointer to a NIfTI-style \c mat44 or \c dmat44 encapsulating the same data as this
+     * object.
+    */
     NiftiType * niftiPointer () const { return (NiftiType *) elements; }
+    
+    /**
+     * Copy the data elements into a new NIfTI-style \c mat44 or \c dmat44.
+    */
     NiftiType niftiCopy () const
     {
         NiftiType value;
@@ -663,26 +690,38 @@ protected:
     }
     
 public:
-    typedef NiftiType NativeType;
-    typedef SquareMatrix<NiftiType,ElementType,Order> MatrixType;
-    typedef Vector<ElementType,Order> VectorType;
+    typedef NiftiType NativeType;                                       /**< The niftilib structure type corresponding to this matrix */
+    typedef SquareMatrix<NiftiType,ElementType,Order> MatrixType;       /**< Type alias for the current specialisation */
+    typedef Vector<ElementType,Order> VectorType;                       /**< Type of vectors for which this matrix is a linear operator */
     
+    /**
+     * Initialise with a fixed element value, defaulting to zero
+    **/
     SquareMatrix (const ElementType value = 0.0)
     {
         std::fill(elements, elements + Order*Order, value);
     }
     
+    /**
+     * Initialise from a C-style array of the appropriate type and length
+    **/
     SquareMatrix (const ElementType * source)
     {
         std::copy(source, source + Order*Order, this->elements);
     }
     
+    /**
+     * Initialise from the appropriate niftilib type
+    **/
     SquareMatrix (const NiftiType &source)
     {
         std::copy(*source.m, *source.m + Order*Order, this->elements);
     }
     
 #ifdef USING_R
+    /**
+     * Initialise from an R object representing a numeric matrix
+    **/
     SquareMatrix (SEXP source)
     {
         Rcpp::NumericMatrix matrix(source);
@@ -695,19 +734,44 @@ public:
         }
     }
 #endif
-
+    
+    /**
+     * Implicit conversion to the corresponding niftilib type, which allows a \c SquareMatrix
+     * object to be used directly in library functions
+    **/
     operator const NiftiType () const { return niftiCopy(); }
-
+    
+    /**
+     * Implicit conversion to the corresponding niftilib type, which allows a \c SquareMatrix
+     * object to be used directly in library functions
+    **/
     operator NiftiType () { return niftiCopy(); }
     
+    /**
+     * Return a pointer/iterator to the beginning of the data. Elements are accessed in row-major
+     * order
+    **/
     const ElementType * begin () const { return elements; }
     
+    /**
+     * Return a pointer/iterator to the beginning of the data. Elements are accessed in row-major
+     * order
+    **/
     ElementType * begin () { return elements; }
     
+    /**
+     * Return a pointer/iterator to the end of the data
+    **/
     const ElementType * end () const { return elements + Order*Order; }
     
+    /**
+     * Return a pointer/iterator to the end of the data
+    **/
     ElementType * end () { return elements + Order*Order; }
     
+    /**
+     * Construct an identity matrix of the appropriate size
+    **/
     static MatrixType eye ()
     {
         MatrixType matrix;
@@ -716,22 +780,31 @@ public:
         return matrix;
     }
     
-    MatrixType inverse () const;
-    MatrixType polar () const;
-    ElementType colnorm () const;
-    ElementType rownorm () const;
-    ElementType determ () const;
-    MatrixType multiply (const MatrixType &other) const;
-    VectorType multiply (const VectorType &vec) const;
+    MatrixType inverse () const;                                /**< Matrix inverse */
+    MatrixType polar () const;                                  /**< Polar decomposition, as implemented in niftilib (\c Order 3 only) */
+    ElementType colnorm () const;                               /**< Maximum column norm, as implemented in niftilib (\c Order 3 only) */
+    ElementType rownorm () const;                               /**< Maximum row norm, as implemented in niftilib (\c Order 3 only) */
+    ElementType determ () const;                                /**< Matrix determinant, as implemented in niftilib (\c Order 3 only) */
+    MatrixType multiply (const MatrixType &other) const;        /**< Matrix-matrix multiplication */
+    VectorType multiply (const VectorType &vec) const;          /**< Matrix-vector multiplication */
     
-    MatrixType operator* (const MatrixType &other) const { return multiply(other); }
-    VectorType operator* (const VectorType &vec) const { return multiply(vec); }
+    MatrixType operator* (const MatrixType &other) const { return multiply(other); }    /**< Matrix-matrix multiplication (infix shorthand) */
+    VectorType operator* (const VectorType &vec) const { return multiply(vec); }        /**< Matrix-vector multiplication (infix shorthand) */
     
-    // Indexing order is column-major
+    /**
+     * Indexing operator. The first index is for column, and the second is for row
+    **/
     const ElementType & operator() (const int i, const int j) const { return elements[j + i*Order]; }
+    
+    /**
+     * Indexing operator. The first index is for column, and the second is for row
+    **/
     ElementType & operator() (const int i, const int j) { return elements[j + i*Order]; }
     
 #ifdef USING_R
+    /**
+     * \c SEXP cast operator, which converts to R's numeric matrix type
+    **/
     operator SEXP () const
     {
         Rcpp::NumericMatrix result(Order, Order);
@@ -849,10 +922,10 @@ public:
     };
     
     /**
-     * Inner class representing an xform matrix, indicating the orientation of an image.
-     * Specifically, an xform is an affine transformation in 3D space, representing the conversion
-     * from the image's coordinate system to canonical "real-world" space. The header file
-     * \c nifti1.h contains authoritative documentation.
+     * Inner class representing an xform matrix, which indicates the orientation and other spatial
+     * properties of an image. Specifically, an xform is an affine transformation in 3D space,
+     * representing the conversion from the image's coordinate system to canonical "real-world"
+     * space. The header file \c nifti1.h contains authoritative documentation.
     **/
     class Xform
     {
@@ -952,15 +1025,51 @@ public:
             return *this;
         }
         
+        /**
+         * Access the xform matrix as an immutable \c SquareMatrix object
+        **/
         const Matrix & matrix () const { return mat; }
+        
+        /**
+         * Obtain the upper left 3x3 submatrix from the xform matrix
+        **/
         Submatrix submatrix () const;
+        
+        /**
+         * Obtain the 3x3 rotation matrix from the xform matrix, with scale and skew components
+         * removed
+        **/
         Submatrix rotation () const;
         
+        /**
+         * Returns the \c qfac value, which should be 1 where the xform matrix represents a
+         * right-handed coordinate system (like \c RAS, the NIfTI default) and -1 for a left-handed
+         * system (like \c LAS, the ANALYZE default). Also see the \ref orientation method
+        **/
         Element handedness () const;
+        
+        /**
+         * Obtain the quaternion representation of the xform's rotation component
+        **/
         Vector4 quaternion () const;
+        
+        /**
+         * Obtain the translation component of the xform matrix
+        **/
         Vector3 offset () const;
+        
+        /**
+         * Obtain the pixel spacing of the image in each spatial dimension
+        **/
         Vector3 spacing () const;
         
+        /**
+         * Obtain the approximate orientation of the image's coordinate frame, as a three-character
+         * string consisting of some permutation of the letters \c L or \c R (for left or right),
+         * \c P or \c A (for posterior or anterior) and \c I or \c S (for inferior or superior).
+         * These give the canonical axes most closely aligned with each of the three dimensions as
+         * stored
+        **/
         std::string orientation () const;
     };
     
@@ -1559,6 +1668,8 @@ public:
      * Write the image to a NIfTI-1 file
      * @param fileName The file name to write to, with appropriate suffix (e.g. ".nii.gz")
      * @param datatype The datatype to use when writing the file
+     * @param filetype The file type to create: a \c NIFTI_FTYPE constant or -1. In the latter case
+     * the file name is used to determine the file type
      * @return A pair of strings, giving the final header and image paths in that order
     **/
     std::pair<std::string,std::string> toFile (const std::string fileName, const int datatype = DT_NONE, const int filetype = -1) const;
@@ -1567,6 +1678,8 @@ public:
      * Write the image to a NIfTI-1 file
      * @param fileName The file name to write to, with appropriate suffix (e.g. ".nii.gz")
      * @param datatype The datatype to use when writing the file, or "auto"
+     * @param filetype The file type to create: a \c NIFTI_FTYPE constant or -1. In the latter case
+     * the file name is used to determine the file type
      * @return A pair of strings, giving the final header and image paths in that order
     **/
     std::pair<std::string,std::string> toFile (const std::string fileName, const std::string &datatype, const int filetype = -1) const;
