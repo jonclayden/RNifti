@@ -1005,7 +1005,7 @@ public:
          * Allows an \c Xform to be treated as a NIfTI matrix implicitly, making it directly
          * compatible with API functions
         **/
-       operator Matrix::NativeType () { return mat; }
+        operator Matrix::NativeType () { return mat; }
         
         /**
          * Copy assignment operator, taking an \c Xform and replacing linked data
