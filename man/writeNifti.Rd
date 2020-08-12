@@ -3,9 +3,9 @@
 \name{writeNifti}
 \alias{writeNifti}
 \alias{writeAnalyze}
-\title{Write a NIfTI-1 format file}
+\title{Write a NIfTI or ANALYZE format file}
 \usage{
-writeNifti(image, file, template = NULL, datatype = "auto")
+writeNifti(image, file, template = NULL, datatype = "auto", version = 1)
 
 writeAnalyze(image, file, template = NULL, datatype = "auto")
 }
@@ -22,10 +22,24 @@ default, \code{"auto"} uses the R type or, for internal images, the
 original datatype. Other possibilities are \code{"float"}, \code{"int16"},
 etc., which may be preferred to reduce file size. However, no checks are
 done to ensure that the coercion maintains precision.}
+
+\item{version}{An integer (1 or 2) giving the NIfTI file format version to
+use. Version 2 is usually only needed for very large images or where
+metadata needs to be stored with high precision. The types available for
+storing the pixel data are the same in both cases.}
+}
+\value{
+An invisible, named character vector giving the image and header
+  file names written to.
 }
 \description{
-This function writes an image to NIfTI-1 format, using the standard NIfTI-1
-C library.
+These functions write an image to NIfTI-1, NIfTI-2 or ANALYZE-7.5 format,
+using the standard NIfTI C library.
+}
+\note{
+The ANALYZE-7.5 file format is a legacy format and use of it is not
+  recommended, except for compatibility. In particular, the format does
+  not reliably specify the spatial orientation of the image.
 }
 \examples{
 \dontrun{writeNifti(im, "image.nii.gz", datatype="float")}
