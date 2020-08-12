@@ -2,6 +2,62 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.2.0
+
+With this release, `RNifti`'s core code moves over to the NIfTI-2 library.
+Reading and writing NIfTI-2 format files is therefore supported. API clients
+may use either version of the NIfTI library.
+
+R interface
+
+- The `asNifti()` function is now S3 generic, with the default method handling
+  all objects that the package has supported to date. Packages can therefore
+  define additional methods for their objects.
+- The `writeNifti()` function gains a version argument, which allows NIfTI-2 to
+  be used as the output file format if required. (NIfTI-1 remains the default.)
+- A new `writeAnalyze()` function has been added, for writing to the legacy
+  ANALYZE-7.5 format (although this is not recommended, except where needed for
+  compatibility). A corresponding `readAnalyze()` function has also been added
+  for symmetry, but this is just an alias for `readNifti()`.
+
+API changes
+
+- The package goes to some lengths to allow the mutually incompatible NIfTI-1
+  and NIfTI-2 libraries to coexist. The library version that API clients will
+  see depends on the value of the `RNIFTI_NIFTILIB_VERSION` compile-time
+  constant (default 1), which should be set before including `RNifti.h`.
+  See the comments in that header file for fuller documentation. Stub clients
+  using each version of the `niftilib` library are included in the `clients`
+  subdirectory for illustration (and for testing).
+- The API now makes the full set of public `niftilib` functions available to
+  clients. Previously only a group of the most commonly used were included.
+- C++ classes `Vector` and `SquareMatrix` have been created to provide an
+  object-oriented wrapper around some of the `niftilib` matrix functions, and
+  to abstract away the type width differences between the two versions of the
+  library.
+- Type aliases which handle the differences between `niftilib` versions, such
+  as `NiftiImage::dim_t` and `NiftiImage::pixdim_t`, are now used in various
+  places in the API.
+- An `Xform` inner class within `NiftiImage` now encapsulates an xform, and
+  provides a number of conveniences. The `xform()` method of `NiftiImage` now
+  returns this type rather than a `niftilib`-native type (although `Xform` can
+  be implicitly converted and hence treated as before), and new `sform()` and
+  `qform()` methods have been added, which allow the image sform/qform to be
+  specifically obtained or replaced.
+- The static `xformToRotation()` and `xformToString()` methods of `NiftiImage`
+  have been removed and replaced by methods of `NiftiImage::Xform`.
+- The `headerToList()` method of `NiftiImage` has been removed, since its
+  functionality was rather specific to the `RNifti` R package.
+
+Bug fixes
+
+- The `analyzeHeader()` R function no longer misinterprets internal image
+  objects as file paths.
+- `Rcpp` no longer throws an exception when an invalid image pointer is seen,
+  which prevented `RNifti` from handling this scenario in its own way.
+
+===============================================================================
+
 VERSION 1.1.0
 
 - An alternative info panel for showing time series data (`timeSeriesPanel`) is
