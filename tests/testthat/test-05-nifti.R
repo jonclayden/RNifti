@@ -95,6 +95,28 @@ test_that("NIfTI files can be read and written", {
     expect_equal(analyze$regular, "r")
 })
 
+test_that("NIfTI-2 and ANALYZE-7.5 format files can be written and read", {
+    imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
+    tempStem <- tempfile()
+    tempPath <- paste(tempStem, "nii.gz", sep=".")
+    analyzePaths <- c(header=paste(tempStem,"hdr",sep="."), image=paste(tempStem,"img",sep="."))
+    
+    image <- readNifti(imagePath, internal=TRUE)
+    paths <- writeNifti(image, tempPath, version=2)
+    expect_equal(paths, c(header=tempPath,image=tempPath))
+    expect_equal(niftiVersion(tempPath), structure(2L,names=tempPath))
+    nifti2Image <- readNifti(tempPath, internal=TRUE)
+    expect_equal(nifti2Image$vox_offset, 544L)
+    expect_equal(image[40,40,30], nifti2Image[40,40,30])
+    unlink(tempPath)
+    
+    paths <- writeAnalyze(image, analyzePaths[1])
+    expect_equal(paths, analyzePaths)
+    expect_equal(niftiVersion(tempPath), structure(0L,names=tempPath))
+    analyzeImage <- readAnalyze(tempPath, internal=TRUE)
+    expect_equal(image[40,40,30], analyzeImage[40,40,30])
+})
+
 test_that("image objects can be manipulated", {
     imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
     image <- readNifti(imagePath)
