@@ -106,6 +106,7 @@ test_that("NIfTI-2 and ANALYZE-7.5 format files can be written and read", {
     expect_equal(paths, c(header=tempPath,image=tempPath))
     expect_equal(niftiVersion(tempPath), structure(2L,names=tempPath))
     nifti2Image <- readNifti(tempPath, internal=TRUE)
+    expect_output(print(niftiHeader(nifti2Image)), "NIfTI-2 header")
     expect_equal(nifti2Image$vox_offset, 544L)
     expect_equal(image[40,40,30], nifti2Image[40,40,30])
     unlink(tempPath)
