@@ -22,6 +22,11 @@ R interface
 
 API changes
 
+- The NIfTI-2 library is now included with the package, and available through
+  the API. A number of patches have been made to this version of the library
+  to ensure that it can generate valid NIfTI-2 format files upon request (see
+  <https://github.com/NIFTI-Imaging/nifti_clib/pull/124> for details of the
+  upstream pull request).
 - The package goes to some lengths to allow the mutually incompatible NIfTI-1
   and NIfTI-2 libraries to coexist. The library version that API clients will
   see depends on the value of the `RNIFTI_NIFTILIB_VERSION` compile-time
@@ -51,6 +56,8 @@ API changes
 
 Bug fixes
 
+- The `niftiHeader()` and `analyzeHeader()` functions will now return `NULL`
+  for `NULL` input, rather than potentially segfaulting.
 - The `analyzeHeader()` R function no longer misinterprets internal image
   objects as file paths.
 - `Rcpp` no longer throws an exception when an invalid image pointer is seen,
