@@ -187,18 +187,15 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP niftiHeader (SEXP _image)
+template <typename Header>
+static List niftiHeaderToList (const Header &header)
 {
-BEGIN_RCPP
-    const NiftiImage image(_image, false, true);
-    nifti_1_header header;
-    nifti_convert_nim2n1hdr(image, &header);
     List result;
     
     result["sizeof_hdr"] = header.sizeof_hdr;
     
     result["dim_info"] = int(header.dim_info);
-    result["dim"] = std::vector<short>(header.dim, header.dim+8);
+    result["dim"] = std::vector<int>(header.dim, header.dim+8);
     
     result["intent_p1"] = header.intent_p1;
     result["intent_p2"] = header.intent_p2;
@@ -209,7 +206,7 @@ BEGIN_RCPP
     result["bitpix"] = header.bitpix;
     
     result["slice_start"] = header.slice_start;
-    result["pixdim"] = std::vector<float>(header.pixdim, header.pixdim+8);
+    result["pixdim"] = std::vector<double>(header.pixdim, header.pixdim+8);
     result["vox_offset"] = header.vox_offset;
     result["scl_slope"] = header.scl_slope;
     result["scl_inter"] = header.scl_inter;
@@ -245,9 +242,37 @@ BEGIN_RCPP
     strings["sform_code"] = nifti_xform_string(header.sform_code);
     strings["slice_code"] = nifti_slice_string(header.slice_code);
     
-    RNifti::internal::addAttributes(result, image, false, false);
     result.attr("class") = CharacterVector::create("niftiHeader");
     result.attr("strings") = strings;
+    
+    return result;
+}
+
+RcppExport SEXP niftiHeader (SEXP _image)
+{
+BEGIN_RCPP
+    const NiftiImage image(_image, false, true);
+    if (image.isNull())
+        return R_NilValue;
+    
+    const int version = (image->nifti_type == NIFTI_FTYPE_NIFTI2_1 || image->nifti_type == NIFTI_FTYPE_NIFTI2_2) ? 2 : 1;
+    List result;
+    
+    if (version == 1)
+    {
+        nifti_1_header header;
+        nifti_convert_nim2n1hdr(image, &header);
+        result = niftiHeaderToList(header);
+    }
+    else if (version == 2)
+    {
+        nifti_2_header header;
+        nifti_convert_nim2n2hdr(image, &header);
+        result = niftiHeaderToList(header);
+    }
+    
+    RNifti::internal::addAttributes(result, image, false, false);
+    result.attr("version") = version;
     
     return result;
 END_RCPP
@@ -257,6 +282,9 @@ RcppExport SEXP analyzeHeader (SEXP _image)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, false, true);
+    if (image.isNull())
+        return R_NilValue;
+    
     nifti_1_header header;
     nifti_convert_nim2n1hdr(image, &header);
     nifti_analyze75 *analyze = (nifti_analyze75 *) &header;

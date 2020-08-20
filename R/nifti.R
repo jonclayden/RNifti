@@ -245,7 +245,7 @@ analyzeHeader <- function (image = list())
 #' @export
 print.niftiHeader <- function (x, ...)
 {
-    cat("NIfTI-1 header\n")
+    cat(paste0("NIfTI-", attr(x,"version"), " header\n"))
     widths <- nchar(names(x), "width")
     maxWidth <- max(widths)
     names <- names(x)
