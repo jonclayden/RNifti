@@ -1021,22 +1021,6 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     }
 }
 
-inline void NiftiImage::initFromDims (const std::vector<dim_t> &dim, const int datatype)
-{
-    const int nDims = std::min(7, int(dim.size()));
-    dim_t dims[8] = { nDims, 0, 0, 0, 0, 0, 0, 0 };
-    std::copy(dim.begin(), dim.begin() + nDims, &dims[1]);
-    
-#if RNIFTI_NIFTILIB_VERSION == 1
-    acquire(nifti_make_new_nim(dims, datatype, 1));
-#elif RNIFTI_NIFTILIB_VERSION == 2
-    acquire(nifti2_make_new_nim(dims, datatype, 1));
-#endif
-    
-    if (image == NULL)
-        throw std::runtime_error("Failed to create image from scratch");
-}
-
 inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const bool readOnly)
     : image(NULL), refCount(NULL)
 {
@@ -1119,6 +1103,22 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
 }
 
 #endif // USING_R
+
+inline void NiftiImage::initFromDims (const std::vector<dim_t> &dim, const int datatype)
+{
+    const int nDims = std::min(7, int(dim.size()));
+    dim_t dims[8] = { nDims, 0, 0, 0, 0, 0, 0, 0 };
+    std::copy(dim.begin(), dim.begin() + nDims, &dims[1]);
+    
+#if RNIFTI_NIFTILIB_VERSION == 1
+    acquire(nifti_make_new_nim(dims, datatype, 1));
+#elif RNIFTI_NIFTILIB_VERSION == 2
+    acquire(nifti2_make_new_nim(dims, datatype, 1));
+#endif
+    
+    if (image == NULL)
+        throw std::runtime_error("Failed to create image from scratch");
+}
 
 inline NiftiImage::NiftiImage (const std::vector<dim_t> &dim, const int datatype)
     : image(NULL), refCount(NULL)
