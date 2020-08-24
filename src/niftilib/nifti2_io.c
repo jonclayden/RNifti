@@ -4377,7 +4377,7 @@ int nifti2_set_type_from_names( nifti_image * nim )
    } else {
       /* not too picky here, do what must be done, and then verify */
       if( strcmp(nim->fname, nim->iname) == 0 )          /* one file, type 1 */
-         nim->nifti_type = (nim->nifti_type >= NIFTI_FTYPE_ASCII) ? NIFTI_FTYPE_NIFTI2_1 : NIFTI_FTYPE_NIFTI1_1;
+         nim->nifti_type = (nim->nifti_type >= NIFTI_FTYPE_NIFTI2_1) ? NIFTI_FTYPE_NIFTI2_1 : NIFTI_FTYPE_NIFTI1_1;
       else if( nim->nifti_type == NIFTI_FTYPE_NIFTI1_1 ) /* cannot be type 1 */
          nim->nifti_type = NIFTI_FTYPE_NIFTI1_2;
       else if( nim->nifti_type == NIFTI_FTYPE_NIFTI2_1 )
