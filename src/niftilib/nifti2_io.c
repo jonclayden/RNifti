@@ -524,7 +524,7 @@ static int     has_ascii_header(znzFile fp);
 /*----------------------------------------------------------------------*/
 /*! display the nifti library module history (via stdout)
 *//*--------------------------------------------------------------------*/
-void nifti_disp_lib_hist( int ver )
+void nifti2_disp_lib_hist( int ver )
 {
    int c, len;
 
@@ -3346,7 +3346,7 @@ void old_swap_nifti_header( nifti_1_header *h , int is_nifti )
 
     changed to return int, -1 means no file or error      20 Dec 2004 [rickr]
 *//*-------------------------------------------------------------------------*/
-int64_t nifti_get_filesize( const char *pathname )
+int64_t nifti2_get_filesize( const char *pathname )
 {
    struct stat buf ; int ii ;
 
@@ -3357,7 +3357,7 @@ int64_t nifti_get_filesize( const char *pathname )
 
 #else  /*---------- non-Unix version of the above, less efficient -----------*/
 
-int64_t nifti_get_filesize( const char *pathname )
+int64_t nifti2_get_filesize( const char *pathname )
 {
    znzFile fp ; int64_t len ;
 

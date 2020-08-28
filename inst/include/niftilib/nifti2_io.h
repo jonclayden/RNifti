@@ -431,8 +431,8 @@ int    nifti_datatype_from_string    (const char * name);
 const char * nifti_datatype_to_string(int dtype);
 int    nifti_header_version          (const char * buf, size_t nbytes);
 
+int64_t nifti2_get_filesize( const char *pathname ) ;
 #if RNIFTI_NIFTILIB_VERSION == 2
-int64_t nifti_get_filesize( const char *pathname ) ;
 void  swap_nifti_header ( void * hdr , int ni_ver ) ;
 #endif
 void  old_swap_nifti_header( struct nifti_1_header *h , int is_nifti );
@@ -467,9 +467,7 @@ void         nifti2_image_write_bricks(nifti_image * nim,
                                       const nifti_brick_list * NBL);
 void         nifti2_image_infodump( const nifti_image * nim ) ;
 
-#if RNIFTI_NIFTILIB_VERSION == 2
-void         nifti_disp_lib_hist( int ver ) ;  /* to display library history */
-#endif
+void         nifti2_disp_lib_hist( int ver ) ;  /* to display library history */
 void         nifti_disp_lib_version( void ) ;  /* to display library version */
 int          nifti2_disp_matrix_orient( const char * mesg, nifti_dmat44 mat );
 int          nifti_disp_type_list( int which );
@@ -623,6 +621,8 @@ int    nifti_valid_header_size(int ni_ver, int whine);
 // Remap functions names that have NIfTI-2 variants
 #if (RNIFTI_NIFTILIB_VERSION == 2) && !defined(NO_REMAP_NIFTI2_FUNCTIONS)
 
+#define nifti_get_filesize              nifti2_get_filesize
+
 #define nifti_image_read_bricks         nifti2_image_read_bricks
 #define nifti_image_load_bricks         nifti2_image_load_bricks
 #define nifti_free_NBL                  nifti2_free_NBL
@@ -639,6 +639,7 @@ int    nifti_valid_header_size(int ni_ver, int whine);
 #define nifti_image_write_bricks        nifti2_image_write_bricks
 #define nifti_image_infodump            nifti2_image_infodump
 
+#define nifti_disp_lib_hist             nifti2_disp_lib_hist
 #define nifti_disp_matrix_orient        nifti2_disp_matrix_orient
 #define nifti_image_to_ascii            nifti2_image_to_ascii
 #define nifti_image_from_ascii          nifti2_image_from_ascii

@@ -449,7 +449,6 @@ static int     has_ascii_header(znzFile fp);
 
 
 /* for calling from some main program */
-#ifndef RNIFTI_NIFTILIB_DEDUPLICATE
 /*----------------------------------------------------------------------*/
 /*! display the nifti library module history (via stdout)
 *//*--------------------------------------------------------------------*/
@@ -459,6 +458,8 @@ void nifti_disp_lib_hist( void )
    for( c = 0; c < len; c++ )
        Rc_fputs_stdout(gni_history[c]);
 }
+
+#ifndef RNIFTI_NIFTILIB_DEDUPLICATE
 
 /*----------------------------------------------------------------------*/
 /*! display the nifti library version (via stdout)
@@ -2408,6 +2409,7 @@ void old_swap_nifti_header( struct nifti_1_header *h , int is_nifti )
    }
    }
 
+#endif /* RNIFTI_NIFTILIB_DEDUPLICATE */
 
 #define USE_STAT
 #ifdef  USE_STAT
@@ -2447,7 +2449,6 @@ int nifti_get_filesize( const char *pathname )
 }
 
 #endif /* USE_STAT */
-#endif /* RNIFTI_NIFTILIB_DEDUPLICATE */
 
 /*----------------------------------------------------------------------*/
 /*! return the total volume size, in bytes

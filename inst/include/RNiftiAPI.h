@@ -156,7 +156,7 @@ static int(*_nifti_datatype_is_valid)(int, int) = NULL;
 static int(*_nifti_datatype_from_string)(const char *) = NULL;
 static const char *(*_nifti_datatype_to_string)(int) = NULL;
 static int(*_nifti_header_version)(const char *, size_t) = NULL;
-static int64_t(*_nifti_get_filesize)(const char *) = NULL;
+static int64_t(*_nifti2_get_filesize)(const char *) = NULL;
 static void(*_swap_nifti_header)(void *, int) = NULL;
 static void(*_old_swap_nifti_header)(struct nifti_1_header *, int) = NULL;
 static void(*_nifti_swap_as_analyze)(nifti_analyze75 *) = NULL;
@@ -174,7 +174,7 @@ static int64_t(*_nifti2_read_subregion_image)(nifti_image *, const int64_t *, co
 static void(*_nifti2_image_write)(nifti_image *) = NULL;
 static void(*_nifti2_image_write_bricks)(nifti_image *, const nifti_brick_list *) = NULL;
 static void(*_nifti2_image_infodump)(const nifti_image *) = NULL;
-static void(*_nifti_disp_lib_hist)(int) = NULL;
+static void(*_nifti2_disp_lib_hist)(int) = NULL;
 static void(*_nifti_disp_lib_version)(void) = NULL;
 static int(*_nifti2_disp_matrix_orient)(const char *, nifti_dmat44) = NULL;
 static int(*_nifti_disp_type_list)(int) = NULL;
@@ -398,7 +398,7 @@ void niftilib_register_all ()
         _nifti_datatype_from_string = (int(*)(const char *)) R_GetCCallable("RNifti", "nii_datatype_from_string");
         _nifti_datatype_to_string = (const char *(*)(int)) R_GetCCallable("RNifti", "nii_datatype_to_string");
         _nifti_header_version = (int(*)(const char *, size_t)) R_GetCCallable("RNifti", "nii_header_version");
-        _nifti_get_filesize = (int64_t(*)(const char *)) R_GetCCallable("RNifti", "nii_get_filesize");
+        _nifti2_get_filesize = (int64_t(*)(const char *)) R_GetCCallable("RNifti", "nii2_get_filesize");
         _swap_nifti_header = (void(*)(void *, int)) R_GetCCallable("RNifti", "swap_nii_header");
         _old_swap_nifti_header = (void(*)(struct nifti_1_header *, int)) R_GetCCallable("RNifti", "old_swap_nii_header");
         _nifti_swap_as_analyze = (void(*)(nifti_analyze75 *)) R_GetCCallable("RNifti", "nii_swap_as_analyze");
@@ -416,7 +416,7 @@ void niftilib_register_all ()
         _nifti2_image_write = (void(*)(nifti_image *)) R_GetCCallable("RNifti", "nii2_image_write");
         _nifti2_image_write_bricks = (void(*)(nifti_image *, const nifti_brick_list *)) R_GetCCallable("RNifti", "nii2_image_write_bricks");
         _nifti2_image_infodump = (void(*)(const nifti_image *)) R_GetCCallable("RNifti", "nii2_image_infodump");
-        _nifti_disp_lib_hist = (void(*)(int)) R_GetCCallable("RNifti", "nii_disp_lib_hist");
+        _nifti2_disp_lib_hist = (void(*)(int)) R_GetCCallable("RNifti", "nii2_disp_lib_hist");
         _nifti_disp_lib_version = (void(*)(void)) R_GetCCallable("RNifti", "nii_disp_lib_version");
         _nifti2_disp_matrix_orient = (int(*)(const char *, nifti_dmat44)) R_GetCCallable("RNifti", "nii2_disp_matrix_orient");
         _nifti_disp_type_list = (int(*)(int)) R_GetCCallable("RNifti", "nii_disp_type_list");
@@ -637,7 +637,7 @@ int nifti_datatype_is_valid (int dtype, int for_nifti) { NIFTILIB_WRAPPER_BODY(_
 int nifti_datatype_from_string (const char * name) { NIFTILIB_WRAPPER_BODY(_nifti_datatype_from_string, name) }
 const char * nifti_datatype_to_string (int dtype) { NIFTILIB_WRAPPER_BODY(_nifti_datatype_to_string, dtype) }
 int nifti_header_version (const char * buf, size_t nbytes) { NIFTILIB_WRAPPER_BODY(_nifti_header_version, buf, nbytes) }
-int64_t nifti_get_filesize (const char * pathname) { NIFTILIB_WRAPPER_BODY(_nifti_get_filesize, pathname) }
+int64_t nifti2_get_filesize (const char * pathname) { NIFTILIB_WRAPPER_BODY(_nifti2_get_filesize, pathname) }
 void swap_nifti_header (void * hdr, int ni_ver) { NIFTILIB_WRAPPER_BODY(_swap_nifti_header, hdr, ni_ver) }
 void old_swap_nifti_header (struct nifti_1_header * h, int is_nifti) { NIFTILIB_WRAPPER_BODY(_old_swap_nifti_header, h, is_nifti) }
 void nifti_swap_as_analyze (nifti_analyze75 * h) { NIFTILIB_WRAPPER_BODY(_nifti_swap_as_analyze, h) }
@@ -655,7 +655,7 @@ int64_t nifti2_read_subregion_image (nifti_image * nim, const int64_t * start_in
 void nifti2_image_write (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti2_image_write, nim) }
 void nifti2_image_write_bricks (nifti_image * nim, const nifti_brick_list * NBL) { NIFTILIB_WRAPPER_BODY(_nifti2_image_write_bricks, nim, NBL) }
 void nifti2_image_infodump (const nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti2_image_infodump, nim) }
-void nifti_disp_lib_hist (int ver) { NIFTILIB_WRAPPER_BODY(_nifti_disp_lib_hist, ver) }
+void nifti2_disp_lib_hist (int ver) { NIFTILIB_WRAPPER_BODY(_nifti2_disp_lib_hist, ver) }
 void nifti_disp_lib_version () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_disp_lib_version) }
 int nifti2_disp_matrix_orient (const char * mesg, nifti_dmat44 mat) { NIFTILIB_WRAPPER_BODY(_nifti2_disp_matrix_orient, mesg, mat) }
 int nifti_disp_type_list (int which) { NIFTILIB_WRAPPER_BODY(_nifti_disp_type_list, which) }

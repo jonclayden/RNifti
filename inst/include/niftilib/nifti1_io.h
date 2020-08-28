@@ -286,8 +286,8 @@ int    nifti_datatype_is_valid   (int dtype, int for_nifti);
 int    nifti_datatype_from_string(const char * name);
 const char * nifti_datatype_to_string  (int dtype);
 
-#if RNIFTI_NIFTILIB_VERSION == 1
 int   nifti_get_filesize( const char *pathname ) ;
+#if RNIFTI_NIFTILIB_VERSION == 1
 void  swap_nifti_header ( struct nifti_1_header *h , int is_nifti ) ;
 #endif
 void  old_swap_nifti_header( struct nifti_1_header *h , int is_nifti );
@@ -321,9 +321,7 @@ void         nifti_image_write_bricks(nifti_image * nim,
                                       const nifti_brick_list * NBL);
 void         nifti_image_infodump( const nifti_image * nim ) ;
 
-#if RNIFTI_NIFTILIB_VERSION == 1
 void         nifti_disp_lib_hist( void ) ;     /* to display library history */
-#endif
 void         nifti_disp_lib_version( void ) ;  /* to display library version */
 int          nifti_disp_matrix_orient( const char * mesg, mat44 mat );
 int          nifti_disp_type_list( int which );
