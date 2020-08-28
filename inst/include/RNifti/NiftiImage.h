@@ -715,7 +715,8 @@ public:
     **/
     SquareMatrix (const NiftiType &source)
     {
-        std::copy(*source.m, *source.m + Order*Order, this->elements);
+        const ElementType *castSource = (const ElementType *) *source.m;
+        std::copy(castSource, castSource + Order*Order, this->elements);
     }
     
 #ifdef USING_R
