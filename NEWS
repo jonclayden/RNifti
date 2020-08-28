@@ -2,6 +2,14 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.2.1
+
+- A type inconsistency that could lead to segmentation faults in client
+  packages on certain platforms has been resolved.
+- Other compiler and sanitiser warnings have been resolved.
+
+===============================================================================
+
 VERSION 1.2.0
 
 With this release, `RNifti`'s core code moves over to the NIfTI-2 library.
