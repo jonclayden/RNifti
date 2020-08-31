@@ -1,6 +1,8 @@
 #ifndef _NIFTI2_IMAGE_H_
 #define _NIFTI2_IMAGE_H_
 
+#include <inttypes.h>
+
 // This is repetitious and inelegant, but a definition for nifti2_image is needed to allow
 // conversion to/from nifti1_image. This is a straight copy of the relevant parts of nifti2_io.h.
 #if RNIFTI_NIFTILIB_VERSION == 1
