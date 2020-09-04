@@ -9,6 +9,7 @@ inline bool isNaN (const Type x) { return (x != x); }
 
 #ifdef USING_R
 // R offers the portable ISNAN macro for doubles, which is more robust
+// Note that this tests for NaN and NA values
 template <>
 inline bool isNaN<double> (const double x) { return bool(ISNAN(x)); }
 
@@ -18,6 +19,16 @@ inline bool isNaN<int> (const int x) { return (x == NA_INTEGER); }
 
 template <>
 inline bool isNaN<rgba32_t> (const rgba32_t x) { return (x.value.packed == NA_INTEGER); }
+
+// Specifically test for missingness - this is only relevant for R, and only when the distinction from NaN is important
+template <typename Type>
+inline bool isNA (const Type x) { return false; }
+
+template <>
+inline bool isNA<int> (const int x) { return (x == NA_INTEGER); }
+
+template <>
+inline bool isNA<double> (const double x) { return ISNA(x); }
 #endif
 
 template <typename Type>
@@ -465,6 +476,8 @@ inline NiftiImageData::Element & NiftiImageData::Element::operator= (const Sourc
         // or narrower type
         else if (parent.isInteger())
             parent.handler->setInt(ptr, NA_INTEGER);
+        else if (internal::isNA(value))
+            parent.handler->setDouble(ptr, NA_REAL);
 #endif
         else
             parent.handler->setDouble(ptr, std::numeric_limits<double>::quiet_NaN());
