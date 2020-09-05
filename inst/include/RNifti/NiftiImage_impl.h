@@ -656,6 +656,8 @@ inline int NiftiImage::fileVersion (const std::string &path)
 #elif RNIFTI_NIFTILIB_VERSION == 2
     int version;
     void *header = nifti2_read_header(internal::stringToPath(path), &version, true);
+    if (header == NULL)
+        return -1;
     free(header);
     return version;
 #endif

@@ -24,6 +24,12 @@ test_that("NIfTI files can be read and written", {
     expect_equal(dim(readNifti(imagePath,internal=TRUE)), c(96L,96L,60L))
     expect_output(print(readNifti(imagePath,internal=TRUE)), "2.5 mm per voxel")
     
+    # Non-NIfTI and missing files should return -1
+    expect_warning(version <- niftiVersion(system.file("COPYRIGHTS",package="RNifti")))
+    expect_equivalent(version, -1L)
+    expect_warning(version <- niftiVersion(system.file("no-such-file",package="RNifti")))
+    expect_equivalent(version, -1L)
+    
     image <- readNifti(imagePath)
     expect_s3_class(image, "niftiImage")
     expect_equal(image[40,40,30], 368)
