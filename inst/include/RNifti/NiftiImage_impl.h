@@ -952,8 +952,7 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
         this->image->qform_code = this->image->sform_code = 0;
     else
     {
-        Xform::Matrix xformMatrix;
-        std::copy(xform.begin(), xform.end(), xformMatrix.begin());
+        const Xform::Matrix xformMatrix(xform);
         this->qform() = xformMatrix;
         this->sform() = xformMatrix;
         this->image->qform_code = this->image->sform_code = 2;
