@@ -50,6 +50,14 @@ soft-deprecated.
 Several medical image analysis packages, such as SPM and FSL, use the
   ANALYZE \code{originator} field to store a coordinate origin. This
   interpretation is also returned, in the \code{origin} field.
+
+  Both of these functions call \code{\link{asNifti}} on their arguments to
+  coerce it to NIfTI, except in one specific circumstance: when
+  \code{analyzeHeader} is called with a single-element character-mode
+  argument that is not an \code{"internalImage"} object. In this case the
+  string is taken to be a path and the header is reported as stored on disk.
+  This is because otherwise the header may be changed by the process of
+  converting it to NIfTI and back.
 }
 \examples{
 niftiHeader(system.file("extdata", "example.nii.gz", package="RNifti"))

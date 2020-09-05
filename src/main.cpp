@@ -281,12 +281,32 @@ END_RCPP
 RcppExport SEXP analyzeHeader (SEXP _image)
 {
 BEGIN_RCPP
-    const NiftiImage image(_image, false, true);
-    if (image.isNull())
-        return R_NilValue;
-    
+    RObject object(_image);
     nifti_1_header header;
-    nifti_convert_nim2n1hdr(image, &header);
+    
+    // This special-case treatment of strings is important, because converting
+    // ANALYZE files into NIfTI objects and back is somewhat destructive. It
+    // mustn't pick up internal images by accident, though
+    if (Rf_isString(object) && !object.hasAttribute(".nifti_image_ptr"))
+    {
+        const std::string path = as<std::string>(object);
+        int version;
+        void *ptr = nifti2_read_header(RNifti::internal::stringToPath(path), &version, true);
+        if (ptr == NULL)
+            return R_NilValue;
+        else if (version < 0 || version > 1)
+            Rf_error("File is not in ANALYZE-7.5 or NIfTI-1 format");
+        header = *((nifti_1_header *) ptr);
+        free(ptr);
+    }
+    else
+    {
+        const NiftiImage image(_image, false, true);
+        if (image.isNull())
+            return R_NilValue;
+        nifti_convert_nim2n1hdr(image, &header);
+    }
+    
     nifti_analyze75 *analyze = (nifti_analyze75 *) &header;
     List result;
     
