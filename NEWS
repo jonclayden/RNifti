@@ -2,6 +2,26 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.2.2
+
+- The distinction between `NaN` and `NA` double values is now preserved more
+  reliably when copying voxel data from one blob to another. (Reported by John
+  Muschelli, issue #21.)
+- It is now possible to use the `initFromDims()` C++ method in non-R API
+  clients, which was previously unavailable because of an oversight. (Patch
+  from Tom Wilkinson, PR #20.)
+- `niftiVersion()` should once again return -1 for missing and invalid files,
+  as documented. There are now also regression tests for this behaviour.
+- Image xforms created from `MriImage` objects will no longer be implicitly
+  transposed in the process.
+- The special treatment of character-mode arguments to `analyzeHeader()` has
+  been reinstated, but is now more careful to avoid misinterpreting internal
+  images. More details of its behaviour may be found in the documentation.
+- A header required on some platforms was not previously included, which could
+  lead to API client packages failing to compile. This has been corrected.
+
+===============================================================================
+
 VERSION 1.2.1
 
 - A type inconsistency that could lead to segmentation faults in client
