@@ -21,6 +21,7 @@ for (version in 1:2) {
     pieces <- groups(ore.search("^(\\w[\\w\\s]+?\\**)\\s*(\\w+)\\s*\\(([^\\)]+)\\)\\s*;\\s*(/\\*[^*]+\\*/\\s*)?$", lines))
     values <- ore.subst("^\\s+(.+?)\\s+", "\\1", pieces[,1,])
     values <- ore.subst("\\s+(\\s)", "\\1", values, all=TRUE)
+    noreturn <- values == "void"
     symbols <- pieces[,2,]
     
     # Remove leading and trailing whitespace from the arg list, split at commas
@@ -46,8 +47,10 @@ for (version in 1:2) {
     
     # Construct wrapper functions
     defineWrappers <- rep(NA, length(argPieces))
-    defineWrappers[voidType] <- paste0(values[voidType], " ", symbols[voidType], " () { NIFTILIB_WRAPPER_BODY_VOID(_", symbols[voidType], ") }")
-    defineWrappers[!voidType] <- paste0(values[!voidType], " ", symbols[!voidType], " (", args[!voidType], ") { NIFTILIB_WRAPPER_BODY(_", symbols[!voidType], ", ", argNames[!voidType], ") }")
+    defineWrappers[voidType & !noreturn] <- paste0(values[voidType & !noreturn], " ", symbols[voidType & !noreturn], " () { NIFTILIB_WRAPPER_BODY_VOID(_", symbols[voidType & !noreturn], ") }")
+    defineWrappers[!voidType & !noreturn] <- paste0(values[!voidType & !noreturn], " ", symbols[!voidType & !noreturn], " (", args[!voidType & !noreturn], ") { NIFTILIB_WRAPPER_BODY(_", symbols[!voidType & !noreturn], ", ", argNames[!voidType & !noreturn], ") }")
+    defineWrappers[voidType & noreturn] <- paste0("void ", symbols[voidType & noreturn], " () { NIFTILIB_WRAPPER_BODY_VOID_NORETURN(_", symbols[voidType & noreturn], ") }")
+    defineWrappers[!voidType & noreturn] <- paste0("void ", symbols[!voidType & noreturn], " (", args[!voidType & noreturn], ") { NIFTILIB_WRAPPER_BODY_NORETURN(_", symbols[!voidType & noreturn], ", ", argNames[!voidType & noreturn], ") }")
     defineWrappers <- na.omit(defineWrappers)
     
     versions <- c(versions, list(list(registerCallables=registerCallables, declarePointers=declarePointers, mapPointers=mapPointers, defineWrappers=defineWrappers)))

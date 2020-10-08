@@ -18,6 +18,16 @@ extern "C" {
         niftilib_register_all();            \
     return symbol();
 
+#define NIFTILIB_WRAPPER_BODY_NORETURN(symbol, ...) \
+    if (symbol == NULL)                             \
+        niftilib_register_all();                    \
+    symbol(__VA_ARGS__);
+
+#define NIFTILIB_WRAPPER_BODY_VOID_NORETURN(symbol) \
+    if (symbol == NULL)                             \
+        niftilib_register_all();                    \
+    symbol();
+
 static int registered = 0;
 
 /* MARK - Declare pointers */
