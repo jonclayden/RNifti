@@ -2,6 +2,12 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.2.3
+
+- Compiler warnings from some API functions have been resolved.
+
+===============================================================================
+
 VERSION 1.2.2
 
 - The distinction between `NaN` and `NA` double values is now preserved more
