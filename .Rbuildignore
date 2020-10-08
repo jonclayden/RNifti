@@ -11,3 +11,4 @@
 ^src/zzz.c.in$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.nova$
