@@ -9,3 +9,5 @@
 ^revdep$
 ^inst/include/RNiftiAPI.h.in$
 ^src/zzz.c.in$
+^.*\.Rproj$
+^\.Rproj\.user$
