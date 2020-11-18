@@ -659,6 +659,16 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP getExtensions (SEXP _image)
+{
+BEGIN_RCPP
+    NiftiImage image(_image);
+    const std::vector<NiftiImage::Extension> extensions = image.extensions();
+    List result(extensions.begin(), extensions.end());
+    return result;
+END_RCPP
+}
+
 RcppExport SEXP setDebugLevel (SEXP _level)
 {
 BEGIN_RCPP
@@ -690,6 +700,7 @@ R_CallMethodDef callMethods[] = {
     { "indexList",      (DL_FUNC) &indexList,       2 },
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },
+    { "getExtensions",  (DL_FUNC) &getExtensions,   1 },
     { "setDebugLevel",  (DL_FUNC) &setDebugLevel,   1 },
     { NULL, NULL, 0 }
 };

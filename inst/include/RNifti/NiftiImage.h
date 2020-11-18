@@ -922,6 +922,58 @@ public:
         std::vector<TargetType> getData (const bool useSlope = true) const;
     };
     
+    class Extension
+    {
+    protected:
+        nifti1_extension *ext;
+        
+    public:
+        Extension ()
+            : ext(NULL) {}
+        
+        Extension (nifti1_extension * const ext, const bool copy = false)
+            : ext(NULL)
+        {
+            if (ext != NULL)
+            {
+                if (copy)
+                {
+                    this->ext = (nifti1_extension *) calloc(1, sizeof(nifti1_extension));
+                    this->ext->esize = ext->esize;
+                    this->ext->ecode = ext->ecode;
+                    if (ext->edata != NULL && ext->esize > 8)
+                    {
+                        this->ext->edata = (char *) calloc(ext->esize - 8, 1);
+                        memcpy(this->ext->edata, ext->edata, ext->esize - 8);
+                    }
+                }
+                else
+                    this->ext = ext;
+            }
+        }
+        
+        int code () const { return (ext == NULL ? NIFTI_ECODE_IGNORE : ext->ecode); }
+        
+        size_t length () const { return (ext == NULL || ext->esize < 8 ? 0 : size_t(ext->esize - 8)); }
+        
+        size_t size () const { return (ext == NULL || ext->esize < 8 ? 0 : size_t(ext->esize - 8)); }
+        
+#ifdef USING_R
+        operator SEXP () const
+        {
+            if (ext == NULL || ext->esize < 8)
+                return R_NilValue;
+            
+            const int length = ext->esize - 8;
+            Rcpp::RawVector result(length);
+            const Rbyte *source = (const Rbyte *) ext->edata;
+            std::copy(source, source+length, result.begin());
+            result.attr("code") = ext->ecode;
+            return result;
+        }
+#endif
+    };
+    
     /**
      * Inner class representing an xform matrix, which indicates the orientation and other spatial
      * properties of an image. Specifically, an xform is an affine transformation in 3D space,
@@ -1664,6 +1716,21 @@ public:
      * @return An integer giving the number of voxels in the image
     **/
     size_t nVoxels () const { return (image == NULL ? 0 : image->nvox); }
+    
+    int nExtensions () const { return (image == NULL ? 0 : image->num_ext); }
+    
+    std::vector<Extension> extensions () const
+    {
+        if (image == NULL)
+            return std::vector<Extension>();
+        else
+        {
+            std::vector<Extension> result(image->num_ext);
+            for (int i=0; i<image->num_ext; i++)
+                result[i] = Extension(image->ext_list + i);
+            return result;
+        }
+    }
     
     /**
      * Write the image to a NIfTI-1 file
