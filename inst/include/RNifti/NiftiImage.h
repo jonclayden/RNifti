@@ -1719,15 +1719,19 @@ public:
     
     int nExtensions () const { return (image == NULL ? 0 : image->num_ext); }
     
-    std::vector<Extension> extensions () const
+    std::vector<Extension> extensions (const int code = 0) const
     {
         if (image == NULL)
             return std::vector<Extension>();
         else
         {
-            std::vector<Extension> result(image->num_ext);
+            std::vector<Extension> result;
             for (int i=0; i<image->num_ext; i++)
-                result[i] = Extension(image->ext_list + i);
+            {
+                const Extension extension(image->ext_list + i);
+                if (code <= 0 || code == extension.code())
+                    result.push_back(extension);
+            }
             return result;
         }
     }
