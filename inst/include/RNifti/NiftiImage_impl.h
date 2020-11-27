@@ -512,6 +512,41 @@ inline NiftiImageData::Element & NiftiImageData::Element::operator= (const Nifti
     return *this;
 }
 
+inline void NiftiImage::Extension::copy (const nifti1_extension *source)
+{
+    if (source == NULL)
+        ext = NULL;
+    else
+    {
+        ext = (nifti1_extension *) calloc(1, sizeof(nifti1_extension));
+        ext->esize = source->esize;
+        ext->ecode = source->ecode;
+        if (source->edata != NULL && source->esize > 8)
+        {
+            ext->edata = (char *) calloc(source->esize - 8, 1);
+            memcpy(ext->edata, source->edata, source->esize - 8);
+        }
+    }
+}
+
+template <typename SourceType>
+inline void NiftiImage::Extension::copy (const SourceType *data, const size_t length, const int code)
+{
+    if (data == NULL)
+        ext = NULL;
+    else
+    {
+        const size_t bytes = length * sizeof(SourceType);
+        ext = (nifti1_extension *) calloc(1, sizeof(nifti1_extension));
+        ext->esize = int(bytes + 8);
+        const int remainder = ext->esize % 16;
+        ext->esize += (remainder == 0 ? 0 : 16 - remainder);
+        ext->ecode = code;
+        ext->edata = (char *) calloc(ext->esize - 8, 1);
+        memcpy(ext->edata, data, bytes);
+    }
+}
+
 inline void NiftiImage::Xform::replace (const Matrix &source)
 {
     mat = source;

@@ -927,32 +927,64 @@ public:
     protected:
         nifti1_extension *ext;
         
+        void copy (const nifti1_extension *source);
+        
+        template <typename SourceType>
+        void copy (const SourceType *data, const size_t length, const int code);
+        
     public:
         Extension ()
             : ext(NULL) {}
         
-        Extension (nifti1_extension * const ext, const bool copy = false)
-            : ext(NULL)
+        Extension (nifti1_extension * const extension, const bool copy = false)
         {
-            if (ext != NULL)
-            {
-                if (copy)
-                {
-                    this->ext = (nifti1_extension *) calloc(1, sizeof(nifti1_extension));
-                    this->ext->esize = ext->esize;
-                    this->ext->ecode = ext->ecode;
-                    if (ext->edata != NULL && ext->esize > 8)
-                    {
-                        this->ext->edata = (char *) calloc(ext->esize - 8, 1);
-                        memcpy(this->ext->edata, ext->edata, ext->esize - 8);
-                    }
-                }
-                else
-                    this->ext = ext;
-            }
+            if (!copy || extension == NULL)
+                this->ext = extension;
+            else
+                this->copy(extension);
         }
         
-        int code () const { return (ext == NULL ? NIFTI_ECODE_IGNORE : ext->ecode); }
+        Extension (const Extension &source)
+        {
+            copy(source.ext);
+        }
+        
+        template <typename SourceType>
+        Extension (const SourceType *data, const size_t length, const int code)
+        {
+            copy(data, length, code);
+        }
+        
+#ifdef USING_R
+        Extension (SEXP source, int code = -1)
+        {
+            const Rcpp::RObject object(source);
+            if (code == -1 && object.hasAttribute("code"))
+                code = Rcpp::as<int>(object.attr("code"));
+            
+            switch (object.sexp_type())
+            {
+                case RAWSXP:  copy(RAW(source), Rf_length(source), code);       break;
+                case REALSXP: copy(REAL(source), Rf_length(source), code);      break;
+                case CPLXSXP: copy(COMPLEX(source), Rf_length(source), code);   break;
+                case INTSXP:  copy(INTEGER(source), Rf_length(source), code);   break;
+                case LGLSXP:  copy(LOGICAL(source), Rf_length(source), code);   break;
+                case STRSXP:
+                {
+                    if (Rf_length(source) > 1)
+                        Rf_warning("Character vector elements after the first will not be stored in a NIfTI extension");
+                    const char *string = CHAR(STRING_ELT(source, 0));
+                    copy(string, strlen(string), code);
+                    break;
+                }
+                default: Rf_error("Unable to convert SEXP type %d to NIfTI extension", object.sexp_type());
+            }
+        }
+#endif
+        
+        int code () const { return (ext == NULL ? -1 : ext->ecode); }
+        
+        const char * data () const { return (ext == NULL ? NULL : ext->edata); }
         
         size_t length () const { return (ext == NULL || ext->esize < 8 ? 0 : size_t(ext->esize - 8)); }
         
@@ -1719,21 +1751,51 @@ public:
     
     int nExtensions () const { return (image == NULL ? 0 : image->num_ext); }
     
-    std::vector<Extension> extensions (const int code = 0) const
+    std::list<Extension> extensions (const int code = -1) const
     {
         if (image == NULL)
-            return std::vector<Extension>();
+            return std::list<Extension>();
         else
         {
-            std::vector<Extension> result;
+            std::list<Extension> result;
             for (int i=0; i<image->num_ext; i++)
             {
                 const Extension extension(image->ext_list + i);
-                if (code <= 0 || code == extension.code())
+                if (code < 0 || code == extension.code())
                     result.push_back(extension);
             }
             return result;
         }
+    }
+    
+    NiftiImage & addExtension (const Extension &extension)
+    {
+        if (image != NULL)
+#if RNIFTI_NIFTILIB_VERSION == 1
+            nifti_add_extension(image, extension.data(), int(extension.length()), extension.code());
+#elif RNIFTI_NIFTILIB_VERSION == 2
+            nifti2_add_extension(image, extension.data(), int(extension.length()), extension.code());
+#endif
+        return *this;
+    }
+    
+    NiftiImage & replaceExtensions (const std::list<Extension> extensions)
+    {
+        dropExtensions();
+        for (std::list<Extension>::const_iterator it=extensions.begin(); it!=extensions.end(); ++it)
+            addExtension(*it);
+        return *this;
+    }
+    
+    NiftiImage & dropExtensions ()
+    {
+        if (image != NULL)
+#if RNIFTI_NIFTILIB_VERSION == 1
+            nifti_free_extensions(image);
+#elif RNIFTI_NIFTILIB_VERSION == 2
+            nifti2_free_extensions(image);
+#endif
+        return *this;
     }
     
     /**
