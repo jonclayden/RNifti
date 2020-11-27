@@ -502,8 +502,11 @@ int    valid_nifti_extensions(const nifti_image *nim);
    https://quantiphyse.readthedocs.io/en/latest/advanced/nifti_extension.html*/
 #define NIFTI_ECODE_QUANTIPHYSE     42  /* Quantiphyse extension */
 
+/* Magnetic Resonance Spectroscopy (MRS)
+   link to come... */
+#define NIFTI_ECODE_MRS             44  /* MRS extension */
 
-#define NIFTI_MAX_ECODE             42  /******* maximum extension code *******/
+#define NIFTI_MAX_ECODE             44  /******* maximum extension code *******/
 
 /* nifti_type file codes */
 #if RNIFTI_NIFTILIB_VERSION == 1
