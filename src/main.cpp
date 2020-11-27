@@ -9,8 +9,9 @@ using namespace RNifti;
 typedef std::vector<int> int_vector;
 typedef std::vector<NiftiImage::dim_t> dim_vector;
 typedef std::vector<NiftiImage::pixdim_t> pixdim_vector;
+typedef std::list<NiftiImage::Extension> extension_list;
 
-inline bool isXformMatrix (const SEXP object)
+inline static bool isXformMatrix (const SEXP object)
 {
     if (!Rf_isMatrix(object))
         return false;
@@ -18,7 +19,7 @@ inline bool isXformMatrix (const SEXP object)
     return (matrix.cols() == 4 && matrix.rows() == 4);
 }
 
-inline unsigned char clip (const double &value)
+inline static unsigned char clip (const double &value)
 {
     unsigned char result;
     if (value < 0.0)
@@ -654,7 +655,7 @@ END_RCPP
 RcppExport SEXP pointerToArray (SEXP _image)
 {
 BEGIN_RCPP
-    NiftiImage image(_image);
+    const NiftiImage image(_image, true, true);
     return image.toArray();
 END_RCPP
 }
@@ -662,10 +663,39 @@ END_RCPP
 RcppExport SEXP getExtensions (SEXP _image, SEXP _code)
 {
 BEGIN_RCPP
-    NiftiImage image(_image);
-    const std::vector<NiftiImage::Extension> extensions = image.extensions(as<int>(_code));
+    const NiftiImage image(_image, false, true);
+    const extension_list extensions = image.extensions(as<int>(_code));
     List result(extensions.begin(), extensions.end());
     return result;
+END_RCPP
+}
+
+RcppExport SEXP setExtensions (SEXP _image, SEXP _extensions, SEXP _code)
+{
+BEGIN_RCPP
+    NiftiImage image(_image);
+    const int code = as<int>(_code);
+    extension_list extensions = image.extensions();
+    
+    if (Rf_isNull(_extensions))
+    {
+        if (code < 0)
+            extensions.clear();
+        else
+        {
+            for (extension_list::const_iterator it=extensions.begin(); it!=extensions.end(); ++it)
+            {
+                if (it->code() == code)
+                    extensions.erase(it);
+            }
+        }
+    }
+    else if (Rf_isVectorList(_extensions))
+        extensions = as<extension_list>(_extensions);
+    else
+        extensions.push_back(NiftiImage::Extension(_extensions, code));
+    
+    return image.replaceExtensions(extensions).toArrayOrPointer(Rf_inherits(_image,"internalImage"), "NIfTI image");
 END_RCPP
 }
 
@@ -701,6 +731,7 @@ R_CallMethodDef callMethods[] = {
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },
     { "getExtensions",  (DL_FUNC) &getExtensions,   2 },
+    { "setExtensions",  (DL_FUNC) &setExtensions,   3 },
     { "setDebugLevel",  (DL_FUNC) &setDebugLevel,   1 },
     { NULL, NULL, 0 }
 };
