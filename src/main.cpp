@@ -655,7 +655,8 @@ END_RCPP
 RcppExport SEXP pointerToArray (SEXP _image)
 {
 BEGIN_RCPP
-    const NiftiImage image(_image, true, true);
+    // Not flagging as read-only, because a copy must happen or the objects will be tied together
+    NiftiImage image(_image);
     return image.toArray();
 END_RCPP
 }
