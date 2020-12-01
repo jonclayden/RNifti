@@ -19,7 +19,8 @@ extension(image, code) <- value
 \arguments{
 \item{image}{An image, in any acceptable form (see \code{\link{asNifti}}).}
 
-\item{code}{Integer value specifying which extension code is required.}
+\item{code}{Integer value, expression or string specifying which extension
+code is required.}
 
 \item{mode}{The required mode of the extracted data.}
 
@@ -51,7 +52,8 @@ at once. The retrieval form returns a list of raw vectors, each with the
 corresponding code in an attribute, and the replacement form accepts a list
 of atomic vectors with code attributes, or \code{NULL}, which removes all
 extensions. The singular version, \code{extension}, gets all extensions with
-the specified code, or appends an extension with that code.
+the specified code, or appends an extension with that code. Valid extension
+codes are stored in the \code{\link{ExtensionCodes}} vector.
 
 NIfTI extensions are stored as a simple, unstructured byte stream, which is
 naturally represented in R as a vector of mode \code{"raw"}. However, these
@@ -60,9 +62,8 @@ convenience. The NIfTI standard makes no guarantees about byte order within
 the data stream, but the \code{endian} argument to \code{\link{readBin}} can
 be passed through when converting to a non-raw type.
 }
-\note{
-A list of registered extension codes is available in the
-  \code{nifti2_io.h} header file, which is distributed with this package.
+\seealso{
+\code{\link{ExtensionCodes}} for the valid extension codes.
 }
 \author{
 Jon Clayden <code@clayden.org>
