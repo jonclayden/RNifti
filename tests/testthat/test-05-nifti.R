@@ -1,5 +1,3 @@
-context("Reading, writing and manipulating NIfTI objects")
-
 test_that("NIfTI objects can be created from data", {
     data <- array(rnorm(24), dim=c(3L,2L,4L))
     image <- asNifti(data)

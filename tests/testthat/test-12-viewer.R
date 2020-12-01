@@ -1,5 +1,3 @@
-context("Displaying images")
-
 test_that("greyscale and RGB images can be viewed", {
     expect_null(view(system.file("extdata", "example.nii.gz", package="RNifti"), interactive=FALSE))
     

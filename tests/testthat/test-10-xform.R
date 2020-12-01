@@ -1,5 +1,3 @@
-context("NIfTI sform/qform operations")
-
 test_that("NIfTI sform/qform operations work", {
     imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
     image <- readNifti(imagePath)

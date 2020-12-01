@@ -1,5 +1,3 @@
-context("Handling composite types")
-
 test_that("complex datatypes are handled properly", {
     image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
     tempPath <- paste(tempfile(), "nii.gz", sep=".")

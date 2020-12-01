@@ -1,5 +1,3 @@
-context("Working with objects from other packages")
-
 test_that("image objects from oro.nifti can be read", {
     imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
     
