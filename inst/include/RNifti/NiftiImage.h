@@ -923,20 +923,44 @@ public:
         std::vector<TargetType> getData (const bool useSlope = true) const;
     };
     
+    /**
+     * Inner class wrapping a NIfTI extension, a weakly-specified standard for attaching additional
+     * metadata to NIfTI-1 and NIfTI-2 images.
+    **/
     class Extension
     {
     protected:
-        nifti1_extension *ext;
+        nifti1_extension *ext;          /**< The wrapped extension structure */
         
+        /**
+         * Copy an existing \c nifti1_extension structure into the object
+         * @param source A pointer to a \c nifti1_extension
+        **/
         void copy (const nifti1_extension *source);
         
+        /**
+         * Copy the specified data buffer into the object
+         * @param data An array of data
+         * @param length The number of elements in \c data
+         * @param code The extension code to associate with the data
+        **/
         template <typename SourceType>
         void copy (const SourceType *data, const size_t length, const int code);
         
     public:
+        /**
+         * Default constructor, wrapping \c NULL
+        **/
         Extension ()
             : ext(NULL) {}
         
+        /**
+         * Initialise from an existing \c nifti1_extension (which is used by both NIfTI-1 and
+         * NIfTI-2 images), optionally copying the contents
+         * @param extension A pointer to a \c nifti1_extension
+         * @param copy If \c true, the contents of the extension are copied; otherwise the pointer
+         * is wrapped directly
+        **/
         Extension (nifti1_extension * const extension, const bool copy = false)
         {
             if (!copy || extension == NULL)
@@ -945,11 +969,21 @@ public:
                 this->copy(extension);
         }
         
+        /**
+         * Copy constructor
+         * @param source Another \c Extension object
+        **/
         Extension (const Extension &source)
         {
             copy(source.ext);
         }
         
+        /**
+         * Construct the object from its constituent parts
+         * @param data An array of data
+         * @param length The number of elements in \c data
+         * @param code The extension code to associate with the data
+        **/
         template <typename SourceType>
         Extension (const SourceType *data, const size_t length, const int code)
         {
@@ -957,6 +991,13 @@ public:
         }
         
 #ifdef USING_R
+        /**
+         * Construct the object from an atomic R object, copying the data into a new extension
+         * @param source An R object, which should be of an atomic type (integer, double,
+         * character, etc.)
+         * @param code The extension code to associate with the data. If -1, the default, a
+         * \c code attribute will be used, if available
+        **/
         Extension (SEXP source, int code = -1)
         {
             const Rcpp::RObject object(source);
@@ -983,15 +1024,34 @@ public:
         }
 #endif
         
+        /**
+         * Return the code associated with the extension
+         * @return An integer code giving the relevant code, or -1 if the extension is \c NULL
+        **/
         int code () const { return (ext == NULL ? -1 : ext->ecode); }
         
+        /**
+         * Return the data blob associated with the extension
+         * @return The data, as a byte array
+        **/
         const char * data () const { return (ext == NULL ? NULL : ext->edata); }
         
+        /**
+         * Return the length of the data array
+         * @return The length of the data array, in bytes
+        **/
         size_t length () const { return (ext == NULL || ext->esize < 8 ? 0 : size_t(ext->esize - 8)); }
         
+        /**
+         * Return the length of the data array
+         * @return The length of the data array, in bytes
+        **/
         size_t size () const { return (ext == NULL || ext->esize < 8 ? 0 : size_t(ext->esize - 8)); }
         
 #ifdef USING_R
+        /**
+         * \c SEXP cast operator, which converts to R's raw vector type
+        **/
         operator SEXP () const
         {
             if (ext == NULL || ext->esize < 8)
@@ -1750,8 +1810,18 @@ public:
     **/
     size_t nVoxels () const { return (image == NULL ? 0 : image->nvox); }
     
+    /**
+     * Return the number of extensions associated with the image
+     * @return An integer giving the number of extensions
+    **/
     int nExtensions () const { return (image == NULL ? 0 : image->num_ext); }
     
+    /**
+     * Return a list of the extensions associated with the image
+     * @param code Integer specifying the code corresponding to the extensions required. If -1, the
+     * default, all extensions are returned. There may be more than one extension with a given code
+     * @return A list of \ref Extension objects
+    **/
     std::list<Extension> extensions (const int code = -1) const
     {
         if (image == NULL)
@@ -1769,6 +1839,11 @@ public:
         }
     }
     
+    /**
+     * Add an extension to the image
+     * @param The new image extension, an \ref Extension object
+     * @return Self, with the extension appended
+    **/
     NiftiImage & addExtension (const Extension &extension)
     {
         if (image != NULL)
@@ -1780,6 +1855,11 @@ public:
         return *this;
     }
     
+    /**
+     * Replace all extensions with new ones
+     * @param A list of \ref Extension objects
+     * @return Self, with the new extensions attached
+    **/
     NiftiImage & replaceExtensions (const std::list<Extension> extensions)
     {
         dropExtensions();
@@ -1788,6 +1868,10 @@ public:
         return *this;
     }
     
+    /**
+     * Remove any extensions from the image
+     * @return Self, with extensions removed
+    **/
     NiftiImage & dropExtensions ()
     {
         if (image != NULL)
