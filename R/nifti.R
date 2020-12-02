@@ -326,9 +326,14 @@ rescaleNifti <- function (image, scales)
     .Call("rescaleImage", image, scales, PACKAGE="RNifti")
 }
 
-bareNiftiPointer <- function (image)
+unwrapPointer <- function (image, disown = FALSE)
 {
-    .Call("unwrapPointer", image, PACKAGE="RNifti")
+    .Call("unwrapPointer", image, disown, PACKAGE="RNifti")
+}
+
+wrapPointer <- function (image)
+{
+    .Call("wrapPointer", image, PACKAGE="RNifti")
 }
 
 niftiDebug <- function (level = 1L)

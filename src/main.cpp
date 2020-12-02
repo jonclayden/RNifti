@@ -670,7 +670,7 @@ void unwrappedPointerFinaliser (SEXP pointer)
 
 // Extract an external pointer to a nifti_image, for use in plain C client code
 // This involves a copy, and currently only produces version 2 structs
-RcppExport SEXP unwrapPointer (SEXP _image)
+RcppExport SEXP unwrapPointer (SEXP _image, SEXP _disown)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, true, true);
@@ -683,9 +683,19 @@ BEGIN_RCPP
     }
     
     SEXP pointer = PROTECT(R_MakeExternalPtr(result, R_NilValue, R_NilValue));
-    R_RegisterCFinalizerEx(pointer, unwrappedPointerFinaliser, TRUE);
+    if (!as<bool>(_disown))
+        R_RegisterCFinalizerEx(pointer, unwrappedPointerFinaliser, TRUE);
     UNPROTECT(1);
     return pointer;
+END_RCPP
+}
+
+RcppExport SEXP wrapPointer (SEXP _image)
+{
+BEGIN_RCPP
+    XPtr<nifti2_image> pointer(_image);
+    const NiftiImage image(pointer.get(), true);
+    return image.toPointer("NIfTI image");
 END_RCPP
 }
 
@@ -759,7 +769,8 @@ R_CallMethodDef callMethods[] = {
     { "indexList",      (DL_FUNC) &indexList,       2 },
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },
-    { "unwrapPointer",  (DL_FUNC) &unwrapPointer,   1 },
+    { "unwrapPointer",  (DL_FUNC) &unwrapPointer,   2 },
+    { "wrapPointer",    (DL_FUNC) &wrapPointer,     1 },
     { "getExtensions",  (DL_FUNC) &getExtensions,   2 },
     { "setExtensions",  (DL_FUNC) &setExtensions,   3 },
     { "setDebugLevel",  (DL_FUNC) &setDebugLevel,   1 },
