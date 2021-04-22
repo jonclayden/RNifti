@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+#include <fstream>
 
 #define RNIFTI_NIFTILIB_VERSION 2
 #include "RNifti.h"
@@ -170,6 +171,36 @@ BEGIN_RCPP
         const NiftiImage image(as<std::string>(_object), volumes);
         return image.toArrayOrPointer(as<bool>(_internal), "NIfTI image");
     }
+END_RCPP
+}
+
+RcppExport SEXP readNiftiBlob (SEXP _file, SEXP _length, SEXP _datatype, SEXP _offset)
+{
+BEGIN_RCPP
+    const std::string file = as<std::string>(_file);
+    const size_t length = as<size_t>(_length);
+    const int datatype = RNifti::internal::stringToDatatype(as<std::string>(_datatype));
+    const size_t offset = Rf_isNull(_offset) ? 0 : as<size_t>(_offset);
+    
+    int nbyper;
+    nifti_datatype_sizes(datatype, &nbyper, NULL);
+    const size_t bytes = length * nbyper;
+    
+    std::ifstream stream(file.c_str(), std::ios::binary);
+    if (offset > 0)
+        stream.seekg(offset);
+    char *buffer = (char *) calloc(length, nbyper);
+    stream.read(buffer, bytes);
+    
+    NiftiImageData data(buffer, length, datatype);
+    RObject result;
+    if (data.isComplex())
+        result = ComplexVector(data.begin(), data.end());
+    else if (data.isFloatingPoint())
+        result = NumericVector(data.begin(), data.end());
+    else
+        result = IntegerVector(data.begin(), data.end());
+    return result;
 END_RCPP
 }
 
@@ -755,6 +786,7 @@ R_CallMethodDef callMethods[] = {
     { "asNifti",        (DL_FUNC) &asNifti,         4 },
     { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
+    { "readNiftiBlob",  (DL_FUNC) &readNiftiBlob,   4 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      4 },
     { "niftiHeader",    (DL_FUNC) &niftiHeader,     1 },
     { "analyzeHeader",  (DL_FUNC) &analyzeHeader,   1 },
