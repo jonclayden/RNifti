@@ -1,5 +1,4 @@
 #include <Rcpp.h>
-#include <fstream>
 
 #define RNIFTI_NIFTILIB_VERSION 2
 #include "RNifti.h"
@@ -177,7 +176,7 @@ END_RCPP
 RcppExport SEXP readNiftiBlob (SEXP _file, SEXP _length, SEXP _datatype, SEXP _offset)
 {
 BEGIN_RCPP
-    const std::string file = as<std::string>(_file);
+    const std::string filename = as<std::string>(_file);
     const size_t length = as<size_t>(_length);
     const int datatype = RNifti::internal::stringToDatatype(as<std::string>(_datatype));
     const size_t offset = Rf_isNull(_offset) ? 0 : as<size_t>(_offset);
@@ -186,11 +185,15 @@ BEGIN_RCPP
     nifti_datatype_sizes(datatype, &nbyper, NULL);
     const size_t bytes = length * nbyper;
     
-    std::ifstream stream(file.c_str(), std::ios::binary);
+    const bool gzExtension = filename.length() > 3 && filename.substr(filename.length()-3,3) == ".gz";
+    znzFile file = znzopen(filename.c_str(), "rb", gzExtension);
+    if (znz_isnull(file))
+        Rf_error("Failed to open file %s", filename.c_str());
     if (offset > 0)
-        stream.seekg(offset);
+        znzseek(file, offset, SEEK_SET);
     char *buffer = (char *) calloc(length, nbyper);
-    stream.read(buffer, bytes);
+    znzread(buffer, nbyper, length, file);
+    znzclose(file);
     
     NiftiImageData data(buffer, length, datatype);
     RObject result;
@@ -200,6 +203,7 @@ BEGIN_RCPP
         result = NumericVector(data.begin(), data.end());
     else
         result = IntegerVector(data.begin(), data.end());
+    free(buffer);
     return result;
 END_RCPP
 }
