@@ -176,9 +176,14 @@ END_RCPP
 RcppExport SEXP readNiftiBlob (SEXP _file, SEXP _length, SEXP _datatype, SEXP _offset)
 {
 BEGIN_RCPP
+    int datatype;
+    if (Rf_isInteger(_datatype))
+        datatype = as<int>(_datatype);
+    else
+        datatype = RNifti::internal::stringToDatatype(as<std::string>(_datatype));
+    
     const std::string filename = as<std::string>(_file);
     const size_t length = as<size_t>(_length);
-    const int datatype = RNifti::internal::stringToDatatype(as<std::string>(_datatype));
     const size_t offset = Rf_isNull(_offset) ? 0 : as<size_t>(_offset);
     
     int nbyper;
