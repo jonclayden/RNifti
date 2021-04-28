@@ -81,6 +81,10 @@ test_that("NIfTI files can be read and written", {
     expect_error(pixdim(image) <- c(1,1,1))
     expect_error(image[40,40,30] <- 400)
     
+    # Direct access to the NIfTI data blob
+    imageHeader <- niftiHeader(imagePath)
+    expect_equal(RNifti:::readBlob(imagePath, 1, imageHeader$datatype, imageHeader$vox_offset + imageHeader$bitpix * 271047 / 8), 368)
+    
     # Check that internal indexing still works when data scaling is in play
     compressedInternalImage <- readNifti(tempPath, internal=TRUE)
     expect_equal(round(compressedInternalImage[40,40,30]), 363)
