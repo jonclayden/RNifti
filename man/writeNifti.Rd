@@ -46,7 +46,7 @@ The ANALYZE-7.5 file format is a legacy format and use of it is not
 
 }
 \references{
-The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
+The NIfTI-1 standard (\url{https://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 }
 \seealso{
 \code{\link{readNifti}}, \code{\link{asNifti}}

@@ -33,7 +33,7 @@
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{writeNifti}}
-#' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
+#' @references The NIfTI-1 standard (\url{https://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @aliases readAnalyze
 #' @export readNifti readAnalyze
 readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL)
@@ -78,7 +78,7 @@ readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL)
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{readNifti}}, \code{\link{asNifti}}
-#' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
+#' @references The NIfTI-1 standard (\url{https://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @export
 writeNifti <- function (image, file, template = NULL, datatype = "auto", version = 1)
 {
@@ -234,7 +234,7 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
 #' 
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso \code{\link{niftiVersion}}
-#' @references The NIfTI-1 standard (\url{http://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
+#' @references The NIfTI-1 standard (\url{https://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @aliases dumpNifti
 #' @export niftiHeader dumpNifti
 niftiHeader <- dumpNifti <- function (image = list())
