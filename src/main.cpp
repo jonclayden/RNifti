@@ -188,7 +188,6 @@ BEGIN_RCPP
     
     int nbyper;
     nifti_datatype_sizes(datatype, &nbyper, NULL);
-    const size_t bytes = length * nbyper;
     
     const bool gzExtension = filename.length() > 3 && filename.substr(filename.length()-3,3) == ".gz";
     znzFile file = znzopen(filename.c_str(), "rb", gzExtension);
