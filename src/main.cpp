@@ -700,13 +700,6 @@ BEGIN_RCPP
 END_RCPP
 }
 
-void unwrappedPointerFinaliser (SEXP pointer)
-{
-    nifti2_image *image = (nifti2_image *) R_ExternalPtrAddr(pointer);
-    nifti2_image_free(image);
-    R_ClearExternalPtr(pointer);
-}
-
 // Extract an external pointer to a nifti_image, for use in plain C client code
 // This involves a copy, and currently only produces version 2 structs
 RcppExport SEXP unwrapPointer (SEXP _image, SEXP _disown)
@@ -721,10 +714,8 @@ BEGIN_RCPP
         memcpy(result->data, image->data, dataSize);
     }
     
-    SEXP pointer = PROTECT(R_MakeExternalPtr(result, R_NilValue, R_NilValue));
-    if (!as<bool>(_disown))
-        R_RegisterCFinalizerEx(pointer, unwrappedPointerFinaliser, TRUE);
-    UNPROTECT(1);
+    // Create the bare pointer, and set nifti2_image_free() as a finaliser function if we're not disowning
+    XPtr<nifti2_image,PreserveStorage,nifti2_image_free,true> pointer(result, !as<bool>(_disown));
     return pointer;
 END_RCPP
 }
@@ -732,6 +723,7 @@ END_RCPP
 RcppExport SEXP wrapPointer (SEXP _image)
 {
 BEGIN_RCPP
+    // Finalisers are not set when the pointer is retrieved, so the other template parameters aren't needed
     XPtr<nifti2_image> pointer(_image);
     const NiftiImage image(pointer.get(), true);
     return image.toPointer("NIfTI image");

@@ -900,7 +900,7 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
     acquire(nifti_convert_n1hdr2nim(header, NULL));
 #endif
     
-    const SEXP data = PROTECT(object.slot(".Data"));
+    const Rcpp::RObject data = object.slot(".Data");
     if (!copyData || Rf_length(data) <= 1)
         this->image->data = NULL;
     else if (header.datatype == DT_INT32)
@@ -913,7 +913,6 @@ inline void NiftiImage::initFromNiftiS4 (const Rcpp::RObject &object, const bool
         Rcpp::DoubleVector doubleData(data);
         replaceData(NiftiImageData(doubleData.begin(), doubleData.end(), DT_FLOAT64));
     }
-    UNPROTECT(1);
 }
 
 inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const bool copyData)
