@@ -8209,6 +8209,10 @@ static char *escapize_string( const char * str )
 *//*-------------------------------------------------------------------------*/
 char *nifti2_image_to_ascii( const nifti_image *nim )
 {
+#ifdef USING_R
+   Rf_error("nifti2_image_to_ascii is currently unimplemented for R packages, for portability reasons");
+   return NULL;
+#else
    char *buf , *ebuf ; int nbuf ;
 
    if( nim == NULL ) return NULL ;   /* stupid caller */
@@ -8451,6 +8455,7 @@ char *nifti2_image_to_ascii( const nifti_image *nim )
    if( !buf ) Rc_fprintf_stderr("** NIFTI NITA: failed to realloc %d bytes\n",
                       nbuf+1);
    return buf ;
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
