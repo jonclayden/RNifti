@@ -162,10 +162,17 @@ test_that("image objects can be manipulated", {
 test_that("NIfTI objects have the expected copying semantics", {
     im1 <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"), internal=TRUE)
     im2 <- im1
+    
     # Only applies for internal images, because otherwise the data will be updated to match the R array
     expect_true(all(RNifti:::addresses(im1) == RNifti:::addresses(im2)))
     im1$intent_code <- 1000L
     expect_false(all(RNifti:::addresses(im1) == RNifti:::addresses(im2)))
+    
+    # Unwrapping and wrapping NiftiImage pointers involves copies
+    im3 <- RNifti:::wrapPointer(RNifti:::unwrapPointer(im1))
+    expect_equal(niftiHeader(im1), niftiHeader(im3))
+    expect_s3_class(im3, "niftiImage")
+    expect_false(all(RNifti:::addresses(im1) == RNifti:::addresses(im3)))
 })
 
 test_that("NAs are preserved across datatypes", {
