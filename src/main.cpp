@@ -173,7 +173,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP readNiftiBlob (SEXP _file, SEXP _length, SEXP _datatype, SEXP _offset)
+RcppExport SEXP readNiftiBlob (SEXP _file, SEXP _length, SEXP _datatype, SEXP _offset, SEXP _swap)
 {
 BEGIN_RCPP
     int datatype;
@@ -198,6 +198,9 @@ BEGIN_RCPP
     char *buffer = (char *) calloc(length, nbyper);
     znzread(buffer, nbyper, length, file);
     znzclose(file);
+    
+    if (as<bool>(_swap))
+        nifti_swap_Nbytes(length, nbyper, buffer);
     
     NiftiImageData data(buffer, length, datatype);
     RObject result;
@@ -786,7 +789,7 @@ R_CallMethodDef callMethods[] = {
     { "asNifti",        (DL_FUNC) &asNifti,         4 },
     { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
-    { "readNiftiBlob",  (DL_FUNC) &readNiftiBlob,   4 },
+    { "readNiftiBlob",  (DL_FUNC) &readNiftiBlob,   5 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      4 },
     { "niftiHeader",    (DL_FUNC) &niftiHeader,     1 },
     { "analyzeHeader",  (DL_FUNC) &analyzeHeader,   1 },
