@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+#include <fstream>
 
 #define RNIFTI_NIFTILIB_VERSION 2
 #include "RNifti.h"
@@ -173,7 +174,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP readNiftiBlob (SEXP _file, SEXP _length, SEXP _datatype, SEXP _offset, SEXP _swap)
+RcppExport SEXP readNiftiBlob (SEXP _file, SEXP _length, SEXP _datatype, SEXP _offset, SEXP _gzipped, SEXP _swap)
 {
 BEGIN_RCPP
     int datatype;
@@ -185,12 +186,33 @@ BEGIN_RCPP
     const std::string filename = as<std::string>(_file);
     const size_t length = as<size_t>(_length);
     const size_t offset = Rf_isNull(_offset) ? 0 : as<size_t>(_offset);
+    const bool swap = as<bool>(_swap);
     
     int nbyper;
     nifti_datatype_sizes(datatype, &nbyper, NULL);
     
-    const bool gzExtension = filename.length() > 3 && filename.substr(filename.length()-3,3) == ".gz";
-    znzFile file = znzopen(filename.c_str(), "rb", gzExtension);
+    // NA means the caller wants us to guess if the file is gzipped
+    // NB: as<bool> gives true for NA_LOGICAL, so we need to convert to int to test for this value
+    bool gzipped = as<bool>(_gzipped);
+    if (as<int>(_gzipped) == NA_LOGICAL)
+    {
+        // If the filename has a ".gz" extension, assume it's gzipped
+        // Otherwise look for the gzip magic number in the first two bytes of the file, possibly swapped
+        if (filename.length() > 3 && filename.substr(filename.length()-3,3) == ".gz")
+            gzipped = true;
+        else
+        {
+            uint16_t magic;
+            std::ifstream stream(filename.c_str(), std::ios::binary);
+            if (stream.fail())
+                Rf_error("Failed to open file %s", filename.c_str());
+            stream.read(reinterpret_cast<char*>(&magic), 2);
+            gzipped = (magic == (swap ? 0x8b1f : 0x1f8b));
+            stream.close();
+        }
+    }
+    
+    znzFile file = znzopen(filename.c_str(), "rb", gzipped);
     if (znz_isnull(file))
         Rf_error("Failed to open file %s", filename.c_str());
     if (offset > 0)
@@ -199,7 +221,7 @@ BEGIN_RCPP
     znzread(buffer, nbyper, length, file);
     znzclose(file);
     
-    if (as<bool>(_swap))
+    if (swap)
         nifti_swap_Nbytes(length, nbyper, buffer);
     
     NiftiImageData data(buffer, length, datatype);
@@ -789,7 +811,7 @@ R_CallMethodDef callMethods[] = {
     { "asNifti",        (DL_FUNC) &asNifti,         4 },
     { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
-    { "readNiftiBlob",  (DL_FUNC) &readNiftiBlob,   5 },
+    { "readNiftiBlob",  (DL_FUNC) &readNiftiBlob,   6 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      4 },
     { "niftiHeader",    (DL_FUNC) &niftiHeader,     1 },
     { "analyzeHeader",  (DL_FUNC) &analyzeHeader,   1 },
