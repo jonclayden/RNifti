@@ -569,8 +569,13 @@ BEGIN_RCPP
         else
             Rf_warning("The origin of a bare xform matrix cannot be reliably preserved through reorientation");
         
+        // Perform the full reorientation process
         image.reorient(as<std::string>(_axes));
-        return image.qform().matrix();
+        
+        NumericMatrix result = wrap(image.qform().matrix());
+        result.attr("imagedim") = image.dim();
+        result.attr("code") = xform.attr("code");
+        return result;
     }
     else
     {
