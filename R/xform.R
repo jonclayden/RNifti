@@ -24,8 +24,7 @@
 #' (0,0,0,1). Reorienting an image involves permuting and possibly reversing
 #' some of the axes, both in the data and the metadata. The sense of the
 #' translation may also need to be reversed, but this is only possible if the
-#' image dimensions are known, which isn't the case when reorienting an xform
-#' alone.
+#' image dimensions are known.
 #' 
 #' @param image,x An image, in any acceptable form (see \code{\link{asNifti}}),
 #'   or a 4x4 numeric xform matrix.
@@ -36,7 +35,8 @@
 #'   matrix has a \code{"code"} attribute, the appropriate qform or sform code
 #'   is also set.
 #' @return For \code{xform}, an affine matrix corresponding to the ``qform''
-#'   or ``sform'' information in the image header, with a \code{"code"}
+#'   or ``sform'' information in the image header, with an \code{"imagedim"}
+#'   attribute giving the original image dimensions and a \code{"code"}
 #'   attribute giving the corresponding xform code. For \code{orientation}, a
 #'   string with three characters indicating the (approximate) orientation of
 #'   the image. The replacement forms return the modified object.
