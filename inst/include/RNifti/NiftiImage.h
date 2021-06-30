@@ -1171,6 +1171,17 @@ public:
             return *this;
         }
         
+#ifdef USING_R
+        /**
+         * Copy assignment operator, taking a \c SEXP and replacing linked data
+        **/
+        Xform & operator= (SEXP source)
+        {
+            replace(Matrix(source));
+            return *this;
+        }
+#endif
+        
         /**
          * Access the xform matrix as an immutable \c SquareMatrix object
         **/
