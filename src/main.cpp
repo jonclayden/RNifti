@@ -438,7 +438,10 @@ BEGIN_RCPP
         if (image.isNull())
             matrix.attr("code") = 0;
         else
+        {
+            matrix.attr("imagedim") = image.dim();
             matrix.attr("code") = ((preferQuaternion && image->qform_code > 0) || image->sform_code <= 0) ? image->qform_code : image->sform_code;
+        }
         return matrix;
     }
 END_RCPP
@@ -543,13 +546,28 @@ RcppExport SEXP setOrientation (SEXP _image, SEXP _axes)
 BEGIN_RCPP
     if (isXformMatrix(_image))
     {
+        const RObject xform(_image);
+        
         // Create an empty image for temporary purposes
         nifti2_image *ptr = nifti2_make_new_nim(NULL, DT_UNSIGNED_CHAR, 0);
         NiftiImage image(ptr);
         
         // Set the qform matrix
-        image.qform() = NiftiImage::Xform(_image);
+        image.qform() = xform;
         image->qform_code = 2;
+        
+        // If the matrix has an image dimension attribute, apply it
+        // If not, warn that the translation component of the xform will be unreliable
+        if (xform.hasAttribute("imagedim"))
+        {
+            const std::vector<NiftiImage::dim_t> dimVector = xform.attr("imagedim");
+            const int nDims = std::min(7, int(dimVector.size()));
+            image->dim[0] = nDims;
+            for (int i=0; i<nDims; i++)
+                image->dim[i+1] = dimVector[i];
+        }
+        else
+            Rf_warning("The origin of a bare xform matrix cannot be reliably preserved through reorientation");
         
         image.reorient(as<std::string>(_axes));
         return image.qform().matrix();
