@@ -1,6 +1,7 @@
 ^Doxyfile$
 ^\.travis\.yml$
 ^appveyor.yml$
+^\.github$
 ^\.covrignore$
 ^README.Rmd$
 ^standalone$
