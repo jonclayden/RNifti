@@ -51,8 +51,8 @@ jobs:
     
     - name: Check client packages
       run: |
-        R CMD check clients/nifti1c || ( cat nifti1c.Rcheck/00install.out >>Rcheck; exit 1 )
-        R CMD check clients/nifti2cpp || ( cat nifti2cpp.Rcheck/00install.out >>Rcheck; exit 1 )
+        R CMD build clients/nifti1c && R CMD check --no-manual nifti1c*.tar.gz || ( cat nifti1c.Rcheck/00install.out >>Rcheck; exit 1 )
+        R CMD build clients/nifti2cpp && R CMD check --no-manual nifti2cpp*.tar.gz || ( cat nifti2cpp.Rcheck/00install.out >>Rcheck; exit 1 )
     
     # Upload the check directory as an artefact on failure
     - name: Upload check results
@@ -70,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        os: ubuntu-latest
     
     runs-on: ${{ matrix.os }}
     
