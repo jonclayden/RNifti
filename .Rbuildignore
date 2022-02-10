@@ -3,6 +3,7 @@
 ^appveyor.yml$
 ^\.github$
 ^\.covrignore$
+^configure.ac$
 ^README.Rmd$
 ^standalone$
 ^clients$
