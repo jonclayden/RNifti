@@ -1,4 +1,5 @@
 /inst/doxygen/
 /revdep
+/config.*
 .Rproj.user
 .DS_Store

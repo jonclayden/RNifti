@@ -1,0 +1,5 @@
+PKG_CPPFLAGS = -DNDEBUG -DHAVE_ZLIB -DUSING_R -DRNIFTI_NIFTILIB_DEDUPLICATE -I../inst/include @ZLIB_FLAGS@
+PKG_LIBS = @LIBS@
+
+NIFTI_OBJECTS = znzlib/znzlib.o niftilib/nifti1_io.o niftilib/nifti2_io.o
+OBJECTS = main.o zzz.o @ZLIB_OBJECTS@ $(NIFTI_OBJECTS)
