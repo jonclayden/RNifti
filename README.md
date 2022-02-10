@@ -1,6 +1,6 @@
 
 
-[![CRAN version](http://www.r-pkg.org/badges/version/RNifti)](https://cran.r-project.org/package=RNifti) [![Build Status](https://travis-ci.org/jonclayden/RNifti.svg?branch=master)](https://travis-ci.org/jonclayden/RNifti) [![Build status](https://ci.appveyor.com/api/projects/status/ftoy9c6k0ne3ga12/branch/master?svg=true)](https://ci.appveyor.com/project/jonclayden/rnifti/branch/master) [![Coverage Status](https://coveralls.io/repos/github/jonclayden/RNifti/badge.svg?branch=master)](https://coveralls.io/github/jonclayden/RNifti?branch=master)
+[![CRAN version](http://www.r-pkg.org/badges/version/RNifti)](https://cran.r-project.org/package=RNifti) [![CI](https://github.com/jonclayden/RNifti/actions/workflows/ci.yaml/badge.svg)](https://github.com/jonclayden/RNifti/actions/workflows/ci.yaml) [![Coverage Status](https://coveralls.io/repos/github/jonclayden/RNifti/badge.svg?branch=master)](https://coveralls.io/github/jonclayden/RNifti?branch=master)
 
 # RNifti: Fast R and C++ Access to NIfTI Images
 
@@ -131,6 +131,8 @@ xform(image)
 ## [2,]  0.0  2.5  0.0 -95.18523
 ## [3,]  0.0  0.0  2.5 -55.03814
 ## [4,]  0.0  0.0  0.0   1.00000
+## attr(,"imagedim")
+## [1] 96 96 60
 ## attr(,"code")
 ## [1] 2
 ```
@@ -178,6 +180,8 @@ xform(image)
 ## [2,]  0.0  2.5  0.0  -95.18523
 ## [3,]  0.0  0.0  2.5  -55.03814
 ## [4,]  0.0  0.0  0.0    1.00000
+## attr(,"imagedim")
+## [1] 96 96 60
 ## attr(,"code")
 ## [1] 2
 image[50,39,23]
