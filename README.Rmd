@@ -226,4 +226,4 @@ Packages must choose which version of the NIfTI library to work with, since thei
 
 ## Use in pure C++ projects
 
-Thanks to contributions from [Matt Hall](https://github.com/soolijoo), it is possible (as of package version 0.7.0) to use the `NiftiImage` C++ class in standalone C++ projects. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example, and its contents can be copied to a new directory (including symlinked files) as a new project template.
+Thanks to contributions from [Matt Hall](https://github.com/soolijoo), it is possible (as of package version 0.7.0) to use the `NiftiImage` C++ class in standalone C++ projects. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example, as well as further documentation, and its contents can be copied to a new directory (including symlinked files) as a new project template.
