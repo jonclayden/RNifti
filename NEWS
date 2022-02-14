@@ -2,6 +2,19 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.4.0
+
+- xform matrices now have an `imagedim` attribute containing the image
+  dimensions. This allows the origin to be preserved accurately through
+  reorientation without reference to the rest of the header.
+- The package now uses a `configure` script to check for and find the system
+  `zlib`, which will be used in preference to the bundled version where
+  available.
+- Additional documentation of standalone use of the code (without R) has been
+  added to the package repository. (Suggested by Rashid Kratou.)
+
+===============================================================================
+
 VERSION 1.3.1
 
 - The API version number RNIFTI_VERSION was erroneously not updated in v1.3.0.
