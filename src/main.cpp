@@ -107,7 +107,7 @@ BEGIN_RCPP
     for (size_t i=0; i<len; i++)
     {
         rgba.value.packed = int(data[i]);
-        for (int j=0; j<channels.size(); j++)
+        for (unsigned j=0; j<channels.size(); j++)
         {
             const int channel = channels[j] - 1;
             result[i + len * j] = int(rgba.value.bytes[channel]);

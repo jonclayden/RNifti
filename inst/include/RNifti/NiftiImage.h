@@ -887,7 +887,7 @@ public:
             for (int i=1; i<dimension; i++)
                 blockSize *= image->dim[i];
             
-            if (blockSize != source->nvox)
+            if (blockSize != size_t(source->nvox))
                 throw std::runtime_error("New data does not have the same size as the target block");
             
             blockSize *= image->nbyper;

@@ -1766,7 +1766,7 @@ inline NiftiImage & NiftiImage::replaceData (const NiftiImageData &data)
 #endif
         return *this;
     }
-    else if (data.length() != image->nvox)
+    else if (data.length() != size_t(image->nvox))
         throw std::runtime_error("New data length does not match the number of voxels in the image");
     
     // Copy the data
