@@ -248,7 +248,7 @@ The `RNifti` package uses the robust and widely used [NIfTI reference implementa
 installed.packages()[c("AnalyzeFMRI","ANTsRCore","neuroim","oro.nifti","RNifti",
                        "tractor.base"), "Version"]
 ##  AnalyzeFMRI    ANTsRCore      neuroim    oro.nifti       RNifti tractor.base 
-##     "1.1-21"      "0.7.3"      "0.0.6"      "0.9.1"      "1.0.0"      "3.3.2"
+##     "1.1-24"      "0.7.5"      "0.0.6"     "0.11.0"      "1.4.0"    "3.3.3.1"
 
 library(microbenchmark)
 microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
@@ -259,27 +259,27 @@ microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
                RNifti::readNifti("example.nii", internal=TRUE),
                tractor.base::readImageFile("example.nii"), unit="ms")
 ## Unit: milliseconds
-##                                               expr       min        lq
-##          AnalyzeFMRI::f.read.volume("example.nii") 10.650034 10.785712
-##            ANTsRCore::antsImageRead("example.nii")  1.174784  1.553855
-##                 neuroim::loadVolume("example.nii") 16.496942 17.202503
-##                oro.nifti::readNIfTI("example.nii") 23.323140 26.900033
-##                   RNifti::readNifti("example.nii")  1.309286  1.432574
-##  RNifti::readNifti("example.nii", internal = TRUE)  0.155987  0.218652
-##         tractor.base::readImageFile("example.nii")  8.020815  8.512061
-##        mean     median         uq         max neval
-##  12.5975294 10.9189280 11.2826610  142.469529   100
-##  12.5234012  1.6563580  1.7609965 1087.252412   100
-##  31.0333107 23.2155850 25.1907460  847.043278   100
-##  50.4967592 29.4253275 32.0777185  434.736898   100
-##   1.6504420  1.5129170  1.7070565    5.564642   100
-##   0.3028081  0.2976415  0.3680695    0.768533   100
-##  26.8987791 10.4609615 13.3785205  180.474982   100
+##                                               expr       min         lq
+##          AnalyzeFMRI::f.read.volume("example.nii") 29.734889 30.8786055
+##            ANTsRCore::antsImageRead("example.nii")  3.336989  4.0922635
+##                 neuroim::loadVolume("example.nii") 37.631847 39.6159530
+##                oro.nifti::readNIfTI("example.nii") 39.190034 42.4400090
+##                   RNifti::readNifti("example.nii")  1.928004  2.2818390
+##  RNifti::readNifti("example.nii", internal = TRUE)  0.392529  0.7233765
+##         tractor.base::readImageFile("example.nii") 13.726200 16.8920740
+##        mean    median        uq         max neval
+##  43.1935622 32.127420 37.147587  873.351879   100
+##  22.1543773  4.538117  5.270167 1727.918618   100
+##  63.6164186 41.908256 51.502174 1583.497529   100
+##  67.8210527 49.280901 57.436492  578.222950   100
+##   5.3772204  2.415228  2.741401  179.865678   100
+##   0.8355802  0.836148  0.951779    1.470726   100
+##  25.9411984 19.371901 26.144958  274.506899   100
 ```
 
-With a median runtime of less than 2 ms, `RNifti` is typically around ten times as fast as the alternatives to read this image into R. The exception is `ANTsRCore`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsRCore` has substantial dependencies, which may affect its suitability in some applications.
+With a median runtime of less than 2.5 ms, `RNifti` is typically around ten times as fast as the alternatives to read this image into R. The exception is `ANTsRCore`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsRCore` has substantial dependencies, which may affect its suitability in some applications.
 
-Moreover, when reading the file into an "internal" image, which does not copy the pixel values into R data structures until they are required, the median runtime drops by a further 80%, to just 300 µs. This saves time and memory, while still allowing data access through standard R indexing operations.
+Moreover, when reading the file into an "internal" image, which does not copy the pixel values into R data structures until they are required, the median runtime drops by a further 65%, to just 840 µs. This saves time and memory, while still allowing data access through standard R indexing operations.
 
 ## Implementation details
 
@@ -343,4 +343,4 @@ Packages must choose which version of the NIfTI library to work with, since thei
 
 ## Use in pure C++ projects
 
-Thanks to contributions from [Matt Hall](https://github.com/soolijoo), it is possible (as of package version 0.7.0) to use the `NiftiImage` C++ class in standalone C++ projects. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example, and its contents can be copied to a new directory (including symlinked files) as a new project template.
+Thanks to contributions from [Matt Hall](https://github.com/soolijoo), it is possible (as of package version 0.7.0) to use the `NiftiImage` C++ class in standalone C++ projects. The [`standalone` directory](https://github.com/jonclayden/RNifti/tree/master/standalone) provides a minimal example, as well as further documentation, and its contents can be copied to a new directory (including symlinked files) as a new project template.
