@@ -2,6 +2,17 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.4.1
+
+- A formatting oversight would previously lead to an invalid `Makevars` file on
+  systems without a (findable) system `zlib`. This has been corrected.
+  (Reported by @casparms, issue #26).
+- Package `cleanup` scripts now also remove the derived `Makevars` file.
+- Performance data in the package README has been updated to use newer package
+  versions.
+
+===============================================================================
+
 VERSION 1.4.0
 
 - xform matrices now have an `imagedim` attribute containing the image
