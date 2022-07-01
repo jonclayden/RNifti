@@ -1,3 +1,3 @@
 #!/bin/sh
 
-rm -f src/*.o src/niftilib/*.o src/zlib/*.o src/znzlib/*.o
+rm -f src/Makevars src/*.o src/niftilib/*.o src/zlib/*.o src/znzlib/*.o
