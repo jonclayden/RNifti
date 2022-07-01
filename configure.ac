@@ -19,7 +19,7 @@ LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
 
 # Checks for libraries.
 ZLIB_FLAGS="-Izlib"
-ZLIB_OBJECTS=`ls -1 src/zlib/*.c | sed 's/^src\///' | sed 's/\\.c$/\\.o/'`
+ZLIB_OBJECTS=`ls -1 src/zlib/*.c | sed 's/^src\///' | sed 's/\\.c$/\\.o/' | tr '\n' ' '`
 AC_SEARCH_LIBS([inflate], [z], [
     ZLIB_FLAGS=""
     ZLIB_OBJECTS=""
