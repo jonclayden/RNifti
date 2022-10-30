@@ -550,8 +550,8 @@ int nifti_read_subregion_image (nifti_image * nim, const int * start_index, cons
 void nifti_image_write (nifti_image * nim) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_image_write, nim) }
 void nifti_image_write_bricks (nifti_image * nim, const nifti_brick_list * NBL) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_image_write_bricks, nim, NBL) }
 void nifti_image_infodump (const nifti_image * nim) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_image_infodump, nim) }
-void nifti_disp_lib_hist () { NIFTILIB_WRAPPER_BODY_VOID_NORETURN(_nifti_disp_lib_hist) }
-void nifti_disp_lib_version () { NIFTILIB_WRAPPER_BODY_VOID_NORETURN(_nifti_disp_lib_version) }
+void nifti_disp_lib_hist (void) { NIFTILIB_WRAPPER_BODY_VOID_NORETURN(_nifti_disp_lib_hist) }
+void nifti_disp_lib_version (void) { NIFTILIB_WRAPPER_BODY_VOID_NORETURN(_nifti_disp_lib_version) }
 int nifti_disp_matrix_orient (const char * mesg, mat44 mat) { NIFTILIB_WRAPPER_BODY(_nifti_disp_matrix_orient, mesg, mat) }
 int nifti_disp_type_list (int which) { NIFTILIB_WRAPPER_BODY(_nifti_disp_type_list, which) }
 char * nifti_image_to_ascii (const nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_image_to_ascii, nim) }
@@ -581,7 +581,7 @@ void nifti_datatype_sizes (int datatype, int * nbyper, int * swapsize) { NIFTILI
 void nifti_mat44_to_quatern (mat44 R, float * qb, float * qc, float * qd, float * qx, float * qy, float * qz, float * dx, float * dy, float * dz, float * qfac) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_mat44_to_quatern, R, qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac) }
 mat44 nifti_quatern_to_mat44 (float qb, float qc, float qd, float qx, float qy, float qz, float dx, float dy, float dz, float qfac) { NIFTILIB_WRAPPER_BODY(_nifti_quatern_to_mat44, qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac) }
 mat44 nifti_make_orthog_mat44 (float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33) { NIFTILIB_WRAPPER_BODY(_nifti_make_orthog_mat44, r11, r12, r13, r21, r22, r23, r31, r32, r33) }
-int nifti_short_order () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_short_order) }
+int nifti_short_order (void) { NIFTILIB_WRAPPER_BODY_VOID(_nifti_short_order) }
 void nifti_mat44_to_orientation (mat44 R, int * icod, int * jcod, int * kcod) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_mat44_to_orientation, R, icod, jcod, kcod) }
 char * nifti_findhdrname (const char* fname) { NIFTILIB_WRAPPER_BODY(_nifti_findhdrname, fname) }
 char * nifti_findimgname (const char* fname, int nifti_type) { NIFTILIB_WRAPPER_BODY(_nifti_findimgname, fname, nifti_type) }
@@ -592,7 +592,7 @@ nifti_1_header * nifti_make_new_header (const int arg_dims[], int arg_dtype) { N
 nifti_1_header * nifti_read_header (const char * hname, int * swapped, int check) { NIFTILIB_WRAPPER_BODY(_nifti_read_header, hname, swapped, check) }
 nifti_image * nifti_copy_nim_info (const nifti_image * src) { NIFTILIB_WRAPPER_BODY(_nifti_copy_nim_info, src) }
 nifti_image * nifti_make_new_nim (const int dims[], int datatype, int data_fill) { NIFTILIB_WRAPPER_BODY(_nifti_make_new_nim, dims, datatype, data_fill) }
-nifti_image * nifti_simple_init_nim () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_simple_init_nim) }
+nifti_image * nifti_simple_init_nim (void) { NIFTILIB_WRAPPER_BODY_VOID(_nifti_simple_init_nim) }
 nifti_image * nifti_convert_nhdr2nim (struct nifti_1_header nhdr, const char * fname) { NIFTILIB_WRAPPER_BODY(_nifti_convert_nhdr2nim, nhdr, fname) }
 int nifti_hdr_looks_good (const nifti_1_header * hdr) { NIFTILIB_WRAPPER_BODY(_nifti_hdr_looks_good, hdr) }
 int nifti_is_valid_datatype (int dtype) { NIFTILIB_WRAPPER_BODY(_nifti_is_valid_datatype, dtype) }
@@ -606,7 +606,7 @@ int nifti_update_dims_from_array (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_ni
 void nifti_set_iname_offset (nifti_image * nim) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_iname_offset, nim) }
 int nifti_set_type_from_names (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_set_type_from_names, nim) }
 int nifti_add_extension (nifti_image * nim, const char * data, int len, int ecode) { NIFTILIB_WRAPPER_BODY(_nifti_add_extension, nim, data, len, ecode) }
-int nifti_compiled_with_zlib () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_compiled_with_zlib) }
+int nifti_compiled_with_zlib (void) { NIFTILIB_WRAPPER_BODY_VOID(_nifti_compiled_with_zlib) }
 int nifti_copy_extensions (nifti_image * nim_dest, const nifti_image * nim_src) { NIFTILIB_WRAPPER_BODY(_nifti_copy_extensions, nim_dest, nim_src) }
 int nifti_free_extensions (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_free_extensions, nim) }
 int * nifti_get_intlist (int nvals, const char * str) { NIFTILIB_WRAPPER_BODY(_nifti_get_intlist, nvals, str) }
@@ -666,7 +666,7 @@ void nifti2_image_write (nifti_image * nim) { NIFTILIB_WRAPPER_BODY_NORETURN(_ni
 void nifti2_image_write_bricks (nifti_image * nim, const nifti_brick_list * NBL) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti2_image_write_bricks, nim, NBL) }
 void nifti2_image_infodump (const nifti_image * nim) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti2_image_infodump, nim) }
 void nifti2_disp_lib_hist (int ver) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti2_disp_lib_hist, ver) }
-void nifti_disp_lib_version () { NIFTILIB_WRAPPER_BODY_VOID_NORETURN(_nifti_disp_lib_version) }
+void nifti_disp_lib_version (void) { NIFTILIB_WRAPPER_BODY_VOID_NORETURN(_nifti_disp_lib_version) }
 int nifti2_disp_matrix_orient (const char * mesg, nifti_dmat44 mat) { NIFTILIB_WRAPPER_BODY(_nifti2_disp_matrix_orient, mesg, mat) }
 int nifti_disp_type_list (int which) { NIFTILIB_WRAPPER_BODY(_nifti_disp_type_list, which) }
 char * nifti2_image_to_ascii (const nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti2_image_to_ascii, nim) }
@@ -684,7 +684,7 @@ int disp_nifti_2_header (const char * info, const nifti_2_header * hp) { NIFTILI
 void nifti_set_debug_level (int level) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_debug_level, level) }
 void nifti_set_skip_blank_ext (int skip) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_skip_blank_ext, skip) }
 void nifti_set_allow_upper_fext (int allow) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_allow_upper_fext, allow) }
-int nifti_get_alter_cifti () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_get_alter_cifti) }
+int nifti_get_alter_cifti (void) { NIFTILIB_WRAPPER_BODY_VOID(_nifti_get_alter_cifti) }
 void nifti_set_alter_cifti (int alter_cifti) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_alter_cifti, alter_cifti) }
 int nifti_alter_cifti_dims (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_alter_cifti_dims, nim) }
 int valid_nifti2_brick_list (nifti_image * nim, int64_t nbricks, const int64_t * blist, int disp_error) { NIFTILIB_WRAPPER_BODY(_valid_nifti2_brick_list, nim, nbricks, blist, disp_error) }
@@ -703,7 +703,7 @@ nifti_dmat44 nifti_make_orthog_dmat44 (double r11, double r12, double r13, doubl
 void nifti_mat44_to_quatern (mat44 R, float * qb, float * qc, float * qd, float * qx, float * qy, float * qz, float * dx, float * dy, float * dz, float * qfac) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_mat44_to_quatern, R, qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac) }
 mat44 nifti_quatern_to_mat44 (float qb, float qc, float qd, float qx, float qy, float qz, float dx, float dy, float dz, float qfac) { NIFTILIB_WRAPPER_BODY(_nifti_quatern_to_mat44, qb, qc, qd, qx, qy, qz, dx, dy, dz, qfac) }
 mat44 nifti_make_orthog_mat44 (float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33) { NIFTILIB_WRAPPER_BODY(_nifti_make_orthog_mat44, r11, r12, r13, r21, r22, r23, r31, r32, r33) }
-int nifti_short_order () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_short_order) }
+int nifti_short_order (void) { NIFTILIB_WRAPPER_BODY_VOID(_nifti_short_order) }
 void nifti_mat44_to_orientation (mat44 R, int * icod, int * jcod, int * kcod) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_mat44_to_orientation, R, icod, jcod, kcod) }
 void nifti_dmat44_to_orientation (nifti_dmat44 R, int * icod, int * jcod, int * kcod) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_dmat44_to_orientation, R, icod, jcod, kcod) }
 char * nifti_findhdrname (const char* fname) { NIFTILIB_WRAPPER_BODY(_nifti_findhdrname, fname) }
@@ -719,7 +719,7 @@ nifti_1_header * nifti_read_n1_hdr (const char * hname, int * swapped, int check
 nifti_2_header * nifti_read_n2_hdr (const char * hname, int * swapped, int check) { NIFTILIB_WRAPPER_BODY(_nifti_read_n2_hdr, hname, swapped, check) }
 nifti_image * nifti2_copy_nim_info (const nifti_image * src) { NIFTILIB_WRAPPER_BODY(_nifti2_copy_nim_info, src) }
 nifti_image * nifti2_make_new_nim (const int64_t dims[], int datatype, int data_fill) { NIFTILIB_WRAPPER_BODY(_nifti2_make_new_nim, dims, datatype, data_fill) }
-nifti_image * nifti2_simple_init_nim () { NIFTILIB_WRAPPER_BODY_VOID(_nifti2_simple_init_nim) }
+nifti_image * nifti2_simple_init_nim (void) { NIFTILIB_WRAPPER_BODY_VOID(_nifti2_simple_init_nim) }
 nifti_image * nifti_convert_n1hdr2nim (nifti_1_header nhdr, const char * fname) { NIFTILIB_WRAPPER_BODY(_nifti_convert_n1hdr2nim, nhdr, fname) }
 nifti_image * nifti_convert_n2hdr2nim (nifti_2_header nhdr, const char * fname) { NIFTILIB_WRAPPER_BODY(_nifti_convert_n2hdr2nim, nhdr, fname) }
 int nifti_looks_like_cifti (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_looks_like_cifti, nim) }
@@ -736,7 +736,7 @@ int nifti2_update_dims_from_array (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_n
 void nifti2_set_iname_offset (nifti_image * nim, int nifti_ver) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti2_set_iname_offset, nim, nifti_ver) }
 int nifti2_set_type_from_names (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti2_set_type_from_names, nim) }
 int nifti2_add_extension (nifti_image * nim, const char * data, int len, int ecode) { NIFTILIB_WRAPPER_BODY(_nifti2_add_extension, nim, data, len, ecode) }
-int nifti_compiled_with_zlib () { NIFTILIB_WRAPPER_BODY_VOID(_nifti_compiled_with_zlib) }
+int nifti_compiled_with_zlib (void) { NIFTILIB_WRAPPER_BODY_VOID(_nifti_compiled_with_zlib) }
 int nifti2_copy_extensions (nifti_image * nim_dest, const nifti_image * nim_src) { NIFTILIB_WRAPPER_BODY(_nifti2_copy_extensions, nim_dest, nim_src) }
 int nifti2_free_extensions (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti2_free_extensions, nim) }
 int64_t * nifti_get_int64list (int64_t nvals, const char * str) { NIFTILIB_WRAPPER_BODY(_nifti_get_int64list, nvals, str) }

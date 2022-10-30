@@ -47,9 +47,9 @@ for (version in 1:2) {
     
     # Construct wrapper functions
     defineWrappers <- rep(NA, length(argPieces))
-    defineWrappers[voidType & !noreturn] <- paste0(values[voidType & !noreturn], " ", symbols[voidType & !noreturn], " () { NIFTILIB_WRAPPER_BODY_VOID(_", symbols[voidType & !noreturn], ") }")
+    defineWrappers[voidType & !noreturn] <- paste0(values[voidType & !noreturn], " ", symbols[voidType & !noreturn], " (void) { NIFTILIB_WRAPPER_BODY_VOID(_", symbols[voidType & !noreturn], ") }")
     defineWrappers[!voidType & !noreturn] <- paste0(values[!voidType & !noreturn], " ", symbols[!voidType & !noreturn], " (", args[!voidType & !noreturn], ") { NIFTILIB_WRAPPER_BODY(_", symbols[!voidType & !noreturn], ", ", argNames[!voidType & !noreturn], ") }")
-    defineWrappers[voidType & noreturn] <- paste0("void ", symbols[voidType & noreturn], " () { NIFTILIB_WRAPPER_BODY_VOID_NORETURN(_", symbols[voidType & noreturn], ") }")
+    defineWrappers[voidType & noreturn] <- paste0("void ", symbols[voidType & noreturn], " (void) { NIFTILIB_WRAPPER_BODY_VOID_NORETURN(_", symbols[voidType & noreturn], ") }")
     defineWrappers[!voidType & noreturn] <- paste0("void ", symbols[!voidType & noreturn], " (", args[!voidType & noreturn], ") { NIFTILIB_WRAPPER_BODY_NORETURN(_", symbols[!voidType & noreturn], ", ", argNames[!voidType & noreturn], ") }")
     defineWrappers <- na.omit(defineWrappers)
     

@@ -55,7 +55,7 @@
 extern "C" {
 #endif // __cplusplus
 
-extern void niftilib_register_all ();
+extern void niftilib_register_all (void);
 
 #ifdef __cplusplus
 } // extern "C"
