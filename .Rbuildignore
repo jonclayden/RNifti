@@ -1,4 +1,6 @@
 ^Doxyfile$
+^inst/doxygen/html/Makefile$
+^inst/doxygen/html/org\.doxygen\.Project\.docset$
 ^\.travis\.yml$
 ^appveyor.yml$
 ^\.github$
