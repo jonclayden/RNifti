@@ -2,6 +2,13 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.4.2
+
+- Warnings about non-prototype function declarations (in clang 15+) have been
+  resolved.
+
+===============================================================================
+
 VERSION 1.4.1
 
 - A formatting oversight would previously lead to an invalid `Makevars` file on
