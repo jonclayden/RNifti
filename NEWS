@@ -101,9 +101,11 @@ VERSION 1.2.1
 
 VERSION 1.2.0
 
-With this release, `RNifti`'s core code moves over to the NIfTI-2 library.
-Reading and writing NIfTI-2 format files is therefore supported. API clients
-may use either version of the NIfTI library.
+General
+
+- With this release, `RNifti`'s core code moves over to the NIfTI-2 library.
+  Reading and writing NIfTI-2 format files is therefore supported. API clients
+  may use either version of the NIfTI library.
 
 R interface
 
