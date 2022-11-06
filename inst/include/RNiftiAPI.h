@@ -265,7 +265,7 @@ static int(*_valid_nifti2_extensions)(const nifti_image *) = NULL;
 static int(*_nifti_valid_header_size)(int, int) = NULL;
 #endif
 
-void niftilib_register_all ()
+void niftilib_register_all (void)
 {
 #ifdef _OPENMP
 #pragma omp critical

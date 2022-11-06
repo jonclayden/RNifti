@@ -32,7 +32,7 @@ static int registered = 0;
 
 /* MARK - Declare pointers */
 
-void niftilib_register_all ()
+void niftilib_register_all (void)
 {
 #ifdef _OPENMP
 #pragma omp critical
