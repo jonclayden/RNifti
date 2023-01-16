@@ -2,6 +2,13 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.4.4
+
+- Calls to the unsafe C function `sprintf()` have been removed or worked
+  around, as required for the next minor R release.
+
+===============================================================================
+
 VERSION 1.4.3
 
 - Resolved one further non-prototype function declaration warning.
