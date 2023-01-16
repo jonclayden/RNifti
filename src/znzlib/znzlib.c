@@ -308,7 +308,7 @@ int znzprintf(znzFile stream, const char *format, ...)
        Rc_fprintf_stderr("** ERROR: znzprintf failed to alloc %d bytes\n", size);
        return retval;
     }
-    vsprintf(tmpstr,format,va);
+    vsnprintf(tmpstr,size,format,va);
     retval=gzprintf(stream->zfptr,"%s",tmpstr);
     free(tmpstr);
   } else
