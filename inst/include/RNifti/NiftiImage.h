@@ -349,7 +349,7 @@ public:
     /**
      * Iterator type for \c NiftiImageData, with \c Element as its value type
     **/
-    class Iterator : public std::iterator<std::random_access_iterator_tag, Element>
+    class Iterator
     {
     private:
         const NiftiImageData &parent;
@@ -357,6 +357,13 @@ public:
         size_t step;
         
     public:
+        // Standard iterator typedefs
+        typedef std::random_access_iterator_tag iterator_category;
+        typedef Element value_type;
+        typedef std::ptrdiff_t difference_type;
+        typedef Element* pointer;
+        typedef Element& reference;
+        
         /**
          * Primary constructor
          * @param parent A reference to the parent object
