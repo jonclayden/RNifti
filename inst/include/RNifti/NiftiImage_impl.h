@@ -933,7 +933,12 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
         data = call.eval();
     }
     
-    const int datatype = (Rf_isNull(data) ? DT_INT32 : sexpTypeToNiftiType(data.sexp_type()));
+    int datatype = (Rf_isNull(data) ? DT_INT32 : sexpTypeToNiftiType(data.sexp_type()));
+    if (data.inherits("rgbArray"))
+    {
+        const int channels = (data.hasAttribute("channels") ? data.attr("channels") : 3);
+        datatype = (channels == 4 ? DT_RGBA32 : DT_RGB24);
+    }
     
     dim_t dims[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
     const std::vector<dim_t> dimVector = mriImage.field("imageDims");
@@ -966,8 +971,15 @@ inline void NiftiImage::initFromMriImage (const Rcpp::RObject &object, const boo
         // NB: nifti_get_volsize() will not be right here if there were tags
         const size_t dataSize = nVoxels * image->nbyper;
         this->image->data = calloc(1, dataSize);
-        if (datatype == DT_INT32)
+        if (datatype == DT_INT32 || datatype == DT_RGBA32)
             memcpy(this->image->data, INTEGER(data), dataSize);
+        else if (datatype == DT_RGB24)
+        {
+            NiftiImageData newData(image);
+            std::copy(INTEGER(data), INTEGER(data)+nVoxels, newData.begin());
+        }
+        else if (datatype == DT_COMPLEX128)
+            memcpy(this->image->data, COMPLEX(data), dataSize);
         else
             memcpy(this->image->data, REAL(data), dataSize);
     }
