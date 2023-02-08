@@ -2,6 +2,12 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.4.5
+
+- The package now works around the deprecation of `std::iterator` in C++17.
+
+===============================================================================
+
 VERSION 1.4.4
 
 - Calls to the unsafe C function `sprintf()` have been removed or worked
