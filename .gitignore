@@ -1,5 +1,8 @@
 /inst/doxygen/
 /revdep
 /config.*
+/.cache
 .Rproj.user
 .DS_Store
+compile_commands.json
+
