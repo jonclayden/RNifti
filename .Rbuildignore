@@ -2,7 +2,7 @@
 ^inst/doxygen/html/Makefile$
 ^inst/doxygen/html/org\.doxygen\.Project\.docset$
 ^\.travis\.yml$
-^appveyor.yml$
+^appveyor\.yml$
 ^\.github$
 ^\.covrignore$
 ^README.Rmd$
@@ -15,3 +15,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.nova$
+^\.cache$
+^compile_commands\.json$

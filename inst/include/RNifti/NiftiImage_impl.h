@@ -76,7 +76,9 @@ inline int stringToDatatype (const std::string &datatype)
         datatypeCodes["uint32"] = DT_UINT32;
         datatypeCodes["int64"] = DT_INT64;
         datatypeCodes["uint64"] = DT_UINT64;
+        datatypeCodes["cfloat"] = DT_COMPLEX64;
         datatypeCodes["complex64"] = DT_COMPLEX64;
+        datatypeCodes["cdouble"] = DT_COMPLEX128;
         datatypeCodes["complex128"] = DT_COMPLEX128;
         datatypeCodes["complex"] = DT_COMPLEX128;
         datatypeCodes["rgb24"] = DT_RGB24;
