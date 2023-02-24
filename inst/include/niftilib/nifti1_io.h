@@ -3,8 +3,8 @@
            - Written by Bob Cox, SSCC NIMH
            - Revisions by Rick Reynolds, SSCC NIMH
  */
-#ifndef _NIFTI_IO_HEADER_
-#define _NIFTI_IO_HEADER_
+#ifndef NIFTI1_IO_HEADER
+#define NIFTI1_IO_HEADER
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,7 +50,7 @@ extern "C" {
 
       Mainly adding low-level IO and changing things to allow gzipped files
       to be read and written
-      Full backwards compatability should have been maintained
+      Full backwards compatibility should have been maintained
 
    Modified by: Rick Reynolds (SSCC/DIRP/NIMH, National Institutes of Health)
    Date: December 2004
@@ -317,8 +317,12 @@ int          nifti_read_subregion_image( nifti_image * nim,
                                          void ** data );
 
 void         nifti_image_write   ( nifti_image * nim ) ;
+int          nifti_image_write_status( nifti_image *nim );
+
 void         nifti_image_write_bricks(nifti_image * nim,
                                       const nifti_brick_list * NBL);
+int          nifti_image_write_bricks_status(nifti_image * nim,
+                                             const nifti_brick_list * NBL);
 void         nifti_image_infodump( const nifti_image * nim ) ;
 
 void         nifti_disp_lib_hist( void ) ;     /* to display library history */
@@ -518,9 +522,9 @@ int    valid_nifti_extensions(const nifti_image *nim);
 #endif
 
 /*------------------------------------------------------------------------*/
-/*-- the rest of these apply only to nifti1_io.c, check for _NIFTI1_IO_C_ */
+/*-- the rest of these apply only to nifti1_io.c, check for NIFTI1_IO_C */
 /*                                                    Feb 9, 2005 [rickr] */
-#ifdef _NIFTI1_IO_C_
+#ifdef NIFTI1_IO_C
 
 typedef struct {
     int debug;               /*!< debug level for status reports  */
@@ -535,7 +539,7 @@ typedef struct {
     char const * const name;           /* text string to match #define */
 } nifti_type_ele;
 
-#undef  LNI_FERR /* local nifti file error, to be compact and repetative */
+#undef  LNI_FERR /* local nifti file error, to be compact and repetitive */
 #ifdef USING_R
 #define LNI_FERR(func,msg,file)                                      \
             Rf_warning("%s: %s '%s'\n",func,msg,file)
@@ -575,7 +579,7 @@ typedef struct {
 
 #define LNI_MAX_NIA_EXT_LEN 100000  /* consider a longer extension invalid */
 
-#endif  /* _NIFTI1_IO_C_ section */
+#endif  /* NIFTI1_IO_C section */
 /*------------------------------------------------------------------------*/
 
 /*=================*/
@@ -584,4 +588,4 @@ typedef struct {
 #endif
 /*=================*/
 
-#endif /* _NIFTI_IO_HEADER_ */
+#endif /* NIFTI1_IO_HEADER */
