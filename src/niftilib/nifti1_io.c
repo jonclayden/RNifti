@@ -1,6 +1,7 @@
 #define NIFTI1_IO_C
 
 #include "niftilib/nifti1_io.h"   /* typedefs, prototypes, macros, etc. */
+#include "niftilib/nifti1_io_version.h"
 
 /*****===================================================================*****/
 /*****     Sample functions to deal with NIFTI-1 and ANALYZE files       *****/
@@ -2105,7 +2106,7 @@ void nifti_mat44_to_orientation( mat44 R , int *icod, int *jcod, int *kcod )
      case -2: i = NIFTI_A2P ; break ;
      case  3: i = NIFTI_I2S ; break ;
      case -3: i = NIFTI_S2I ; break ;
-     default: assert(0) ; break ;
+     default: break ;
    }
 
    switch( jbest*qbest ){
@@ -2115,7 +2116,7 @@ void nifti_mat44_to_orientation( mat44 R , int *icod, int *jcod, int *kcod )
      case -2: j = NIFTI_A2P ; break ;
      case  3: j = NIFTI_I2S ; break ;
      case -3: j = NIFTI_S2I ; break ;
-     default: assert(0) ; break ;
+     default: break ;
    }
 
    switch( kbest*rbest ){
@@ -2125,7 +2126,7 @@ void nifti_mat44_to_orientation( mat44 R , int *icod, int *jcod, int *kcod )
      case -2: k = NIFTI_A2P ; break ;
      case  3: k = NIFTI_I2S ; break ;
      case -3: k = NIFTI_S2I ; break ;
-     default: assert(0) ; break ;
+     default: break ;
    }
 
    *icod = i ; *jcod = j ; *kcod = k ;

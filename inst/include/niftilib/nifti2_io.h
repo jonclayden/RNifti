@@ -468,11 +468,11 @@ int64_t      nifti2_read_subregion_image(nifti_image *nim, const int64_t *start_
                                         const int64_t *region_size, void ** data);
 
 void         nifti2_image_write   ( nifti_image * nim ) ;
-int          nifti_image_write_status( nifti_image *nim ) ;  /* 7 Jun 2022 */
+int          nifti2_image_write_status( nifti_image *nim ) ;  /* 7 Jun 2022 */
 
 void         nifti2_image_write_bricks(nifti_image * nim,
                                       const nifti_brick_list * NBL);
-int          nifti_image_write_bricks_status(nifti_image * nim,
+int          nifti2_image_write_bricks_status(nifti_image * nim,
                                              const nifti_brick_list * NBL);
 void         nifti2_image_infodump( const nifti_image * nim ) ;
 
@@ -645,7 +645,9 @@ int    nifti_valid_header_size(int ni_ver, int whine);
 #define nifti_read_subregion_image      nifti2_read_subregion_image
 
 #define nifti_image_write               nifti2_image_write
+#define nifti_image_write_status        nifti2_image_write_status
 #define nifti_image_write_bricks        nifti2_image_write_bricks
+#define nifti_image_write_bricks_status nifti2_image_write_bricks_status
 #define nifti_image_infodump            nifti2_image_infodump
 
 #define nifti_disp_lib_hist             nifti2_disp_lib_hist

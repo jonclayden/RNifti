@@ -1,6 +1,7 @@
 #define NIFTI2_IO_C
 
 #include "niftilib/nifti2_io.h"   /* typedefs, prototypes, macros, etc. */
+#include "niftilib/nifti2_io_version.h"
 
 /*****===================================================================*****/
 /*****     Sample functions to deal with NIFTI-1,2 and ANALYZE files     *****/
@@ -2776,7 +2777,7 @@ void nifti_dmat44_to_orientation( nifti_dmat44 R ,
      case -2: i = NIFTI_A2P ; break ;
      case  3: i = NIFTI_I2S ; break ;
      case -3: i = NIFTI_S2I ; break ;
-     default: assert(0) ; break ;
+     default: break ;
    }
 
    switch( jbest*qbest ){
@@ -2786,7 +2787,7 @@ void nifti_dmat44_to_orientation( nifti_dmat44 R ,
      case -2: j = NIFTI_A2P ; break ;
      case  3: j = NIFTI_I2S ; break ;
      case -3: j = NIFTI_S2I ; break ;
-     default: assert(0) ; break ;
+     default: break ;
    }
 
    switch( kbest*rbest ){
@@ -2796,7 +2797,7 @@ void nifti_dmat44_to_orientation( nifti_dmat44 R ,
      case -2: k = NIFTI_A2P ; break ;
      case  3: k = NIFTI_I2S ; break ;
      case -3: k = NIFTI_S2I ; break ;
-     default: assert(0) ; break ;
+     default: break ;
    }
 
    *icod = i ; *jcod = j ; *kcod = k ; }
@@ -8048,7 +8049,7 @@ void nifti2_image_write( nifti_image *nim )
    \sa nifti_image_write_bricks, nifti_image_free, nifti_set_filenames,
        nifti_image_write_engine, nifti_image_write
 *//*------------------------------------------------------------------------*/
-int nifti_image_write_status( nifti_image *nim )
+int nifti2_image_write_status( nifti_image *nim )
 {
    znzFile fp=NULL;   /* required for _engine, but promptly ignored */
    int     rv;
@@ -8074,7 +8075,7 @@ int nifti_image_write_status( nifti_image *nim )
 
    \sa nifti_image_write, nifti_image_free, nifti_set_filenames, nifti_free_NBL
 *//*--------------------------------------------------------------------*/
-int nifti_image_write_bricks_status( nifti_image *nim,
+int nifti2_image_write_bricks_status( nifti_image *nim,
                                      const nifti_brick_list * NBL )
 {
    znzFile fp=NULL;
