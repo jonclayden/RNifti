@@ -1825,7 +1825,7 @@ inline NiftiImage & NiftiImage::replaceData (const NiftiImageData &data)
     return *this;
 }
 
-inline std::pair<std::string,std::string> NiftiImage::toFile (const std::string fileName, const int datatype, const int filetype) const
+inline std::pair<std::string,std::string> NiftiImage::toFile (const std::string fileName, const int datatype, const int filetype, const int compression) const
 {
     const bool changingDatatype = (datatype != DT_NONE && !this->isNull() && datatype != image->datatype);
     
@@ -1840,24 +1840,28 @@ inline std::pair<std::string,std::string> NiftiImage::toFile (const std::string 
     // Set the buffer size used by zlib
     internal::setBufferSize();
     
+    std::string mode = "wb";
+    if (compression >= 0 && compression <= 9)
+        mode += std::to_string(compression);
+    
 #if RNIFTI_NIFTILIB_VERSION == 1
     const int status = nifti_set_filenames(imageToWrite, internal::stringToPath(fileName), false, true);
     if (status != 0)
         throw std::runtime_error("Failed to set filenames for NIfTI object");
-    nifti_image_write(imageToWrite);
+    nifti_image_write_hdr_img(imageToWrite, 1, mode.c_str());
 #elif RNIFTI_NIFTILIB_VERSION == 2
     const int status = nifti2_set_filenames(imageToWrite, internal::stringToPath(fileName), false, true);
     if (status != 0)
         throw std::runtime_error("Failed to set filenames for NIfTI object");
-    nifti2_image_write(imageToWrite);
+    nifti2_image_write_hdr_img(imageToWrite, 1, mode.c_str());
 #endif
     
     return std::pair<std::string,std::string>(std::string(imageToWrite->fname), std::string(imageToWrite->iname));
 }
 
-inline std::pair<std::string,std::string> NiftiImage::toFile (const std::string fileName, const std::string &datatype, const int filetype) const
+inline std::pair<std::string,std::string> NiftiImage::toFile (const std::string fileName, const std::string &datatype, const int filetype, const int compression) const
 {
-    return toFile(fileName, internal::stringToDatatype(datatype), filetype);
+    return toFile(fileName, internal::stringToDatatype(datatype), filetype, compression);
 }
 
 #ifdef USING_R

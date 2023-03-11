@@ -66,6 +66,8 @@ readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL)
 #'   use. Version 2 is usually only needed for very large images or where
 #'   metadata needs to be stored with high precision. The types available for
 #'   storing the pixel data are the same in both cases.
+#' @param compression The gzip compression level to use, an integer between 0
+#'   (none) and 9 (maximum).
 #' @return An invisible, named character vector giving the image and header
 #'   file names written to.
 #' 
@@ -80,9 +82,9 @@ readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL)
 #' @seealso \code{\link{readNifti}}, \code{\link{asNifti}}
 #' @references The NIfTI-1 standard (\url{https://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @export
-writeNifti <- function (image, file, template = NULL, datatype = "auto", version = 1)
+writeNifti <- function (image, file, template = NULL, datatype = "auto", version = 1, compression = 6)
 {
-    invisible(.Call("writeNifti", asNifti(image,template,internal=TRUE), file, tolower(datatype), switch(version,"nifti1","nifti2"), PACKAGE="RNifti"))
+    invisible(.Call("writeNifti", asNifti(image,template,internal=TRUE), file, tolower(datatype), switch(version,"nifti1","nifti2"), compression, PACKAGE="RNifti"))
 }
 
 #' @rdname writeNifti

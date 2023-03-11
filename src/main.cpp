@@ -237,7 +237,7 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP writeNifti (SEXP _image, SEXP _file, SEXP _datatype, SEXP _filetype)
+RcppExport SEXP writeNifti (SEXP _image, SEXP _file, SEXP _datatype, SEXP _filetype, SEXP _compression)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, true, true);
@@ -247,7 +247,7 @@ BEGIN_RCPP
         filetype = NIFTI_FTYPE_ANALYZE;
     else if (filetypeString == "nifti2")
         filetype = NIFTI_FTYPE_NIFTI2_1;
-    const std::pair<std::string,std::string> paths = image.toFile(as<std::string>(_file), as<std::string>(_datatype), filetype);
+    const std::pair<std::string,std::string> paths = image.toFile(as<std::string>(_file), as<std::string>(_datatype), filetype, as<int>(_compression));
     return CharacterVector::create(Named("header")=paths.first, Named("image")=paths.second);
 END_RCPP
 }
@@ -835,7 +835,7 @@ R_CallMethodDef callMethods[] = {
     { "niftiVersion",   (DL_FUNC) &niftiVersion,    1 },
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
     { "readNiftiBlob",  (DL_FUNC) &readNiftiBlob,   6 },
-    { "writeNifti",     (DL_FUNC) &writeNifti,      4 },
+    { "writeNifti",     (DL_FUNC) &writeNifti,      5 },
     { "niftiHeader",    (DL_FUNC) &niftiHeader,     1 },
     { "analyzeHeader",  (DL_FUNC) &analyzeHeader,   1 },
     { "getXform",       (DL_FUNC) &getXform,        2 },

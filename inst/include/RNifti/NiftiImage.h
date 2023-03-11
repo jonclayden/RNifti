@@ -1907,9 +1907,11 @@ public:
      * @param datatype The datatype to use when writing the file
      * @param filetype The file type to create: a \c NIFTI_FTYPE constant or -1. In the latter case
      * the file name is used to determine the file type
+     * @param compression The \c zlib compression level to use, if appropriate. Valid values are
+      * between 0 and 9
      * @return A pair of strings, giving the final header and image paths in that order
     **/
-    std::pair<std::string,std::string> toFile (const std::string fileName, const int datatype = DT_NONE, const int filetype = -1) const;
+    std::pair<std::string,std::string> toFile (const std::string fileName, const int datatype = DT_NONE, const int filetype = -1, const int compression = 6) const;
     
     /**
      * Write the image to a NIfTI-1 file
@@ -1917,9 +1919,11 @@ public:
      * @param datatype The datatype to use when writing the file, or "auto"
      * @param filetype The file type to create: a \c NIFTI_FTYPE constant or -1. In the latter case
      * the file name is used to determine the file type
+     * @param compression The \c zlib compression level to use, if appropriate. Valid values are
+     * between 0 and 9
      * @return A pair of strings, giving the final header and image paths in that order
     **/
-    std::pair<std::string,std::string> toFile (const std::string fileName, const std::string &datatype, const int filetype = -1) const;
+    std::pair<std::string,std::string> toFile (const std::string fileName, const std::string &datatype, const int filetype = -1, const int compression = 6) const;
     
 #ifdef USING_R
     
