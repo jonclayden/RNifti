@@ -352,6 +352,7 @@ int    disp_nifti_1_header(const char * info, const nifti_1_header * hp ) ;
 void   nifti_set_debug_level( int level ) ;
 void   nifti_set_skip_blank_ext( int skip ) ;
 void   nifti_set_allow_upper_fext( int allow ) ;
+void   nifti_set_gz_bufsize( unsigned size ) ;
 
 int    valid_nifti_brick_list(nifti_image * nim , int nbricks,
                               const int * blist, int disp_error);
@@ -530,6 +531,7 @@ typedef struct {
     int debug;               /*!< debug level for status reports  */
     int skip_blank_ext;      /*!< skip extender if no extensions  */
     int allow_upper_fext;    /*!< allow uppercase file extensions */
+    unsigned gz_bufsize;     /*!< buffer size used by zlib        */
 } nifti_global_options;
 
 typedef struct {
