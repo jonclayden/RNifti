@@ -3,6 +3,8 @@
 #include "niftilib/nifti1_io.h"   /* typedefs, prototypes, macros, etc. */
 #include "niftilib/nifti1_io_version.h"
 
+#include <errno.h>
+
 /*****===================================================================*****/
 /*****     Sample functions to deal with NIFTI-1 and ANALYZE files       *****/
 /*****...................................................................*****/
