@@ -89,9 +89,9 @@ writeNifti <- function (image, file, template = NULL, datatype = "auto", version
 
 #' @rdname writeNifti
 #' @export
-writeAnalyze <- function (image, file, template = NULL, datatype = "auto")
+writeAnalyze <- function (image, file, template = NULL, datatype = "auto", compression = 6)
 {
-    invisible(.Call("writeNifti", asNifti(image,template,internal=TRUE), file, tolower(datatype), "analyze", PACKAGE="RNifti"))
+    invisible(.Call("writeNifti", asNifti(image,template,internal=TRUE), file, tolower(datatype), "analyze", compression, PACKAGE="RNifti"))
 }
 
 #' Create or modify an NIfTI image object
