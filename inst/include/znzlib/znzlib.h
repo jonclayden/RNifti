@@ -106,6 +106,8 @@ znzFile znzdopen(int fd, const char *mode, int use_compression);
 
 int Xznzclose(znzFile * file);
 
+int znzbuffer(znzFile * file, unsigned bufsize);
+
 size_t znzread(void* buf, size_t size, size_t nmemb, znzFile file);
 
 size_t znzwrite(const void* buf, size_t size, size_t nmemb, znzFile file);
