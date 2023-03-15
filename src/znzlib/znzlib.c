@@ -132,6 +132,7 @@ int znzbuffer(znzFile * file, unsigned bufsize)
   if (*file!=NULL) {
 #ifdef HAVE_ZLIB
     if ((*file)->zfptr!=NULL) {
+      Rc_fprintf_stdout("** znzbuffer: setting buffer size to %u\n", bufsize);
       retval = gzbuffer((*file)->zfptr, bufsize);
     }
 #endif
