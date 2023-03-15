@@ -416,7 +416,7 @@ static nifti_global_options g_opts = {
         0, /* skip_blank_ext    - skip extender if no extensions  */
         1, /* allow_upper_fext  - allow uppercase file extensions */
         0, /* alter_cifti       - alter CIFTI dims to use nx,t,u,v*/
-        8192    /* gzip buffer size (zlib default)                */
+        8192    /* gz_bufsize   - gzip buffer size (zlib default) */
 };
 
 char nifti1_magic[4] = { 'n', '+', '1', '\0' };

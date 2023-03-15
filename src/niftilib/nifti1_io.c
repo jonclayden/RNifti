@@ -356,7 +356,7 @@ static nifti_global_options g_opts = {
         1, /* debug level                                         */
         0, /* skip_blank_ext    - skip extender if no extensions  */
         1, /* allow_upper_fext  - allow uppercase file extensions */
-        8192    /* gzip buffer size (zlib default)                */
+        8192    /* gz_bufsize   - gzip buffer size (zlib default) */
 };
 
 /*! global nifti types structure list (per type, ordered oldest to newest) */
