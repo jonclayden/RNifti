@@ -1,31 +1,33 @@
 .State <- new.env()
 
-.is3DVector <- function (image)
+.vector3Dim <- function (image)
 {
-    return (image$intent_code == 1007L && ndim(image) == 5L && dim(image)[5] == 3L)
+    if (image$intent_code == 1007L && ndim(image) == 5L && dim(image)[5] == 3L)
+        return (5L)
+    else if (getOption("RNifti.d4vectors",FALSE) && ndim(image) == 4L && dim(image)[4] == 3L)
+        return (4L)
+    else
+        return (NA_integer_)
 }
 
 .plotLayer <- function (layer, loc, asp = NULL, add = FALSE)
 {
-    is3DVector <- .is3DVector(layer$image)
+    vector3Dim <- .vector3Dim(layer$image)
     
     # Extract the data for the appropriate plane
     axis <- which(!is.na(loc))
     indices <- alist(i=, j=, k=, t=1, u=1, v=1, w=1)
-    if (is3DVector)
-        indices[[5]] <- 1:3
+    if (!is.na(vector3Dim))
+        indices[[vector3Dim]] <- 1:3
     indices[[axis]] <- loc[axis]
     data <- do.call("[", c(layer["image"], indices[seq_len(ndim(layer$image))], list(drop=FALSE)))
-    if (is3DVector)
-        dims <- dim(data)[-c(axis,4,6,7)]
-    else
-        dims <- dim(data)[-c(axis,4:7)]
+    dims <- dim(data)[-c(axis, setdiff(4:7,vector3Dim))]
     dim(data) <- dims
     
     if (is.null(asp))
         asp <- dims[2] / dims[1]
     
-    if (is3DVector)
+    if (!is.na(vector3Dim))
     {
         # Show 3D vector data as coloured line segments
         if (!add)
@@ -326,7 +328,7 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL)
             message("Setting window to (", signif(window[1],4), ", ", signif(window[2],4), ")")
         }
         
-        if (!.is3DVector(image))
+        if (is.na(.vector3Dim(image)))
         {
             image[image < window[1]] <- window[1]
             image[image > window[2]] <- window[2]
