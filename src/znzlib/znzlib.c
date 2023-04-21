@@ -126,21 +126,6 @@ int Xznzclose(znzFile * file)
 }
 
 
-int znzbuffer(znzFile * file, unsigned bufsize)
-{
-  int retval = 0;
-  if (*file!=NULL) {
-#ifdef HAVE_ZLIB
-    if ((*file)->zfptr!=NULL) {
-      Rc_fprintf_stdout("** znzbuffer: setting buffer size to %u\n", bufsize);
-      retval = gzbuffer((*file)->zfptr, bufsize);
-    }
-#endif
-  }
-  return retval;
-}
-
-
 /* we already assume ints are 4 bytes */
 #undef ZNZ_MAX_BLOCK_SIZE
 #define ZNZ_MAX_BLOCK_SIZE (1<<30)

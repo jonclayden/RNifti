@@ -355,8 +355,7 @@ static const char gni_version[] = NIFTI1_IO_SOURCE_VERSION " (16 Jun, 2022)";
 static nifti_global_options g_opts = {
         1, /* debug level                                         */
         0, /* skip_blank_ext    - skip extender if no extensions  */
-        1, /* allow_upper_fext  - allow uppercase file extensions */
-        8192    /* gz_bufsize   - gzip buffer size (zlib default) */
+        1  /* allow_upper_fext  - allow uppercase file extensions */
 };
 
 /*! global nifti types structure list (per type, ordered oldest to newest) */
@@ -2457,7 +2456,6 @@ int nifti_get_filesize( const char *pathname )
 
    if( pathname == NULL || *pathname == '\0' ) return -1 ;
    fp = znzopen(pathname,"rb",0); if( znz_isnull(fp) ) return -1 ;
-   znzbuffer(&fp, g_opts.gz_bufsize);
    znzseek(fp,0L,SEEK_END) ; len = znztell(fp) ;
    znzclose(fp) ; return len ;
 }
@@ -2738,16 +2736,6 @@ void nifti_set_skip_blank_ext( int skip )
 void nifti_set_allow_upper_fext( int allow )
 {
     g_opts.allow_upper_fext = allow ? 1 : 0;
-}
-
-/*----------------------------------------------------------------------*/
-/*! set the buffer size used by zlib for reading/writing gzipped images
-
-    the default is 8192 (8 KiB)
-*//*--------------------------------------------------------------------*/
-void nifti_set_gz_bufsize( unsigned size )
-{
-    g_opts.gz_bufsize = size;
 }
 
 /*----------------------------------------------------------------------*/
@@ -3497,7 +3485,6 @@ int is_nifti_file( const char *hname )
 
    /* read header, close file */
 
-   znzbuffer(&fp, g_opts.gz_bufsize);
    ii = (int)znzread( &nhdr , 1 , sizeof(nhdr) , fp ) ;
    znzclose( fp ) ;
    if( ii < (int) sizeof(nhdr) )               return -1 ;  /* bad read? */
@@ -3963,7 +3950,6 @@ znzFile nifti_image_open(const char * hname, const char * opts, nifti_image ** n
   /* open image data file */
   fptr = znzopen( (*nim)->iname, opts, nifti_is_gzfile((*nim)->iname) );
   if( znz_isnull(fptr) ) ERREX("Can't open data file") ;
-  znzbuffer(&fptr, g_opts.gz_bufsize);
 
   return fptr;
 }
@@ -4007,7 +3993,6 @@ nifti_1_header * nifti_read_header(const char * hname, int * swapped, int check)
       free(hfile);
       return NULL;
    }
-   znzbuffer(&fp, g_opts.gz_bufsize);
 
    free(hfile);  /* done with filename */
 
@@ -4234,7 +4219,6 @@ nifti_image *nifti_image_read( const char *hname , int read_data )
       free(hfile);
       return NULL;
    }
-   znzbuffer(&fp, g_opts.gz_bufsize);
 
    rv = has_ascii_header( fp );
    if( rv < 0 ){
@@ -4865,7 +4849,6 @@ static znzFile nifti_image_load_prep( nifti_image *nim )
        free(tmpimgname);
        return NULL;  /* bad open? */
    }
-   znzbuffer(&fp, g_opts.gz_bufsize);
    free(tmpimgname);
 
    /**- get image offset: a negative offset means to figure from end of file */
@@ -5829,7 +5812,6 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
          *imgfile = fp;
          return 1;
       }
-      znzbuffer(&fp, g_opts.gz_bufsize);
    }
 
    /* write the header and extensions */
@@ -5864,7 +5846,6 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
             Rc_fprintf_stderr("+d opening img file '%s'\n", nim->iname);
          fp = znzopen( nim->iname , opts , nifti_is_gzfile(nim->iname) ) ;
          if( znz_isnull(fp) ) ERREX("cannot open image file") ;
-         znzbuffer(&fp, g_opts.gz_bufsize);
       }
    }
 
@@ -5897,7 +5878,6 @@ znzFile nifti_write_ascii_image(nifti_image *nim, const nifti_brick_list * NBL,
       Rc_fprintf_stderr("** failed to open '%s' for ascii write\n",nim->fname);
       return fp;
    }
-   znzbuffer(&fp, g_opts.gz_bufsize);
 
    znzputs(hstr,fp);                                               /* header */
    nifti_write_extensions(fp,nim);                             /* extensions */

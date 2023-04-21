@@ -103,22 +103,6 @@ inline int stringToDatatype (const std::string &datatype)
         return datatypeCodes[lowerCaseDatatype];
 }
 
-// This function always exists, but is a no-op unless running under R
-inline void setBufferSize ()
-{
-#ifdef USING_R
-    Rcpp::RObject size_ = Rf_GetOption1(Rf_install("RNifti.gzBufferSize"));
-    if (!Rf_isNull(size_))
-    {
-        const unsigned size = Rcpp::as<unsigned>(size_);
-        if (size > std::numeric_limits<unsigned>::max() / 2)
-            Rf_warning("Value of option \"RNifti.gzBufferSize\" is too large, so it will be ignored");
-        else
-            nifti_set_gz_bufsize(size);
-    }
-#endif
-}
-
 template <typename TargetType>
 struct ElementConverter
 {
@@ -1141,7 +1125,6 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
             acquire(NULL);
         else if (Rf_isString(object))
         {
-            internal::setBufferSize();
             const std::string path = Rcpp::as<std::string>(object);
 #if RNIFTI_NIFTILIB_VERSION == 1
             acquire(nifti_image_read(internal::stringToPath(path), readData));
@@ -1220,8 +1203,6 @@ inline NiftiImage::NiftiImage (const std::vector<dim_t> &dim, const std::string 
 inline NiftiImage::NiftiImage (const std::string &path, const bool readData)
     : image(NULL), refCount(NULL)
 {
-    internal::setBufferSize();
-    
 #if RNIFTI_NIFTILIB_VERSION == 1
     acquire(nifti_image_read(internal::stringToPath(path), readData));
 #elif RNIFTI_NIFTILIB_VERSION == 2
@@ -1836,9 +1817,6 @@ inline std::pair<std::string,std::string> NiftiImage::toFile (const std::string 
         imageToWrite.changeDatatype(datatype, true);
     if (filetype >= 0 && filetype <= NIFTI_MAX_FTYPE)
         imageToWrite->nifti_type = filetype;
-    
-    // Set the buffer size used by zlib
-    internal::setBufferSize();
     
     std::string mode = "wb";
     if (compression >= 0 && compression <= 9)

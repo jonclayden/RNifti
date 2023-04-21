@@ -507,7 +507,6 @@ void   nifti_set_skip_blank_ext( int skip ) ;
 void   nifti_set_allow_upper_fext( int allow ) ;
 int    nifti_get_alter_cifti( void );
 void   nifti_set_alter_cifti( int alter_cifti );
-void   nifti_set_gz_bufsize( unsigned size ) ;
 
 int    nifti_alter_cifti_dims(nifti_image * nim);
 
@@ -778,7 +777,6 @@ typedef struct {
     int skip_blank_ext;      /*!< skip extender if no extensions  */
     int allow_upper_fext;    /*!< allow uppercase file extensions */
     int alter_cifti;         /*!< convert CIFTI dimensions        */
-    unsigned gz_bufsize;     /*!< buffer size used by zlib        */
 } nifti_global_options;
 
 typedef struct {
