@@ -69,7 +69,6 @@ void R_init_RNifti (DllInfo *info)
     R_RegisterCCallable("RNifti", "nii_set_debug_level", (DL_FUNC) &nifti_set_debug_level);
     R_RegisterCCallable("RNifti", "nii_set_skip_blank_ext", (DL_FUNC) &nifti_set_skip_blank_ext);
     R_RegisterCCallable("RNifti", "nii_set_allow_upper_fext", (DL_FUNC) &nifti_set_allow_upper_fext);
-    R_RegisterCCallable("RNifti", "nii_set_gz_bufsize", (DL_FUNC) &nifti_set_gz_bufsize);
     R_RegisterCCallable("RNifti", "valid_nii_brick_list", (DL_FUNC) &valid_nifti_brick_list);
     R_RegisterCCallable("RNifti", "nii_image_open", (DL_FUNC) &nifti_image_open);
     R_RegisterCCallable("RNifti", "nii_image_write_hdr_img", (DL_FUNC) &nifti_image_write_hdr_img);

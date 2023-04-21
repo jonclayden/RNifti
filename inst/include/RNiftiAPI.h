@@ -89,7 +89,6 @@ static int(*_disp_nifti_1_header)(const char *, const nifti_1_header *) = NULL;
 static void(*_nifti_set_debug_level)(int) = NULL;
 static void(*_nifti_set_skip_blank_ext)(int) = NULL;
 static void(*_nifti_set_allow_upper_fext)(int) = NULL;
-static void(*_nifti_set_gz_bufsize)(unsigned) = NULL;
 static int(*_valid_nifti_brick_list)(nifti_image *, int, const int *, int) = NULL;
 static znzFile(*_nifti_image_open)(const char *, const char *, nifti_image **) = NULL;
 static znzFile(*_nifti_image_write_hdr_img)(nifti_image *, int, const char*) = NULL;
@@ -210,7 +209,6 @@ static void(*_nifti_set_skip_blank_ext)(int) = NULL;
 static void(*_nifti_set_allow_upper_fext)(int) = NULL;
 static int(*_nifti_get_alter_cifti)(void) = NULL;
 static void(*_nifti_set_alter_cifti)(int) = NULL;
-static void(*_nifti_set_gz_bufsize)(unsigned) = NULL;
 static int(*_nifti_alter_cifti_dims)(nifti_image *) = NULL;
 static int(*_valid_nifti2_brick_list)(nifti_image *, int64_t, const int64_t *, int) = NULL;
 static znzFile(*_nifti2_image_open)(const char *, char *, nifti_image **) = NULL;
@@ -337,7 +335,6 @@ void niftilib_register_all (void)
         _nifti_set_debug_level = (void(*)(int)) R_GetCCallable("RNifti", "nii_set_debug_level");
         _nifti_set_skip_blank_ext = (void(*)(int)) R_GetCCallable("RNifti", "nii_set_skip_blank_ext");
         _nifti_set_allow_upper_fext = (void(*)(int)) R_GetCCallable("RNifti", "nii_set_allow_upper_fext");
-        _nifti_set_gz_bufsize = (void(*)(unsigned)) R_GetCCallable("RNifti", "nii_set_gz_bufsize");
         _valid_nifti_brick_list = (int(*)(nifti_image *, int, const int *, int)) R_GetCCallable("RNifti", "valid_nii_brick_list");
         _nifti_image_open = (znzFile(*)(const char *, const char *, nifti_image **)) R_GetCCallable("RNifti", "nii_image_open");
         _nifti_image_write_hdr_img = (znzFile(*)(nifti_image *, int, const char*)) R_GetCCallable("RNifti", "nii_image_write_hdr_img");
@@ -458,7 +455,6 @@ void niftilib_register_all (void)
         _nifti_set_allow_upper_fext = (void(*)(int)) R_GetCCallable("RNifti", "nii_set_allow_upper_fext");
         _nifti_get_alter_cifti = (int(*)(void)) R_GetCCallable("RNifti", "nii_get_alter_cifti");
         _nifti_set_alter_cifti = (void(*)(int)) R_GetCCallable("RNifti", "nii_set_alter_cifti");
-        _nifti_set_gz_bufsize = (void(*)(unsigned)) R_GetCCallable("RNifti", "nii_set_gz_bufsize");
         _nifti_alter_cifti_dims = (int(*)(nifti_image *)) R_GetCCallable("RNifti", "nii_alter_cifti_dims");
         _valid_nifti2_brick_list = (int(*)(nifti_image *, int64_t, const int64_t *, int)) R_GetCCallable("RNifti", "valid_nii2_brick_list");
         _nifti2_image_open = (znzFile(*)(const char *, char *, nifti_image **)) R_GetCCallable("RNifti", "nii2_image_open");
@@ -582,7 +578,6 @@ int disp_nifti_1_header (const char * info, const nifti_1_header * hp) { NIFTILI
 void nifti_set_debug_level (int level) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_debug_level, level) }
 void nifti_set_skip_blank_ext (int skip) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_skip_blank_ext, skip) }
 void nifti_set_allow_upper_fext (int allow) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_allow_upper_fext, allow) }
-void nifti_set_gz_bufsize (unsigned size) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_gz_bufsize, size) }
 int valid_nifti_brick_list (nifti_image * nim, int nbricks, const int * blist, int disp_error) { NIFTILIB_WRAPPER_BODY(_valid_nifti_brick_list, nim, nbricks, blist, disp_error) }
 znzFile nifti_image_open (const char * hname, const char * opts, nifti_image ** nim) { NIFTILIB_WRAPPER_BODY(_nifti_image_open, hname, opts, nim) }
 znzFile nifti_image_write_hdr_img (nifti_image * nim, int write_data, const char* opts) { NIFTILIB_WRAPPER_BODY(_nifti_image_write_hdr_img, nim, write_data, opts) }
@@ -703,7 +698,6 @@ void nifti_set_skip_blank_ext (int skip) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti
 void nifti_set_allow_upper_fext (int allow) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_allow_upper_fext, allow) }
 int nifti_get_alter_cifti (void) { NIFTILIB_WRAPPER_BODY_VOID(_nifti_get_alter_cifti) }
 void nifti_set_alter_cifti (int alter_cifti) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_alter_cifti, alter_cifti) }
-void nifti_set_gz_bufsize (unsigned size) { NIFTILIB_WRAPPER_BODY_NORETURN(_nifti_set_gz_bufsize, size) }
 int nifti_alter_cifti_dims (nifti_image * nim) { NIFTILIB_WRAPPER_BODY(_nifti_alter_cifti_dims, nim) }
 int valid_nifti2_brick_list (nifti_image * nim, int64_t nbricks, const int64_t * blist, int disp_error) { NIFTILIB_WRAPPER_BODY(_valid_nifti2_brick_list, nim, nbricks, blist, disp_error) }
 znzFile nifti2_image_open (const char * hname, char * opts, nifti_image ** nim) { NIFTILIB_WRAPPER_BODY(_nifti2_image_open, hname, opts, nim) }
