@@ -6665,8 +6665,8 @@ static znzFile nifti_image_load_prep( nifti_image *nim )
        nim->nbyper <= 0 || nim->nvox <= 0       )
    {
       if ( g_opts.debug > 0 ){
-         if( !nim ) fprintf(stderr,"** ERROR: N_image_load: no nifti image\n");
-         else fprintf(stderr,"** ERROR: nifti_image_load: bad params (%p,%d,"
+         if( !nim ) Rc_fprintf_stderr("** ERROR: N_image_load: no nifti image\n");
+         else Rc_fprintf_stderr("** ERROR: nifti_image_load: bad params (%p,%d,"
                       "%" PRId64 ")\n",
                       (void *)nim->iname, nim->nbyper, nim->nvox);
       }
@@ -7804,9 +7804,9 @@ znzFile nifti_image_write_hdr_img2(nifti_image *nim, int write_opts,
 }
 
 #undef  ERREX
-#define ERREX(msg)                                                      \
- do{ fprintf(stderr,"** ERROR: nifti_image_write_engine: %s\n",(msg)) ; \
-     if( imgfile ) *imgfile = fp;                                       \
+#define ERREX(msg)                                                         \
+ do{ Rc_fprintf_stderr("** ERROR: nifti_image_write_engine: %s\n",(msg)) ; \
+     if( imgfile ) *imgfile = fp;                                          \
      return 1 ; } while(0)
 
 
@@ -7911,7 +7911,7 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
    /* if we have an imgfile and will also write the header there, use it */
    if( ! znz_isnull(*imgfile) && (nim->nifti_type == NIFTI_FTYPE_NIFTI1_1 ||
                                   nim->nifti_type == NIFTI_FTYPE_NIFTI2_1) ){
-      if( g_opts.debug > 2 ) fprintf(stderr,"+d using passed file for hdr\n");
+      if( g_opts.debug > 2 ) Rc_fprintf_stderr("+d using passed file for hdr\n");
       fp = *imgfile;
    } else {
       /* we will write the header to a new file */
@@ -7943,7 +7943,7 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
 
    /* if the header is all we want, we are done */
    if( ! write_data && ! leave_open ){
-      if( g_opts.debug > 2 ) fprintf(stderr,"-d header is all we want: done\n");
+      if( g_opts.debug > 2 ) Rc_fprintf_stderr("-d header is all we want: done\n");
       znzclose(fp); *imgfile = fp; return 0;
    }
 
@@ -7953,7 +7953,7 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
       znzclose(fp);         /* first, close header file */
       /* use any valid *imgfile for img */
       if( ! znz_isnull(*imgfile) ){
-         if(g_opts.debug > 2) fprintf(stderr,"+d using passed file for img\n");
+         if(g_opts.debug > 2) Rc_fprintf_stderr("+d using passed file for img\n");
          fp = *imgfile;
       } else {
          /* else we need a new img file pointer */
@@ -8057,11 +8057,11 @@ int nifti2_image_write_status( nifti_image *nim )
    rv = nifti_image_write_engine(nim, 1, "wb", &fp, NULL);
 
    if( fp ){ /* this should not happen, as we requested file closure */
-      if( g_opts.debug > 2 ) fprintf(stderr,"-d niw: done with znzFile\n");
+      if( g_opts.debug > 2 ) Rc_fprintf_stderr("-d niw: done with znzFile\n");
       free(fp);
    }
    if( g_opts.debug > 1 )
-      fprintf(stderr,"-d nifti_image_write_status: done, status %d\n", rv);
+      Rc_fprintf_stderr("-d nifti_image_write_status: done, status %d\n", rv);
 
    return rv;
 }
@@ -8087,7 +8087,7 @@ int nifti2_image_write_bricks_status( nifti_image *nim,
       free(fp);
    }
    if( g_opts.debug > 1 )
-      fprintf(stderr,"-d niwb: done writing bricks, status %d\n", rv);
+      Rc_fprintf_stderr("-d niwb: done writing bricks, status %d\n", rv);
    return rv;
 }
 
@@ -9169,7 +9169,7 @@ int64_t nifti2_read_subregion_image( nifti_image * nim,
   fp = nifti_image_load_prep( nim );
   if(znz_isnull(fp)) {
     if(g_opts.debug > 0)
-      fprintf(stderr,"** nifti_read_subregion_image, failed load_prep\n");
+      Rc_fprintf_stderr("** nifti_read_subregion_image, failed load_prep\n");
     return -1;
   }
 
@@ -9233,7 +9233,7 @@ int64_t nifti2_read_subregion_image( nifti_image * nim,
               nread = nifti_read_buffer(fp, readptr, read_amount, nim);
               if(nread != read_amount) {
                 if(g_opts.debug > 0)
-                  fprintf(stderr,"read of %" PRId64 " bytes failed\n",
+                  Rc_fprintf_stderr("read of %" PRId64 " bytes failed\n",
                           read_amount);
                 znzclose(fp);
                 return -1;
@@ -9409,8 +9409,8 @@ static int make_pivot_list(nifti_image *nim, const int64_t dims[], int64_t pivot
    if( g_opts.debug > 2 ){
       Rc_fprintf_stderr("+d pivot list created, pivots :");
       for(dind = 0; dind < len; dind++)
-         fprintf(stderr," %lld", pivots[dind]);
-      fprintf(stderr,", prods :");
+         Rc_fprintf_stderr(" %lld", pivots[dind]);
+      Rc_fprintf_stderr(", prods :");
       for(dind = 0; dind < len; dind++)
          Rc_fprintf_stderr(" %" PRId64 "", prods[dind]);
       Rc_fputc_stderr('\n');

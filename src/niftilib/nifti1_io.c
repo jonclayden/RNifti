@@ -5713,9 +5713,9 @@ znzFile nifti_image_write_hdr_img2(nifti_image *nim, int write_opts,
 }
 
 #undef  ERREX
-#define ERREX(msg)                                                       \
- do{ fprintf(stderr,"** ERROR: nifti_image_write_engine: %s\n",(msg)) ;  \
-     if( imgfile ) *imgfile = fp;                                        \
+#define ERREX(msg)                                                          \
+ do{ Rc_fprintf_stderr("** ERROR: nifti_image_write_engine: %s\n",(msg)) ;  \
+     if( imgfile ) *imgfile = fp;                                           \
      return 1 ; } while(0)
 
 
@@ -5799,7 +5799,7 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
 
    /* if we have an imgfile and will write the header there, use it */
    if( ! znz_isnull(*imgfile) && nim->nifti_type == NIFTI_FTYPE_NIFTI1_1 ){
-      if( g_opts.debug > 2 ) fprintf(stderr,"+d using passed file for hdr\n");
+      if( g_opts.debug > 2 ) Rc_fprintf_stderr("+d using passed file for hdr\n");
       fp = *imgfile;
    }
    else {
@@ -5830,7 +5830,7 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
 
    /* if the header is all we want, we are done */
    if( ! write_data && ! leave_open ){
-      if( g_opts.debug > 2 ) fprintf(stderr,"-d header is all we want: done\n");
+      if( g_opts.debug > 2 ) Rc_fprintf_stderr("-d header is all we want: done\n");
       znzclose(fp); *imgfile = fp;  return 0;
    }
 
@@ -5838,7 +5838,7 @@ static int nifti_image_write_engine(nifti_image *nim, int write_opts,
    if( nim->nifti_type != NIFTI_FTYPE_NIFTI1_1 ){ /* get a new file pointer */
       znzclose(fp);         /* first, close header file */
       if( ! znz_isnull(*imgfile) ){
-         if(g_opts.debug > 2) fprintf(stderr,"+d using passed file for img\n");
+         if(g_opts.debug > 2) Rc_fprintf_stderr("+d using passed file for img\n");
          fp = *imgfile;
       }
       else {
@@ -5925,7 +5925,7 @@ void nifti_image_write( nifti_image *nim )
       free(fp);
    }
    if( g_opts.debug > 1 )
-      fprintf(stderr,"-d nifti_image_write: done, status %d\n", rv);
+      Rc_fprintf_stderr("-d nifti_image_write: done, status %d\n", rv);
 }
 
 
@@ -5947,7 +5947,7 @@ int nifti_image_write_status( nifti_image *nim )
 
    rv = nifti_image_write_engine(nim, 1, "wb", &fp, NULL);
    if( g_opts.debug > 1 )
-      fprintf(stderr,"-d nifti_image_write_status: done, status %d\n", rv);
+      Rc_fprintf_stderr("-d nifti_image_write_status: done, status %d\n", rv);
    return rv;
 }
 
@@ -5967,11 +5967,11 @@ int nifti_image_write_bricks_status( nifti_image *nim,
 
    rv = nifti_image_write_engine(nim, 1, "wb", &fp, NBL);
    if( fp ){
-      if( g_opts.debug > 2 ) fprintf(stderr,"-d niwb: done with znzFile\n");
+      if( g_opts.debug > 2 ) Rc_fprintf_stderr("-d niwb: done with znzFile\n");
       free(fp);
    }
    if( g_opts.debug > 1 )
-      fprintf(stderr,"-d niwb: done writing bricks, status %d\n", rv);
+      Rc_fprintf_stderr("-d niwb: done writing bricks, status %d\n", rv);
    return rv;
 }
 
@@ -7060,7 +7060,7 @@ int nifti_read_subregion_image( nifti_image * nim,
   if(znz_isnull(fp))
     {
     if(g_opts.debug > 0)
-      fprintf(stderr,"** nifti_read_subregion_image, failed load_prep\n");
+      Rc_fprintf_stderr("** nifti_read_subregion_image, failed load_prep\n");
     return -1;
     }
 
@@ -7397,7 +7397,7 @@ int * nifti_get_intlist( int nvals , const char * str )
          errno = 0;
          long temp = strtol( str+ipos , &cpt , 10 ) ;
          if( (temp == 0 && errno != 0) || temp <= INT_MIN || temp >= INT_MAX){
-            fprintf(stderr,"** ERROR: list index does not fit in int\n") ;
+            Rc_fprintf_stderr("** ERROR: list index does not fit in int\n") ;
             free(subv) ; return NULL ;
          }
          ibot = (int)temp;
@@ -7460,7 +7460,7 @@ int * nifti_get_intlist( int nvals , const char * str )
          errno = 0;
          long temp = strtol( str+ipos , &cpt , 10 ) ;
          if( (temp == 0 && errno != 0) || temp <= INT_MIN || temp >= INT_MAX){
-            fprintf(stderr,"** ERROR: list index does not fit in int\n") ;
+            Rc_fprintf_stderr("** ERROR: list index does not fit in int\n") ;
             free(subv) ; return NULL ;
          }
          itop = (int)temp;
@@ -7495,7 +7495,7 @@ int * nifti_get_intlist( int nvals , const char * str )
          errno = 0;
          long temp = strtol( str+ipos , &cpt , 10 ) ;
          if( (temp == 0 && errno != 0) || temp <= INT_MIN || temp >= INT_MAX){
-            fprintf(stderr,"** ERROR: list index does not fit in int\n") ;
+            Rc_fprintf_stderr("** ERROR: list index does not fit in int\n") ;
             free(subv) ; return NULL ;
          }
          istep = (int)temp;
