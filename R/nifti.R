@@ -54,8 +54,14 @@ readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL)
 #' using the standard NIfTI C library.
 #' 
 #' @param image An image, in any acceptable form (see \code{\link{asNifti}}).
-#' @param file A character string containing a file name.
-#' @param template An optional template object to derive NIfTI-1 properties
+#' @param file A character string containing a file name. If this has no file
+#'   extension suffix, or ends with \code{"nii"}, the single-file NIfTI format
+#'   is used; if the suffix is \code{"nii.gz"}, the compressed single-file
+#'   format is used; if the suffix is \code{"hdr"} or \code{"img"}, the NIfTI
+#'   pair two-file format is used; if it's \code{"hdr.gz"} or \code{"img.gz"},
+#'   the compressed pair format is used. If any other extension is present it
+#'   will be ignored, and \code{".nii"} appended.
+#' @param template An optional template object to derive NIfTI properties
 #'   from. Passed to \code{\link{asNifti}} if \code{image} is an array.
 #' @param datatype The NIfTI datatype to use when writing the data out. The
 #'   default, \code{"auto"} uses the R type or, for internal images, the
@@ -67,7 +73,8 @@ readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL)
 #'   metadata needs to be stored with high precision. The types available for
 #'   storing the pixel data are the same in both cases.
 #' @param compression The gzip compression level to use, an integer between 0
-#'   (none) and 9 (maximum).
+#'   (none) and 9 (maximum). Ignored if an uncompressed format is implied by
+#'   the requested file name.
 #' @return An invisible, named character vector giving the image and header
 #'   file names written to.
 #' 

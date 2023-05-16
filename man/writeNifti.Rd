@@ -5,16 +5,24 @@
 \alias{writeAnalyze}
 \title{Write a NIfTI or ANALYZE format file}
 \usage{
-writeNifti(image, file, template = NULL, datatype = "auto", version = 1)
+writeNifti(image, file, template = NULL, datatype = "auto", version = 1,
+  compression = 6)
 
-writeAnalyze(image, file, template = NULL, datatype = "auto")
+writeAnalyze(image, file, template = NULL, datatype = "auto",
+  compression = 6)
 }
 \arguments{
 \item{image}{An image, in any acceptable form (see \code{\link{asNifti}}).}
 
-\item{file}{A character string containing a file name.}
+\item{file}{A character string containing a file name. If this has no file
+extension suffix, or ends with \code{"nii"}, the single-file NIfTI format
+is used; if the suffix is \code{"nii.gz"}, the compressed single-file
+format is used; if the suffix is \code{"hdr"} or \code{"img"}, the NIfTI
+pair two-file format is used; if it's \code{"hdr.gz"} or \code{"img.gz"},
+the compressed pair format is used. If any other extension is present it
+will be ignored, and \code{".nii"} appended.}
 
-\item{template}{An optional template object to derive NIfTI-1 properties
+\item{template}{An optional template object to derive NIfTI properties
 from. Passed to \code{\link{asNifti}} if \code{image} is an array.}
 
 \item{datatype}{The NIfTI datatype to use when writing the data out. The
@@ -27,6 +35,10 @@ done to ensure that the coercion maintains precision.}
 use. Version 2 is usually only needed for very large images or where
 metadata needs to be stored with high precision. The types available for
 storing the pixel data are the same in both cases.}
+
+\item{compression}{The gzip compression level to use, an integer between 0
+(none) and 9 (maximum). Ignored if an uncompressed format is implied by
+the requested file name.}
 }
 \value{
 An invisible, named character vector giving the image and header

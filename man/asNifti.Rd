@@ -9,7 +9,8 @@
 \usage{
 asNifti(x, reference = NULL, ...)
 
-\method{asNifti}{default}(x, reference = NULL, datatype = "auto", internal = NA, ...)
+\method{asNifti}{default}(x, reference = NULL, datatype = "auto",
+  internal = NA, ...)
 }
 \arguments{
 \item{x}{Any suitable object (see Details).}
