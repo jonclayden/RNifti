@@ -1818,17 +1818,20 @@ inline std::pair<std::string,std::string> NiftiImage::toFile (const std::string 
     if (filetype >= 0 && filetype <= NIFTI_MAX_FTYPE)
         imageToWrite->nifti_type = filetype;
     
+    const char *path = internal::stringToPath(fileName);
+    
+    // If we're writing a gzipped file (only), append a compression level to the mode string
     std::string mode = "wb";
-    if (compression >= 0 && compression <= 9)
+    if (nifti_is_gzfile(path) && compression >= 0 && compression <= 9)
         mode += std::to_string(compression);
     
 #if RNIFTI_NIFTILIB_VERSION == 1
-    const int status = nifti_set_filenames(imageToWrite, internal::stringToPath(fileName), false, true);
+    const int status = nifti_set_filenames(imageToWrite, path, false, true);
     if (status != 0)
         throw std::runtime_error("Failed to set filenames for NIfTI object");
     nifti_image_write_hdr_img(imageToWrite, 1, mode.c_str());
 #elif RNIFTI_NIFTILIB_VERSION == 2
-    const int status = nifti2_set_filenames(imageToWrite, internal::stringToPath(fileName), false, true);
+    const int status = nifti2_set_filenames(imageToWrite, path, false, true);
     if (status != 0)
         throw std::runtime_error("Failed to set filenames for NIfTI object");
     nifti2_image_write_hdr_img(imageToWrite, 1, mode.c_str());
