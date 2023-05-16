@@ -248,7 +248,11 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
 #' @export niftiHeader dumpNifti
 niftiHeader <- dumpNifti <- function (image = list())
 {
-    .Call("niftiHeader", asNifti(image,internal=TRUE), PACKAGE="RNifti")
+    # Special case to avoid expensively reading image data from file when only metadata is needed
+    if (is.character(image) && length(image) == 1 && !inherits(image,"internalImage"))
+        .Call("niftiHeader", image, PACKAGE="RNifti")
+    else
+        .Call("niftiHeader", asNifti(image,internal=TRUE), PACKAGE="RNifti")
 }
 
 #' @rdname niftiHeader
