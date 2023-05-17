@@ -2,6 +2,23 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.5.0
+
+- The `writeNifti()` and `writeAnalyze()` functions gain a "compression"
+  argument to control the compression level used when writing gzipped images.
+- The viewer will now show 4D images with fourth dimension 3 as vectors if the
+  `RNifti.d4vectors` option is `TRUE`. This is off by default (following the
+  previous behaviour) as it's less explicit than an image with a vector intent.
+- The `niftiHeader()` function will no longer call `asNifti()` on an argument
+  that looks like a path, as this will wastefully read in the pixel data when
+  only the metadata is needed.
+- Support for `MriImage` objects with complex or RGB types has been added.
+- `cfloat` and `cdouble` are now additionally accepted as datatypes for 32-bit
+  and 64-bit floating-point complex types, respectively.
+- The upstream NIfTI libraries have been updated.
+
+===============================================================================
+
 VERSION 1.4.5
 
 - The package now works around the deprecation of `std::iterator` in C++17.
