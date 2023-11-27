@@ -12,8 +12,8 @@
 #define Rc_printf Rprintf
 #define Rc_fprintf_stdout(...) Rprintf(__VA_ARGS__)
 #define Rc_fprintf_stderr(...) REprintf(__VA_ARGS__)
-#define Rc_fputs_stdout(str) Rprintf(str)
-#define Rc_fputs_stderr(str) REprintf(str)
+#define Rc_fputs_stdout(str) Rprintf("%s", str)
+#define Rc_fputs_stderr(str) REprintf("%s", str)
 #define Rc_fputc_stdout(ch) Rprintf("%c", ch)
 #define Rc_fputc_stderr(ch) REprintf("%c", ch)
 

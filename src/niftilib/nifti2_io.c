@@ -6111,7 +6111,7 @@ nifti_image * nifti2_read_ascii_image(znzFile fp, const char *fname, int flen,
    if( slen <= 0 ) slen = nifti_get_filesize(fname);
 
    if( g_opts.debug > 1 )
-      Rc_fprintf_stderr("-d %s: have ASCII NIFTI file of size %d\n",fname,slen);
+      Rc_fprintf_stderr("-d %s: have ASCII NIFTI file of size %d\n",fname,(int)slen);
 
    if( slen > 65530 ) slen = 65530 ;
    sbuf = (char *)calloc(sizeof(char),slen+1) ;
@@ -9278,7 +9278,7 @@ static int rci_read_data(nifti_image * nim, int64_t * pivots, int64_t * prods,
 
       /* make sure things look good here */
       if( *pivots != 0 ){
-         Rc_fprintf_stderr("** NIFTI rciRD: final pivot == %d!\n", *pivots);
+         Rc_fprintf_stderr("** NIFTI rciRD: final pivot == %d!\n", (int)*pivots);
          return -1;
       }
 
@@ -9409,7 +9409,7 @@ static int make_pivot_list(nifti_image *nim, const int64_t dims[], int64_t pivot
    if( g_opts.debug > 2 ){
       Rc_fprintf_stderr("+d pivot list created, pivots :");
       for(dind = 0; dind < len; dind++)
-         Rc_fprintf_stderr(" %lld", pivots[dind]);
+         Rc_fprintf_stderr(" %lld", (long long)pivots[dind]);
       Rc_fprintf_stderr(", prods :");
       for(dind = 0; dind < len; dind++)
          Rc_fprintf_stderr(" %" PRId64 "", prods[dind]);

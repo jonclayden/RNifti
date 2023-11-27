@@ -94,9 +94,7 @@ inline int stringToDatatype (const std::string &datatype)
     
     if (datatypeCodes.count(lowerCaseDatatype) == 0)
     {
-        std::ostringstream message;
-        message << "Datatype \"" << datatype << "\" is not valid";
-        Rf_warning(message.str().c_str());
+        Rf_warning("Datatype \"%s\" is not valid", datatype.c_str());
         return DT_NONE;
     }
     else
@@ -240,16 +238,10 @@ inline void copyIfPresent (const Rcpp::List &list, const std::set<std::string> n
         const Rcpp::RObject object = list[name];
         const int length = Rf_length(object);
         if (length == 0)
-        {
-            std::ostringstream message;
-            message << "Field \"" << name << "\" is empty and will be ignored";
-            Rf_warning(message.str().c_str());
-        }
+            Rf_warning("Field \"%s\" is empty and will be ignored", name.c_str());
         else if (length > 1)
         {
-            std::ostringstream message;
-            message << "Field \"" << name << "\" has " << length << "elements, but only the first will be used";
-            Rf_warning(message.str().c_str());
+            Rf_warning("Field \"%s\" has %d elements, but only the first will be used", name.c_str(), length);
             target = Rcpp::as< std::vector<TargetType> >(object)[0];
         }
         else

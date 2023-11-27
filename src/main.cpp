@@ -41,11 +41,7 @@ BEGIN_RCPP
     const double maxValue = as<double>(_maxValue);
     
     if (pixels * channels != length)
-    {
-        std::ostringstream message;
-        message << "Data length (" << length << ") is not a multiple of the number of channels (" << channels << ")";
-        Rf_error(message.str().c_str());
-    }
+        Rf_error("Data length (%d) is not a multiple of the number of channels (%d)", (int) length, channels);
     
     NumericVector source(_object);
     IntegerVector result(pixels);

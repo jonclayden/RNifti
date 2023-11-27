@@ -4414,11 +4414,11 @@ static int nifti_read_extensions( nifti_image *nim, znzFile fp, int remain )
    if( (posn != sizeof(nifti_1_header)) &&
        (nim->nifti_type != NIFTI_FTYPE_ASCII) )
       Rc_fprintf_stderr("** WARNING: posn not header size (%d, %d)\n",
-              posn, (int)sizeof(nifti_1_header));
+              (int)posn, (int)sizeof(nifti_1_header));
 
    if( g_opts.debug > 2 )
       Rc_fprintf_stderr("-d nre: posn = %d, offset = %d, type = %d, remain = %d\n",
-              posn, nim->iname_offset, nim->nifti_type, remain);
+              (int)posn, nim->iname_offset, nim->nifti_type, remain);
 
    if( remain < 16 ){
       if( g_opts.debug > 2 ){
@@ -7088,7 +7088,7 @@ int nifti_read_subregion_image( nifti_image * nim,
     {
     if(g_opts.debug > 1)
       {
-      Rc_fprintf_stderr("allocation of %d bytes failed\n",total_alloc_size);
+      Rc_fprintf_stderr("allocation of %d bytes failed\n", (int)total_alloc_size);
       }
     znzclose(fp);
     return -1;
