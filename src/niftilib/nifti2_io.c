@@ -637,7 +637,7 @@ nifti_image *nifti2_image_read_bricks(const char * hname, int64_t nbricks,
 
    if( !hname || !NBL ){
       Rc_fprintf_stderr("** nifti_image_read_bricks: bad params (%p,%p)\n",
-              hname, (void *)NBL);
+              (void *)hname, (void *)NBL);
       return NULL;
    }
 
@@ -4030,7 +4030,7 @@ int nifti2_set_filenames( nifti_image * nim, const char * prefix, int check,
 
    if( !nim || !prefix ){
       Rc_fprintf_stderr("** nifti_set_filenames, bad params %p, %p\n",
-              (void *)nim,prefix);
+              (void *)nim, (void *)prefix);
       return -1;
    }
 
@@ -4358,7 +4358,7 @@ int nifti2_set_type_from_names( nifti_image * nim )
 
    if( !nim->fname || !nim->iname ){
       Rc_fprintf_stderr("** NIFTI_STFN: NULL filename(s) fname @ %p, iname @ %p\n",
-              nim->fname, nim->iname);
+              (void *)nim->fname, (void *)nim->iname);
       return -1;
    }
 

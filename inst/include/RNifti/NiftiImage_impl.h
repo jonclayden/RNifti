@@ -123,7 +123,7 @@ inline nifti1_image * convertImageV2to1 (nifti2_image *image)
     nifti1_image *result = (nifti1_image *) calloc(1, sizeof(nifti1_image));
     
 #ifndef NDEBUG
-    Rc_printf("Converting v2 image with pointer %p to v1 image with pointer %p\n", image, result);
+    Rc_printf("Converting v2 image with pointer %p to v1 image with pointer %p\n", (void *) image, (void *) result);
 #endif
     
     // We assume that each block of a given type is stored contiguously like an array - this should be the case, but may not be guaranteed
@@ -179,7 +179,7 @@ inline nifti2_image * convertImageV1to2 (nifti1_image *image)
     nifti2_image *result = (nifti2_image *) calloc(1, sizeof(nifti2_image));
     
 #ifndef NDEBUG
-    Rc_printf("Converting v1 image with pointer %p to v2 image with pointer %p\n", image, result);
+    Rc_printf("Converting v1 image with pointer %p to v2 image with pointer %p\n", (void *) image, (void *) result);
 #endif
     
     std::transform(&image->ndim, &image->ndim + 16, &result->ndim, ElementConverter<int64_t>());
@@ -708,7 +708,7 @@ inline void NiftiImage::acquire (nifti_image * const image)
             (*this->refCount)++;
         
 #ifndef NDEBUG
-        Rc_printf("Acquiring pointer %p (v%d; reference count is %d)\n", this->image, RNIFTI_NIFTILIB_VERSION, *this->refCount);
+        Rc_printf("Acquiring pointer %p (v%d; reference count is %d)\n", (void *) this->image, RNIFTI_NIFTILIB_VERSION, *this->refCount);
 #endif
     }
 }
@@ -721,7 +721,7 @@ inline void NiftiImage::release ()
         {
             (*this->refCount)--;
 #ifndef NDEBUG
-            Rc_printf("Releasing pointer %p (v%d; reference count is %d)\n", this->image, RNIFTI_NIFTILIB_VERSION, *this->refCount);
+            Rc_printf("Releasing pointer %p (v%d; reference count is %d)\n", (void *) this->image, RNIFTI_NIFTILIB_VERSION, *this->refCount);
 #endif
             if (*this->refCount < 1)
             {
@@ -736,7 +736,7 @@ inline void NiftiImage::release ()
             }
         }
         else
-            Rc_printf("Releasing untracked object %p", this->image);
+            Rc_printf("Releasing untracked object %p", (void *) this->image);
     }
 }
 
@@ -1152,7 +1152,7 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
     }
     
 #ifndef NDEBUG
-    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from SEXP)\n", RNIFTI_NIFTILIB_VERSION, this->image);
+    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from SEXP)\n", RNIFTI_NIFTILIB_VERSION, (void *) this->image);
 #endif
 }
 
@@ -1179,7 +1179,7 @@ inline NiftiImage::NiftiImage (const std::vector<dim_t> &dim, const int datatype
 {
     initFromDims(dim, datatype);
 #ifndef NDEBUG
-    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from dims)\n", RNIFTI_NIFTILIB_VERSION, this->image);
+    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from dims)\n", RNIFTI_NIFTILIB_VERSION, (void *) this->image);
 #endif
 }
 
@@ -1188,7 +1188,7 @@ inline NiftiImage::NiftiImage (const std::vector<dim_t> &dim, const std::string 
 {
     initFromDims(dim, internal::stringToDatatype(datatype));
 #ifndef NDEBUG
-    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from dims)\n", RNIFTI_NIFTILIB_VERSION, this->image);
+    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from dims)\n", RNIFTI_NIFTILIB_VERSION, (void *) this->image);
 #endif
 }
 
@@ -1205,7 +1205,7 @@ inline NiftiImage::NiftiImage (const std::string &path, const bool readData)
         throw std::runtime_error("Failed to read image from path " + path);
     
 #ifndef NDEBUG
-    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from string)\n", RNIFTI_NIFTILIB_VERSION, this->image);
+    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from string)\n", RNIFTI_NIFTILIB_VERSION, (void *) this->image);
 #endif
 }
 
@@ -1244,7 +1244,7 @@ inline NiftiImage::NiftiImage (const std::string &path, const std::vector<dim_t>
 #endif
     
 #ifndef NDEBUG
-    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from string and volume vector)\n", RNIFTI_NIFTILIB_VERSION, this->image);
+    Rc_printf("Creating NiftiImage (v%d) with pointer %p (from string and volume vector)\n", RNIFTI_NIFTILIB_VERSION, (void *) this->image);
 #endif
 }
 
