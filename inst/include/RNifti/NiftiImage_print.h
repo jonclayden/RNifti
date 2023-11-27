@@ -28,7 +28,7 @@
 #define Rc_fputs_stderr(str) fputs(str, stderr)
 #define Rc_fputc_stdout(ch) fputc(ch, stdout)
 #define Rc_fputc_stderr(ch) fputc(ch, stderr)
-#define Rf_warning(str) fprintf(stderr, "%s\n", str)
+#define Rf_warning(...) fprintf(stderr, __VA_ARGS__)
 #define Rprintf(...) fprintf(stderr, __VA_ARGS__)
 
 #endif // USING_R
