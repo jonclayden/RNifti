@@ -2,6 +2,13 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.5.1
+
+- Several warnings from recent compilers relating to printf-style format
+  strings have been resolved.
+
+===============================================================================
+
 VERSION 1.5.0
 
 - The `writeNifti()` and `writeAnalyze()` functions gain a "compression"
