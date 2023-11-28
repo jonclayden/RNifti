@@ -6538,7 +6538,7 @@ int nifti_header_version(const char * buf, size_t nbytes){
 
    if( nbytes < sizeof(nifti_1_header) ) {
       if(g_opts.debug > 0)
-         Rc_fprintf_stderr("** %s: nbytes=%zu, too small for test", fname, nbytes);
+         Rc_fprintf_stderr("** %s: nbytes=%u, too small for test", fname, (unsigned)nbytes);
       return -1;
    }
 
