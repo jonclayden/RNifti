@@ -352,7 +352,7 @@ public:
     class Iterator
     {
     private:
-        const NiftiImageData &parent;
+        const NiftiImageData *parent;
         void *ptr;
         size_t step;
         
@@ -371,11 +371,11 @@ public:
          * @param step The increment between elements within the blob, in bytes. If zero, the
          *   default, the width associated with the stored datatype will be used.
         **/
-        Iterator (const NiftiImageData &parent, void *ptr = NULL, const size_t step = 0)
+        Iterator (const NiftiImageData *parent = NULL, void *ptr = NULL, const size_t step = 0)
             : parent(parent)
         {
-            this->ptr = (ptr == NULL ? parent.dataPtr : ptr);
-            this->step = (step == 0 ? parent.handler->size() : step);
+            this->ptr = (ptr == NULL ? parent->dataPtr : ptr);
+            this->step = (step == 0 ? parent->handler->size() : step);
         }
         
         /**
@@ -411,10 +411,10 @@ public:
         bool operator> (const Iterator &other) const { return (ptr > other.ptr); }
         bool operator< (const Iterator &other) const { return (ptr < other.ptr); }
         
-        const Element operator* () const { return Element(parent, ptr); }
-        Element operator* () { return Element(parent, ptr); }
-        const Element operator[] (const size_t i) const { return Element(parent, static_cast<char*>(ptr) + (i * step)); }
-        Element operator[] (const size_t i) { return Element(parent, static_cast<char*>(ptr) + (i * step)); }
+        const Element operator* () const { return Element(*parent, ptr); }
+        Element operator* () { return Element(*parent, ptr); }
+        const Element operator[] (const size_t i) const { return Element(*parent, static_cast<char*>(ptr) + (i * step)); }
+        Element operator[] (const size_t i) { return Element(*parent, static_cast<char*>(ptr) + (i * step)); }
     };
     
     /**
@@ -573,16 +573,16 @@ public:
     NiftiImageData & disown ()       { this->owner = false; return *this; }
     
     /** Obtain a constant iterator corresponding to the start of the blob */
-    const Iterator begin () const { return Iterator(*this); }
+    const Iterator begin () const { return Iterator(this); }
     
     /** Obtain a constant iterator corresponding to the end of the blob */
-    const Iterator end () const { return Iterator(*this, static_cast<char*>(dataPtr) + totalBytes()); }
+    const Iterator end () const { return Iterator(this, static_cast<char*>(dataPtr) + totalBytes()); }
     
     /** Obtain a mutable iterator corresponding to the start of the blob */
-    Iterator begin () { return Iterator(*this); }
+    Iterator begin () { return Iterator(this); }
     
     /** Obtain a mutable iterator corresponding to the end of the blob */
-    Iterator end () { return Iterator(*this, static_cast<char*>(dataPtr) + totalBytes()); }
+    Iterator end () { return Iterator(this, static_cast<char*>(dataPtr) + totalBytes()); }
     
     /**
      * Indexing operator, returning a constant element
