@@ -352,6 +352,8 @@ public:
     class Iterator
     {
     private:
+        // NB: "parent" cannot be a reference because reference members are immutable. That renders
+        // the class non-copy-assignable, which is a requirement for iterators (issue #31)
         const NiftiImageData *parent;
         void *ptr;
         size_t step;
@@ -366,8 +368,9 @@ public:
         
         /**
          * Primary constructor
-         * @param parent A reference to the parent object
-         * @param ptr An opaque pointer to the memory underpinning the iterator
+         * @param parent A pointer to the parent object
+         * @param ptr An opaque pointer to the memory underpinning the iterator. The default,
+         *   \c NULL, corresponds to the start of the parent object's data blob.
          * @param step The increment between elements within the blob, in bytes. If zero, the
          *   default, the width associated with the stored datatype will be used.
         **/
