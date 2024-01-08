@@ -8,19 +8,29 @@ defaults:
 
 jobs:
   # Checks for standalone usage (without R) 
-  standalone-check:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, windows-latest ]
-    
-    runs-on: ${{ matrix.os }}
+  ubuntu-standalone-check:
+    runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v3
     
     - name: Compile standalone programs
       run: cd standalone && make
+    
+    - name: Test standalone programs
+      run: |
+        standalone/nii_info inst/extdata/example.nii.gz
+        standalone/nii2_info inst/extdata/example.nii.gz
+  
+  # Standalone check on Windows
+  windows-standalone-check:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Compile standalone programs
+      run: cd standalone && make CXX=g++
     
     - name: Test standalone programs
       run: |
