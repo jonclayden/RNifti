@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.71])
-AC_INIT([RNifti], [1.4.0], [code@clayden.org])
+AC_INIT([RNifti], [1.6.0], [code@clayden.org])
 
 # Get compiler flags from R
 : ${R_HOME=`R RHOME`}
@@ -18,15 +18,14 @@ CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
 LDFLAGS=`"${R_HOME}/bin/R" CMD config LDFLAGS`
 
 # Checks for libraries.
-ZLIB_FLAGS="-Izlib"
-ZLIB_OBJECTS=`ls -1 src/zlib/*.c | sed 's/^src\///' | sed 's/\\.c$/\\.o/' | tr '\n' ' '`
-AC_SEARCH_LIBS([inflate], [z], [
-    ZLIB_FLAGS=""
-    ZLIB_OBJECTS=""
+AC_SEARCH_LIBS([inflate], [z], [], [
+    AC_CONFIG_COMMANDS([zlib], [cd src/zlib && ./configure --static])
+    ZLIB_OBJECT="zlib/libz.a"
+    ZLIB_LIBPATH="-Lzlib"
 ])
 
-AC_SUBST(ZLIB_FLAGS)
-AC_SUBST(ZLIB_OBJECTS)
+AC_SUBST(ZLIB_OBJECT)
+AC_SUBST(ZLIB_LIBPATH)
 
 AC_CONFIG_FILES([src/Makevars])
 AC_OUTPUT

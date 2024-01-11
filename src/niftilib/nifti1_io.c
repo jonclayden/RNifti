@@ -4,6 +4,7 @@
 #include "niftilib/nifti1_io_version.h"
 
 #include <errno.h>
+#include <limits.h>
 
 /*****===================================================================*****/
 /*****     Sample functions to deal with NIFTI-1 and ANALYZE files       *****/

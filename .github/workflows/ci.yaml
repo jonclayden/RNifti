@@ -15,7 +15,7 @@ jobs:
     - uses: actions/checkout@v3
     
     - name: Compile standalone programs
-      run: cd standalone && make
+      run: cd standalone && make -f nii_info.make
     
     - name: Test standalone programs
       run: |

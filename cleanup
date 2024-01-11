@@ -1,3 +1,4 @@
 #!/bin/sh
 
-rm -f src/Makevars src/*.o src/niftilib/*.o src/zlib/*.o src/znzlib/*.o
+rm -f src/Makevars src/*.o src/niftilib/*.o src/znzlib/*.o inst/include/zlib.h inst/include/zconf.h
+rm -f src/zlib/*.o src/zlib/libz.*
