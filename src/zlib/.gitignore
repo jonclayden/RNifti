@@ -1,0 +1,12 @@
+*.a
+*.o
+*.dylib
+
+*.gcda
+*.gcno
+*.gcov
+
+/Makefile
+/zconf.h
+/zlib.pc
+/configure.log
