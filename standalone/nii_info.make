@@ -1,5 +1,5 @@
 CPPFLAGS += -DNDEBUG -DHAVE_ZLIB
-CFLAGS += -I.
+CFLAGS += -I. -Izlib
 CXXFLAGS += -I.
 LIBS += -lz -Lzlib
 
