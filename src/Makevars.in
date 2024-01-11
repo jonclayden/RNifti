@@ -1,5 +1,11 @@
-PKG_CPPFLAGS = -DNDEBUG -DHAVE_ZLIB -DUSING_R -DRNIFTI_NIFTILIB_DEDUPLICATE -I../inst/include @ZLIB_FLAGS@
-PKG_LIBS = @LIBS@
+PKG_CPPFLAGS = -DNDEBUG -DHAVE_ZLIB -DUSING_R -DRNIFTI_NIFTILIB_DEDUPLICATE -I../inst/include
+PKG_LIBS = @LIBS@ @ZLIB_LIBPATH@
 
 NIFTI_OBJECTS = znzlib/znzlib.o niftilib/nifti1_io.o niftilib/nifti2_io.o
-OBJECTS = main.o zzz.o @ZLIB_OBJECTS@ $(NIFTI_OBJECTS)
+OBJECTS = @ZLIB_OBJECT@ main.o zzz.o $(NIFTI_OBJECTS)
+
+$(SHLIB): $(OBJECTS)
+
+zlib/libz.a:
+	cd zlib && $(MAKE) libz.a CC="$(CC)" CFLAGS="$(CFLAGS) $(CPICFLAGS)"
+	cp zlib/zlib.h zlib/zconf.h ../inst/include/
