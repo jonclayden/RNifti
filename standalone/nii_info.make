@@ -1,24 +1,25 @@
 CPPFLAGS += -DNDEBUG -DHAVE_ZLIB
 CFLAGS += -I.
 CXXFLAGS += -I.
+LIBS += -lz -Lzlib
 
 NIFTILIB2_CPPFLAGS = -DRNIFTI_NIFTILIB_VERSION=2 -DNO_REMAP_NIFTI2_FUNCTIONS
 
 NIFTILIB1_OBJECTS = niftilib/nifti1_io.o znzlib/znzlib.o
 NIFTILIB2_OBJECTS = niftilib/nifti2_io.o znzlib/znzlib.o
 
-all: nii_info nii2_info
+all: zlib/libz.a nii_info nii2_info
 
 zlib/libz.a:
 	rm -rf zlib
 	mkdir zlib && cd zlib && ln -s ../../src/zlib/* ../../inst/include/zlib/* .
-	cd zlib && ./configure --static && make libz.a
+	cd zlib && ./configure --static && $(MAKE) libz.a CC="$(CC)"
 
-nii_info: zlib/libz.a nii_info.cpp $(NIFTILIB1_OBJECTS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+nii_info: nii_info.cpp $(NIFTILIB1_OBJECTS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^
 
-nii2_info: zlib/libz.a nii_info.cpp $(NIFTILIB2_OBJECTS)
-	$(CXX) $(CPPFLAGS) $(NIFTILIB2_CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+nii2_info: nii_info.cpp $(NIFTILIB2_OBJECTS)
+	$(CXX) $(CPPFLAGS) $(NIFTILIB2_CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^
 
 clean:
 	rm -rf $(NIFTILIB1_OBJECTS) $(NIFTILIB2_OBJECTS) zlib nii_info nii2_info
