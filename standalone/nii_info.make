@@ -16,10 +16,10 @@ zlib/libz.a:
 	cd zlib && ./configure --static && $(MAKE) libz.a CC="$(CC)"
 
 nii_info: nii_info.cpp $(NIFTILIB1_OBJECTS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $(LDFLAGS) $(LIBS) $^
 
 nii2_info: nii_info.cpp $(NIFTILIB2_OBJECTS)
-	$(CXX) $(CPPFLAGS) $(NIFTILIB2_CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) $(LIBS) -o $@ $^
+	$(CXX) $(CPPFLAGS) $(NIFTILIB2_CPPFLAGS) $(CXXFLAGS) -o $@ $(LDFLAGS) $(LIBS) $^
 
 clean:
 	rm -rf $(NIFTILIB1_OBJECTS) $(NIFTILIB2_OBJECTS) zlib nii_info nii2_info
