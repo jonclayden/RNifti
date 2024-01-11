@@ -12,7 +12,7 @@ all: zlib/libz.a nii_info nii2_info
 
 zlib/libz.a:
 	rm -rf zlib
-	mkdir zlib && cd zlib && ln -s ../../src/zlib/* ../../inst/include/zlib/* .
+	mkdir zlib && cd zlib && ln -s ../../src/zlib/* .
 	cd zlib && ./configure --static && $(MAKE) libz.a CC="$(CC)"
 
 nii_info: nii_info.cpp $(NIFTILIB1_OBJECTS)
