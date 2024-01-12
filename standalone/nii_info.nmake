@@ -4,7 +4,6 @@ LD = link
 
 CFLAGS = /I. /Izlib /DNDEBUG /DHAVE_ZLIB
 CXXFLAGS = /I. /DNDEBUG /DHAVE_ZLIB
-LIBS += -lz -Lzlib
 
 NIFTILIB2_CPPFLAGS = /DRNIFTI_NIFTILIB_VERSION=2 /DNO_REMAP_NIFTI2_FUNCTIONS
 
@@ -13,7 +12,7 @@ NIFTILIB2_OBJECTS = niftilib\nifti2_io.obj znzlib\znzlib.obj
 
 all: zlib\zlib.lib nii_info nii2_info
 
-zlib\libz.lib:
+zlib\zlib.lib:
 	rd zlib -Recurse
 	md zlib; cd zlib; copy ..\..\src\zlib\* . -Recurse
 	cd zlib; $(MAKE) zlib.lib
@@ -38,13 +37,13 @@ nii_info.obj: nii_info.cpp
 	$(CXX) $(CXXFLAGS) /o $@ $<
 
 nii_info: nii_info.obj $(NIFTILIB1_OBJECTS)
-	$(LD) $(LDFLAGS) $< zlib\libz.lib
+	$(LD) $(LDFLAGS) $< zlib\zlib.lib
 
 nii2_info.obj: nii_info.cpp
 	$(CXX) $(CXXFLAGS) $(NIFTILIB2_CPPFLAGS) /o $@ $<
 
 nii2_info: nii2_info.obj $(NIFTILIB2_OBJECTS)
-	$(LD) $(LDFLAGS) $< zlib\libz.lib
+	$(LD) $(LDFLAGS) $< zlib\zlib.lib
 
 clean:
 	del $(NIFTILIB1_OBJECTS) $(NIFTILIB2_OBJECTS) zlib nii_info nii2_info -Recurse -Force
