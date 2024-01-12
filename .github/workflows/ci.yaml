@@ -29,6 +29,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
+    # Set up Developer Command Prompt to see MSVC commands
+    - uses: ilammy/msvc-dev-cmd@v1
+    
     - name: Compile standalone programs
       shell: pwsh
       run: cd standalone; nmake /f nii_info.nmake
