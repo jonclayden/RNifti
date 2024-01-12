@@ -30,9 +30,11 @@ jobs:
     - uses: actions/checkout@v3
     
     - name: Compile standalone programs
-      run: cd standalone && make CXX=g++
+      shell: pwsh
+      run: cd standalone; nmake /f nii_info.nmake
     
     - name: Test standalone programs
+      shell: pwsh
       run: |
         standalone/nii_info inst/extdata/example.nii.gz
         standalone/nii2_info inst/extdata/example.nii.gz

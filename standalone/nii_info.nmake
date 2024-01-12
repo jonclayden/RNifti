@@ -1,0 +1,50 @@
+CC = cl
+CXX = cl
+LD = link
+
+CFLAGS = /I. /Izlib /DNDEBUG /DHAVE_ZLIB
+CXXFLAGS = /I. /DNDEBUG /DHAVE_ZLIB
+LIBS += -lz -Lzlib
+
+NIFTILIB2_CPPFLAGS = /DRNIFTI_NIFTILIB_VERSION=2 /DNO_REMAP_NIFTI2_FUNCTIONS
+
+NIFTILIB1_OBJECTS = niftilib\nifti1_io.obj znzlib\znzlib.obj
+NIFTILIB2_OBJECTS = niftilib\nifti2_io.obj znzlib\znzlib.obj
+
+all: zlib\zlib.lib nii_info nii2_info
+
+zlib\libz.lib:
+	rd zlib -Recurse
+	md zlib; cd zlib; copy ..\..\src\zlib\* . -Recurse
+	cd zlib; $(MAKE) zlib.lib
+
+# niftilib\nifti1_io.obj: niftilib\nifti1_io.c
+# niftilib\nifti2_io.obj: niftilib\nifti2_io.c
+# znzlib\znzlib.obj: znzlib\znzlib.c
+
+niftilib\nifti1_io.c:
+	md niftilib
+	copy ..\src\niftilib\nifti1_io.c niftilib\
+
+niftilib\nifti2_io.c:
+	md niftilib
+	copy ..\src\niftilib\nifti2_io.c niftilib\
+
+znzlib\znzlib.c:
+	md znzlib
+	copy ..\src\znzlib\znzlib.c znzlib\
+
+nii_info.obj: nii_info.cpp
+	$(CXX) $(CXXFLAGS) /o $@ $<
+
+nii_info: nii_info.obj $(NIFTILIB1_OBJECTS)
+	$(LD) $(LDFLAGS) $< zlib\libz.lib
+
+nii2_info.obj: nii_info.cpp
+	$(CXX) $(CXXFLAGS) $(NIFTILIB2_CPPFLAGS) /o $@ $<
+
+nii2_info: nii2_info.obj $(NIFTILIB2_OBJECTS)
+	$(LD) $(LDFLAGS) $< zlib\libz.lib
+
+clean:
+	del $(NIFTILIB1_OBJECTS) $(NIFTILIB2_OBJECTS) zlib nii_info nii2_info -Recurse -Force
