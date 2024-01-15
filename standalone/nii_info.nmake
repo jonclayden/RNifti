@@ -1,49 +1,38 @@
 CC = cl
 CXX = cl
-LD = link
 
-CFLAGS = /I. /Izlib /DNDEBUG /DHAVE_ZLIB
-CXXFLAGS = /I. /DNDEBUG /DHAVE_ZLIB
+CPPFLAGS = /DNDEBUG /DHAVE_ZLIB
+CFLAGS = /I. /Izlib /I..\inst\include $(CPPFLAGS) /MD
+CXXFLAGS = /I. /Izlib /I..\inst\include $(CPPFLAGS) /MD /EHsc
 
-NIFTILIB2_CPPFLAGS = /DRNIFTI_NIFTILIB_VERSION=2 /DNO_REMAP_NIFTI2_FUNCTIONS
+NIFTILIB2_CPPFLAGS = /DRNIFTI_NIFTILIB_VERSION=2
 
-NIFTILIB1_OBJECTS = niftilib\nifti1_io.obj znzlib\znzlib.obj
-NIFTILIB2_OBJECTS = niftilib\nifti2_io.obj znzlib\znzlib.obj
-
-all: zlib\zlib.lib nii_info nii2_info
+all: nii_info.exe nii2_info.exe
 
 zlib\zlib.lib:
 	if exist zlib rd zlib /s /q
-	md zlib && cd zlib && xcopy ..\..\src\zlib\* . /s
+	md zlib && cd zlib && xcopy ..\..\src\zlib\* . /s /q
 	cd zlib && $(MAKE) /f win32\Makefile.msc zlib.lib
-
-# niftilib\nifti1_io.obj: niftilib\nifti1_io.c
-# niftilib\nifti2_io.obj: niftilib\nifti2_io.c
-# znzlib\znzlib.obj: znzlib\znzlib.c
 
 niftilib\nifti1_io.c:
 	if not exist niftilib md niftilib
-	copy ..\src\niftilib\nifti1_io.c niftilib\
+	copy ..\src\niftilib\* niftilib
+	copy ..\inst\include\niftilib\* niftilib
 
 niftilib\nifti2_io.c:
 	if not exist niftilib md niftilib
-	copy ..\src\niftilib\nifti2_io.c niftilib\
+	copy ..\src\niftilib\* niftilib
+	copy ..\inst\include\niftilib\* niftilib
 
 znzlib\znzlib.c:
 	if not exist znzlib md znzlib
-	copy ..\src\znzlib\znzlib.c znzlib\
+	copy ..\src\znzlib\* znzlib\
 
-nii_info.obj: nii_info.cpp
-	$(CXX) $(CXXFLAGS) /o $@ $<
+nii_info.exe: nii_info.cpp niftilib\nifti1_io.c znzlib\znzlib.c zlib\zlib.lib
+	$(CXX) $(CXXFLAGS) /Fe:$@ $**
 
-nii_info: nii_info.obj $(NIFTILIB1_OBJECTS)
-	$(LD) $(LDFLAGS) $< zlib\zlib.lib
-
-nii2_info.obj: nii_info.cpp
-	$(CXX) $(CXXFLAGS) $(NIFTILIB2_CPPFLAGS) /o $@ $<
-
-nii2_info: nii2_info.obj $(NIFTILIB2_OBJECTS)
-	$(LD) $(LDFLAGS) $< zlib\zlib.lib
+nii2_info.exe: nii_info.cpp niftilib\nifti2_io.c znzlib\znzlib.c zlib\zlib.lib
+	$(CXX) $(CXXFLAGS) $(NIFTILIB2_CPPFLAGS) /Fe:$@ $**
 
 clean:
-	del $(NIFTILIB1_OBJECTS) $(NIFTILIB2_OBJECTS) zlib niftilib znzlib nii_info nii2_info /s /q
+	del *.obj *.exe zlib znzlib niftilib /s /q
