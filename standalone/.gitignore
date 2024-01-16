@@ -1,4 +1,6 @@
 /zlib
+/znzlib
+/niftilib
 /nii_info
 /nii2_info
 *.o
