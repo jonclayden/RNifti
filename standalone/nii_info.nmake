@@ -12,7 +12,7 @@ all: fetch nii_info.exe nii2_info.exe
 fetch:
 	md zlib && cd zlib && xcopy ..\..\src\zlib\* . /s /q
 	if not exist znzlib md znzlib
-	copy ..\src\znzlib\* znzlib\
+	copy ..\src\znzlib\* znzlib
 	if not exist niftilib md niftilib
 	copy ..\src\niftilib\* niftilib
 	copy ..\inst\include\niftilib\* niftilib
