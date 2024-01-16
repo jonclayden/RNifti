@@ -7,26 +7,21 @@ CXXFLAGS = /I. /Izlib /I..\inst\include $(CPPFLAGS) /MD /EHsc
 
 NIFTILIB2_CPPFLAGS = /DRNIFTI_NIFTILIB_VERSION=2
 
-all: nii_info.exe nii2_info.exe
+all: fetch nii_info.exe nii2_info.exe
 
-zlib\zlib.lib:
-	if exist zlib rd zlib /s /q
+fetch:
 	md zlib && cd zlib && xcopy ..\..\src\zlib\* . /s /q
-	cd zlib && $(MAKE) /f win32\Makefile.msc zlib.lib
-
-niftilib\nifti1_io.c:
-	if not exist niftilib md niftilib
-	copy ..\src\niftilib\* niftilib
-	copy ..\inst\include\niftilib\* niftilib
-
-niftilib\nifti2_io.c:
-	if not exist niftilib md niftilib
-	copy ..\src\niftilib\* niftilib
-	copy ..\inst\include\niftilib\* niftilib
-
-znzlib\znzlib.c:
 	if not exist znzlib md znzlib
 	copy ..\src\znzlib\* znzlib\
+	if not exist niftilib md niftilib
+	copy ..\src\niftilib\* niftilib
+	copy ..\inst\include\niftilib\* niftilib
+	if not exist RNifti md RNifti
+	copy ..\inst\include\RNifti\* RNifti
+	copy ..\inst\include\RNifti.h .
+
+zlib\zlib.lib:
+	cd zlib && $(MAKE) /f win32\Makefile.msc zlib.lib
 
 nii_info.exe: nii_info.cpp niftilib\nifti1_io.c znzlib\znzlib.c zlib\zlib.lib
 	$(CXX) $(CXXFLAGS) /Fe:$@ $**
@@ -35,4 +30,4 @@ nii2_info.exe: nii_info.cpp niftilib\nifti2_io.c znzlib\znzlib.c zlib\zlib.lib
 	$(CXX) $(CXXFLAGS) $(NIFTILIB2_CPPFLAGS) /Fe:$@ $**
 
 clean:
-	del *.obj *.exe zlib znzlib niftilib /s /q
+	del *.obj *.exe zlib znzlib niftilib RNifti.h RNifti /s /q
