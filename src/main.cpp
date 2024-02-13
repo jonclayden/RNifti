@@ -249,7 +249,36 @@ END_RCPP
 }
 
 template <typename Header>
-static List niftiHeaderToList (const Header &header)
+static void insertUnusedFields (const Header &header, List &result);
+
+template <>
+void insertUnusedFields (const nifti_1_header &header, List &result)
+{
+    // For NIfTI-1 the unused fields are in two blocks. We insert them in the
+    // logical places for convenience
+    List firstBlock, secondBlock;
+    
+    firstBlock["data_type"] = std::string(header.data_type, 10);
+    firstBlock["db_name"] = std::string(header.db_name, 18);
+    firstBlock["extents"] = header.extents;
+    firstBlock["session_error"] = header.session_error;
+    firstBlock["regular"] = header.regular;
+    result.insert(result.begin() + 1, firstBlock);
+    
+    secondBlock["glmax"] = header.glmax;
+    secondBlock["glmin"] = header.glmin;
+    result.insert(result.begin() + 26, secondBlock);
+}
+
+template <>
+void insertUnusedFields (const nifti_2_header &header, List &result)
+{
+    // For NIfTI-2 the only unused field is at the end, which is simple
+    result["unused_str"] = std::string(header.unused_str, 15);
+}
+
+template <typename Header>
+static List niftiHeaderToList (const Header &header, const bool includeUnused = false)
 {
     List result;
     
@@ -296,6 +325,9 @@ static List niftiHeaderToList (const Header &header)
     result["intent_name"] = std::string(header.intent_name, 16);
     result["magic"] = std::string(header.magic, 4);
     
+    if (includeUnused)
+        insertUnusedFields(header, result);
+    
     List strings;
     strings["datatype"] = nifti_datatype_string(header.datatype);
     strings["intent_code"] = nifti_intent_string(header.intent_code);
@@ -309,7 +341,7 @@ static List niftiHeaderToList (const Header &header)
     return result;
 }
 
-RcppExport SEXP niftiHeader (SEXP _image)
+RcppExport SEXP niftiHeader (SEXP _image, SEXP _unused)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, false, true);
@@ -323,13 +355,13 @@ BEGIN_RCPP
     {
         nifti_1_header header;
         nifti_convert_nim2n1hdr(image, &header);
-        result = niftiHeaderToList(header);
+        result = niftiHeaderToList(header, as<bool>(_unused));
     }
     else if (version == 2)
     {
         nifti_2_header header;
         nifti_convert_nim2n2hdr(image, &header);
-        result = niftiHeaderToList(header);
+        result = niftiHeaderToList(header, as<bool>(_unused));
     }
     
     RNifti::internal::addAttributes(result, image, false, false);
@@ -832,7 +864,7 @@ R_CallMethodDef callMethods[] = {
     { "readNifti",      (DL_FUNC) &readNifti,       3 },
     { "readNiftiBlob",  (DL_FUNC) &readNiftiBlob,   6 },
     { "writeNifti",     (DL_FUNC) &writeNifti,      5 },
-    { "niftiHeader",    (DL_FUNC) &niftiHeader,     1 },
+    { "niftiHeader",    (DL_FUNC) &niftiHeader,     2 },
     { "analyzeHeader",  (DL_FUNC) &analyzeHeader,   1 },
     { "getXform",       (DL_FUNC) &getXform,        2 },
     { "setXform",       (DL_FUNC) &setXform,        3 },

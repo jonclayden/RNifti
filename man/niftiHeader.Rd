@@ -8,7 +8,7 @@
 \alias{print.analyzeHeader}
 \title{Dump or construct a raw NIfTI or ANALYZE header}
 \usage{
-niftiHeader(image = list())
+niftiHeader(image = list(), unused = FALSE)
 
 analyzeHeader(image = list())
 
@@ -20,6 +20,10 @@ analyzeHeader(image = list())
 \item{image}{An image, in any acceptable form (see \code{\link{asNifti}}).
 A list containing partial header information is acceptable, including an
 empty list, which returns defaults for every field.}
+
+\item{unused}{Logical value. If \code{TRUE}, legacy ANALYZE and padding
+fields that are unused by the relevant NIfTI standard are included in the
+return value. These are occasionally used by software packages.}
 
 \item{x}{A \code{"niftiHeader"} object.}
 

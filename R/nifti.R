@@ -217,6 +217,9 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
 #' @param image An image, in any acceptable form (see \code{\link{asNifti}}).
 #'   A list containing partial header information is acceptable, including an
 #'   empty list, which returns defaults for every field.
+#' @param unused Logical value. If \code{TRUE}, legacy ANALYZE and padding
+#'   fields that are unused by the relevant NIfTI standard are included in the
+#'   return value. These are occasionally used by software packages.
 #' @param x A \code{"niftiHeader"} object.
 #' @param ... Ignored.
 #' @return For \code{niftiHeader}, a list of class \code{"niftiHeader"}, with
@@ -246,13 +249,13 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
 #' @references The NIfTI-1 standard (\url{https://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @aliases dumpNifti
 #' @export niftiHeader dumpNifti
-niftiHeader <- dumpNifti <- function (image = list())
+niftiHeader <- dumpNifti <- function (image = list(), unused = FALSE)
 {
     # Special case to avoid expensively reading image data from file when only metadata is needed
     if (is.character(image) && length(image) == 1 && !inherits(image,"internalImage"))
-        .Call("niftiHeader", image, PACKAGE="RNifti")
+        .Call("niftiHeader", image, unused, PACKAGE="RNifti")
     else
-        .Call("niftiHeader", asNifti(image,internal=TRUE), PACKAGE="RNifti")
+        .Call("niftiHeader", asNifti(image,internal=TRUE), unused, PACKAGE="RNifti")
 }
 
 #' @rdname niftiHeader
