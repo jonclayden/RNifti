@@ -256,18 +256,43 @@ void insertUnusedFields (const nifti_1_header &header, List &result)
 {
     // For NIfTI-1 the unused fields are in two blocks. We insert them in the
     // logical places for convenience
-    List firstBlock, secondBlock;
+    const R_xlen_t n = result.size() + 7;
+    List elements(n);
+    CharacterVector names(n);
     
-    firstBlock["data_type"] = std::string(header.data_type, 10);
-    firstBlock["db_name"] = std::string(header.db_name, 18);
-    firstBlock["extents"] = header.extents;
-    firstBlock["session_error"] = header.session_error;
-    firstBlock["regular"] = header.regular;
-    result.insert(result.begin() + 1, firstBlock);
+    elements[0] = header.sizeof_hdr;
+    names[0] = "sizeof_hdr";
+    elements[1] = std::string(header.data_type, 10);
+    names[1] = "data_type";
+    elements[2] = std::string(header.db_name, 18);
+    names[2] = "db_name";
+    elements[3] = header.extents;
+    names[3] = "extents";
+    elements[4] = header.session_error;
+    names[4] = "session_error";
+    elements[5] = header.regular;
+    names[5] = "regular";
     
-    secondBlock["glmax"] = header.glmax;
-    secondBlock["glmin"] = header.glmin;
-    result.insert(result.begin() + 26, secondBlock);
+    CharacterVector subsetNames = result.names();
+    for (R_xlen_t i=1; i<21; i++)
+    {
+        elements[i+5] = result[i];
+        names[i+5] = subsetNames[i];
+    }
+    
+    elements[26] = header.glmax;
+    names[26] = "glmax";
+    elements[27] = header.glmin;
+    names[27] = "glmin";
+    
+    for (R_xlen_t i=21; i<result.size(); i++)
+    {
+        elements[i+7] = result[i];
+        names[i+7] = subsetNames[i];
+    }
+    
+    elements.names() = names;
+    result = elements;
 }
 
 template <>
