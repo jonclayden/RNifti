@@ -369,27 +369,54 @@ static List niftiHeaderToList (const Header &header, const bool includeUnused = 
 RcppExport SEXP niftiHeader (SEXP _image, SEXP _unused)
 {
 BEGIN_RCPP
-    const NiftiImage image(_image, false, true);
-    if (image.isNull())
-        return R_NilValue;
+    RObject object(_image);
+    int version;
     
-    const int version = (image->nifti_type == NIFTI_FTYPE_NIFTI2_1 || image->nifti_type == NIFTI_FTYPE_NIFTI2_2) ? 2 : 1;
+    union {
+        nifti_1_header n1;
+        nifti_2_header n2;
+    } header;
+    
+    // Special-case treatment of strings, as otherwise unused fields are lost
+    if (Rf_isString(object) && !object.hasAttribute(".nifti_image_ptr"))
+    {
+        const std::string path = as<std::string>(object);
+        void *ptr = nifti2_read_header(RNifti::internal::stringToPath(path), &version, true);
+        if (ptr == NULL)
+            return R_NilValue;
+        else if (version == 1)
+            header.n1 = *((nifti_1_header *) ptr);
+        else if (version == 2)
+            header.n2 = *((nifti_2_header *) ptr);
+        else
+            Rf_error("File is not in NIfTI-1 or NIfTI-2 format");
+        free(ptr);
+    }
+    else
+    {
+        const NiftiImage image(_image, false, true);
+        if (image.isNull())
+            return R_NilValue;
+        
+        version = (image->nifti_type == NIFTI_FTYPE_NIFTI2_1 || image->nifti_type == NIFTI_FTYPE_NIFTI2_2) ? 2 : 1;
+        if (version == 1)
+            nifti_convert_nim2n1hdr(image, &header.n1);
+        else
+            nifti_convert_nim2n2hdr(image, &header.n2);
+    }
+    
     List result;
-    
     if (version == 1)
     {
-        nifti_1_header header;
-        nifti_convert_nim2n1hdr(image, &header);
-        result = niftiHeaderToList(header, as<bool>(_unused));
+        result = niftiHeaderToList(header.n1, as<bool>(_unused));
+        RNifti::internal::addAttributes(result, header.n1, false, false);
     }
     else if (version == 2)
     {
-        nifti_2_header header;
-        nifti_convert_nim2n2hdr(image, &header);
-        result = niftiHeaderToList(header, as<bool>(_unused));
+        result = niftiHeaderToList(header.n2, as<bool>(_unused));
+        RNifti::internal::addAttributes(result, header.n2, false, false);
     }
     
-    RNifti::internal::addAttributes(result, image, false, false);
     result.attr("version") = version;
     
     return result;
