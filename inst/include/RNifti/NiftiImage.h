@@ -1423,6 +1423,38 @@ public:
     }
     
     /**
+     * Initialise using a NIfTI-1 header
+     * @param header A reference to a NIfTI-1 header struct
+    **/
+    NiftiImage (const nifti_1_header &header)
+        : image(NULL), refCount(NULL)
+    {
+#if RNIFTI_NIFTILIB_VERSION == 1
+        acquire(nifti_convert_nhdr2nim(header, NULL));
+#elif RNIFTI_NIFTILIB_VERSION == 2
+        acquire(nifti_convert_n1hdr2nim(header, NULL));
+#endif
+#ifndef NDEBUG
+        Rc_printf("Creating NiftiImage (v%d) with pointer %p (from header)\n", RNIFTI_NIFTILIB_VERSION, (void *) this->image);
+#endif
+    }
+    
+#if RNIFTI_NIFTILIB_VERSION == 2
+    /**
+     * Initialise using a NIfTI-2 header
+     * @param header A reference to a NIfTI-2 header struct
+    **/
+    NiftiImage (const nifti_2_header &header)
+        : image(NULL), refCount(NULL)
+    {
+        acquire(nifti_convert_n2hdr2nim(header, NULL));
+#ifndef NDEBUG
+        Rc_printf("Creating NiftiImage (v%d) with pointer %p (from header)\n", RNIFTI_NIFTILIB_VERSION, (void *) this->image);
+#endif
+    }
+#endif
+    
+    /**
      * Initialise from basic metadata, allocating and zeroing pixel data
      * @param dim A vector of image dimensions
      * @param datatype A datatype code for the image data
