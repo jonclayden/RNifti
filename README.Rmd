@@ -2,7 +2,7 @@
 knitr::opts_chunk$set(collapse=TRUE, fig.path="tools/figures/", dpi=150)
 ```
 
-[![CRAN version](http://www.r-pkg.org/badges/version/RNifti)](https://cran.r-project.org/package=RNifti) [![CI](https://github.com/jonclayden/RNifti/actions/workflows/ci.yaml/badge.svg)](https://github.com/jonclayden/RNifti/actions/workflows/ci.yaml) [![Coverage Status](https://coveralls.io/repos/github/jonclayden/RNifti/badge.svg?branch=master)](https://coveralls.io/github/jonclayden/RNifti?branch=master)
+[![CRAN version](http://www.r-pkg.org/badges/version/RNifti)](https://cran.r-project.org/package=RNifti) [![CI](https://github.com/jonclayden/RNifti/actions/workflows/ci.yaml/badge.svg)](https://github.com/jonclayden/RNifti/actions/workflows/ci.yaml) [![codecov](https://codecov.io/gh/jonclayden/RNifti/graph/badge.svg?token=WTwyfvbbfL)](https://app.codecov.io/gh/jonclayden/RNifti) [![Dependencies](https://tinyverse.netlify.com/badge/RNifti)](https://tinyverse.netlify.app)
 
 # RNifti: Fast R and C++ Access to NIfTI Images
 
