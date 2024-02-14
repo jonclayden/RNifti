@@ -48,6 +48,9 @@ test_that("NIfTI files can be read and written", {
     
     expect_output(print(niftiHeader(image)), "NIfTI-1 header")
     expect_equal(image$bitpix, 32L)
+    expect_null(image$glmax)
+    expect_equal(niftiHeader(imagePath,unused=TRUE)$glmax, 0L)
+    expect_equal(analyzeHeader(imagePath)$datatype, 4L)
     writeNifti(image, tempPath, datatype="short")
     expect_equal(niftiHeader(tempPath)$bitpix, 16L)
     unlink(tempPath)
