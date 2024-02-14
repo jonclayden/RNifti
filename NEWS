@@ -2,6 +2,38 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.6.0
+
+R interface
+
+- The `niftiHeader()` function gains an "unused" argument. If `TRUE`, the
+  function's return value includes those legacy ANALYZE-7.5 fields that are
+  formally unused by the NIfTI-1 standard (or the last few bytes of a NIfTI-2
+  header). These fields cannot be set, however, as the `niftilib` I/O functions
+  discard them, and the core `nifti_image` structure does not represent them.
+  They also cannot be accessed with the `$` operator shorthand. The option is
+  therefore only useful to inspect file headers created by other software.
+
+API changes
+
+- The `NiftiImage` class now has constructors taking a NIfTI header structure.
+
+Other changes
+
+- The `NiftiImageData::Iterator` inner class now holds a pointer, not a
+  reference, to its parent. This doesn't really change the API, but ensures
+  that iterator objects are mutable, which is formally required by the C++
+  standard. (Prompted by Timothy Anderson, issue #31.)
+- There is now support for standalone use on Windows with the Visual C++
+  toolchain, including an `nmake`-compatible makefile, and this is now tested
+  as part of package CI. The package also no longer includes symlinks, for
+  better portability. (Prompted by Timothy Anderson, issue #31.)
+- The bundled `zlib` is now version 1.3. The included `zlib` headers are no
+  longer exposed to client packages if the system `zlib` is used for linkage,
+  as the two may be incompatible.
+
+===============================================================================
+
 VERSION 1.5.1
 
 - Several warnings from recent compilers relating to printf-style format
