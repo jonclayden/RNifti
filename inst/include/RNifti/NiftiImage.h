@@ -330,7 +330,9 @@ public:
         operator Rcomplex() const
         {
             const complex128_t value = parent.handler->getComplex(ptr);
-            Rcomplex rValue = { value.real(), value.imag() };
+            Rcomplex rValue;
+            rValue.r = value.real();
+            rValue.i = value.imag();
             if (parent.isScaled())
             {
                 rValue.r = rValue.r * parent.slope + parent.intercept;
