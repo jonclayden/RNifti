@@ -17,7 +17,7 @@ Including the main `RNifti` header will in turn include the appropriate `niftili
 #include "RNifti.h"
 ```
 
-This provides access to the `niftilib` C functions, which mostly handle C-style `nifti_image` `struct`s, but in C++ code will also provide access to the `NiftiImage` and `NiftiImageData` wrapper classes. Full Doxygen documentation for these classes is available at <http://doxygen.flakery.org/RNifti/>.
+This provides access to the `niftilib` C functions, which mostly handle C-style `nifti_image` `struct`s, but in C++ code will also provide access to the `NiftiImage` and `NiftiImageData` wrapper classes. Full Doxygen documentation for these classes is available at <https://doxygen.flakery.org/RNifti/>.
 
 ## Reading, writing and creating images
 

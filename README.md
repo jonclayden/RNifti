@@ -283,7 +283,7 @@ Moreover, when reading the file into an "internal" image, which does not copy th
 
 ## Implementation details
 
-The package does not fully duplicate the NIfTI structure's contents in R-visible objects. Instead, it passes key metadata back to R, such as the image dimensions and pixel dimensions, and it also passes back the pixel values where they are needed. Finally, it creates an [external pointer](http://r-manuals.flakery.org/R-exts.html#External-pointers-and-weak-references) to the native data structure, which is stored in an attribute. This pointer is dereferenced whenever the object is passed back to the C++ code, thereby avoiding unnecessary duplication and ensuring that all metadata remains intact. The full NIfTI-1 header can be obtained using the `niftiHeader` R function, if it is needed.
+The package does not fully duplicate the NIfTI structure's contents in R-visible objects. Instead, it passes key metadata back to R, such as the image dimensions and pixel dimensions, and it also passes back the pixel values where they are needed. Finally, it creates an [external pointer](https://r-manuals.flakery.org/R-exts.html#External-pointers-and-weak-references) to the native data structure, which is stored in an attribute. This pointer is dereferenced whenever the object is passed back to the C++ code, thereby avoiding unnecessary duplication and ensuring that all metadata remains intact. The full NIfTI-1 header can be obtained using the `niftiHeader` R function, if it is needed.
 
 This arrangement is efficient and generally works well, but certain R operations strip attributes—in which case the external pointer will be removed. The internal structure will be built again when necessary, but using default metadata. In these cases, if it is important to keep the original metadata, the `asNifti` function should be called explicitly, with a template object. This reconstructs the NIfTI data structure, using the template as a starting point.
 
@@ -294,7 +294,7 @@ It is possible to use the package's NIfTI-handling code in other R packages' com
 - `NiftiImage`, which simplifies memory management and supports the package's internal image pointers and associated reference counting, and
 - `NiftiImageData`, which encapsulates the pixel data within an image, and handles datatype multiplexing and data scaling, as well as providing indexing, iterators and other niceties.
 
-Full doxygen documentation for these classes is available at <http://doxygen.flakery.org/RNifti/>, and is also provided with package releases.
+Full doxygen documentation for these classes is available at <https://doxygen.flakery.org/RNifti/>, and is also provided with package releases.
 
 A third-party package can use the `NiftiImage` class by including
 
