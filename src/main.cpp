@@ -481,7 +481,12 @@ BEGIN_RCPP
     result["originator"] = std::string(analyze->originator, 10);
     
     // SPM and FSL use the originator field to store a coordinate origin
-    short *origin = (short *) analyze->originator;
+    // Making a copy into a new char buffer may seem unnecessary, but the
+    // struct field is at offset 253, which is misaligned for a short*. The
+    // pointer cast therefore has undefined behaviour and gets caught by UBSan
+    char originator[10];
+    memcpy(originator, analyze->originator, 10);
+    short *origin = (short *) originator;
     result["origin"] = std::vector<short>(origin, origin+5);
     
     result["generated"] = std::string(analyze->generated, 10);
