@@ -2,6 +2,12 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.6.1
+
+- A misaligned memory read caught by clang-UBSan has been corrected.
+
+===============================================================================
+
 VERSION 1.6.0
 
 R interface

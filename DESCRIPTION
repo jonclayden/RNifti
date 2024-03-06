@@ -1,6 +1,6 @@
 Package: RNifti
-Version: 1.6.0
-Date: 2024-02-15
+Version: 1.6.1
+Date: 2024-03-06
 Title: Fast R and C++ Access to NIfTI Images
 Authors@R: c(person("Jon", "Clayden", role=c("cre","aut"),
     email="code@clayden.org", comment=c(ORCID="0000-0002-6608-0619")),
