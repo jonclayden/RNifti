@@ -5,6 +5,7 @@
 #' attribute (with value 3 or 4) indicates how many channels are being used.
 #' The resulting array can be used to construct an RGB(A) NIfTI image, or
 #' converted to standard R colour strings using the \code{as.character} method.
+#' The indexing method returns another object of the same type.
 #' 
 #' @param red A numeric vector (or array) of red channel values. If this is the
 #'   only channel argument, it can also be a character vector of colour values
@@ -28,9 +29,11 @@
 #'   will be retained in the result. The default is \code{TRUE}, for
 #'   consistency with the usual behaviour of \code{as.character}, which strips
 #'   all attributes.
-#' @return \code{rgbArray} returns an integer-mode array of class
-#'   \code{"rgbArray"}. The \code{as.character} method returns a character-mode
-#'   vector of colour strings.
+#' @return \code{rgbArray} and the indexing (\code{[}) method return an
+#'   integer-mode array of class \code{"rgbArray"}. The \code{as.raster}
+#'   method returns a \code{raster} object, valid for 2D arrays only. The
+#'   \code{as.character} method returns a character-mode vector of colour
+#'   strings with or without dimensions.
 #' 
 #' @note The values of an \code{"rgbArray"} are not easily interpreted, and
 #'   may depend on the endianness of the platform. For manipulation or use as
@@ -85,6 +88,33 @@ rgbArray <- function (red, green, blue, alpha, max = NULL, dim = NULL, ...)
     
     result <- .Call("packRgb", source, channels, max, PACKAGE="RNifti")
     return (structure(result, ..., channels=channels, dim=dim, class="rgbArray"))
+}
+
+#' @rdname rgbArray
+#' @export
+"[.rgbArray" <- function (x, i, j, ..., drop = TRUE)
+{
+    result <- NextMethod()
+    if (is.null(dim(result)))
+        dim(result) <- length(result)
+    return (structure(result, channels=attr(x,"channels"), class="rgbArray"))
+}
+
+#' @rdname rgbArray
+#' @export
+as.raster.rgbArray <- function (x, ...)
+{
+    dims <- dim(x)
+    nDims <- length(dims)
+    if (nDims > 2L)
+        stop("Raster objects cannot have more than two dimensions")
+    
+    result <- .Call("rgbToStrings", x, PACKAGE="RNifti")
+    if (nDims == 2L)
+        result <- matrix(result, nrow=dims[1], ncol=dims[2], byrow=TRUE)
+    else
+        result <- matrix(result, ncol=1L)
+    return (structure(result, class="raster"))
 }
 
 #' @rdname rgbArray
