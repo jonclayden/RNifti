@@ -1,19 +1,15 @@
-test_that("image objects from oro.nifti can be read", {
-    imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
-    
-    skip_if_not_installed("oro.nifti")
-    
+imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
+
+if (requireNamespace("oro.nifti", quietly=TRUE))
+{
     # The oro.nifti package warns about nonzero slope, which is nothing to worry about
     image <- suppressWarnings(oro.nifti::readNIfTI(imagePath))
     expect_equal(niftiHeader(image)$bitpix, 32L)
     expect_equal(asNifti(image)[40,40,30], 368)
-})
-
-test_that("image objects from tractor.base can be read", {
-    imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
+}
     
-    skip_if_not_installed("tractor.base")
-    
+if (requireNamespace("tractor.base", quietly=TRUE))
+{
     reportr::setOutputLevel(reportr::OL$Warning)
     
     # NB: the $ operator shortcut can't be used since "image" isn't a niftiImage
@@ -24,4 +20,4 @@ test_that("image objects from tractor.base can be read", {
     image <- tractor.base::readImageFile(imagePath, sparse=TRUE)
     expect_equal(niftiHeader(image)$bitpix, 32L)
     expect_equal(asNifti(image)[40,40,30], 368)
-})
+}

@@ -1,0 +1,11 @@
+data <- array(rnorm(24), dim=c(3L,2L,4L))
+image <- asNifti(data)
+
+expect_equal(ndim(data), 3L)
+expect_inherits(image, "niftiImage")
+expect_equal(dim(image), c(3L,2L,4L))
+expect_equal(pixdim(data), c(1,1,1))
+expect_equal(pixdim(image), c(1,1,1))
+expect_equal(pixunits(data), "Unknown")
+expect_equal(pixunits(image), "Unknown")
+expect_equal(image$datatype, 64L)
