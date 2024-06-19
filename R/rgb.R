@@ -22,9 +22,14 @@
 #'   dimensions of \code{red} are used if this is \code{NULL}.
 #' @param ... For \code{rgbArray}, additional attributes to set on the result,
 #'   such as \code{pixdim}. These are passed directly to
-#'   \code{\link{structure}}. For the \code{as.character} method, this argument
-#'   is ignored.
+#'   \code{\link{structure}}. For the indexing method, additional indices.
+#    For the \code{as.character} method, this argument is ignored.
 #' @param x An \code{rgbArray} object.
+#' @param i,j Index vectors, which are passed to the \code{array} method.
+#' @param drop Whether or not to drop unitary dimensions. \code{rgbArray}
+#'   objects currently always have a \code{dim} attribute, so if the result is
+#'   a vector it will have a remaining single-element dimension equal to its
+#'   length.
 #' @param flatten Logical value. If \code{FALSE}, the dimensions of \code{x}
 #'   will be retained in the result. The default is \code{TRUE}, for
 #'   consistency with the usual behaviour of \code{as.character}, which strips
