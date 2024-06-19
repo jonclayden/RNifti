@@ -723,7 +723,7 @@ BEGIN_RCPP
         if (data.isComplex())
         {
             ComplexVector result(indices.length());
-            const Rcomplex naValue = { NA_REAL, NA_REAL };
+            const Rcomplex naValue = {{ NA_REAL, NA_REAL }};
             for (int i=0; i<indices.length(); i++)
                 result[i] = (size_t(indices[i]) > data.size() ? naValue : data[indices[i] - 1]);
             return result;
@@ -785,7 +785,7 @@ BEGIN_RCPP
         if (data.isComplex())
         {
             ComplexVector result(count);
-            const Rcomplex naValue = { NA_REAL, NA_REAL };
+            const Rcomplex naValue = {{ NA_REAL, NA_REAL }};
             for (size_t j=0; j<count; j++)
             {
                 size_t loc = 0;
