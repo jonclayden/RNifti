@@ -96,7 +96,11 @@ as.array.internalImage <- function (x, ...)
     }
     
     if (drop)
+    {
         data <- drop(data)
+        if (inherits(data, "rgbArray") && is.null(dim(data)))
+            dim(data) <- length(data)
+    }
     return (data)
 }
 
