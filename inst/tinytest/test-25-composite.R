@@ -1,7 +1,8 @@
-# Complex datatypes
+# Basic data
 image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
 tempPath <- paste(tempfile(), "nii.gz", sep=".")
 
+# Complex datatypes
 data <- sqrt(array(as.complex(image)-468, dim=dim(image)))
 complexImage <- asNifti(data, image)
 
@@ -42,4 +43,5 @@ expect_equal(header$datatype, 128L)
 expect_equal(header$bitpix, 24L)
 
 rgbImage <- readNifti(tempPath, internal=TRUE)
+expect_equal(rgbImage[40 + 39*96 + 29*9216], refValue)
 expect_equal(rgbImage[40,40,30], refValue)
