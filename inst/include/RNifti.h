@@ -14,7 +14,7 @@
 // work to get them to play nicely:
 // 
 // - The compile-time constant RNIFTI_NIFTILIB_VERSION indicates which version of the library has
-//   precedence. nifti1_io.h sets this to 1, and nifti2.io.h to 2, so the first-included header
+//   precedence. nifti1_io.h sets this to 1, and nifti2_io.h to 2, so the first-included header
 //   wins unless the user sets a value explicitly.
 // - nifti_image is aliased to the appropriate struct type according to the library version in use.
 // - Library functions with the same name but different signatures in the two versions are renamed
