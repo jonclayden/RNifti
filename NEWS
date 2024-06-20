@@ -2,6 +2,18 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.7.0
+
+- Indexing into an `rgbArray` or an RGB-valued `internalImage` now produces a
+  result of type `rgbArray`, to maintain the special interpretation of these
+  values, and facilitate conversion to strings.
+- `rgbArray` now also gains an `as.raster` method.
+- The test suite has been moved from `testthat` to `tinytest`.
+- An API accommodation for versions of R before 3.1.0 has now been removed, as
+  it produces a note in the current R-devel.
+
+===============================================================================
+
 VERSION 1.6.1
 
 - A misaligned memory read caught by clang-UBSan has been corrected.
