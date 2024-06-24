@@ -32,6 +32,14 @@ inline static unsigned char clip (const double &value)
     return result;
 }
 
+inline static Rcomplex complexNA ()
+{
+    static Rcomplex value;
+    value.r = NA_REAL;
+    value.i = NA_REAL;
+    return value;
+}
+
 RcppExport SEXP packRgb (SEXP _object, SEXP _channels, SEXP _maxValue)
 {
 BEGIN_RCPP
@@ -723,7 +731,7 @@ BEGIN_RCPP
         if (data.isComplex())
         {
             ComplexVector result(indices.length());
-            const Rcomplex naValue = {{ NA_REAL, NA_REAL }};
+            const Rcomplex naValue = complexNA();
             for (int i=0; i<indices.length(); i++)
                 result[i] = (size_t(indices[i]) > data.size() ? naValue : data[indices[i] - 1]);
             return result;
@@ -785,7 +793,7 @@ BEGIN_RCPP
         if (data.isComplex())
         {
             ComplexVector result(count);
-            const Rcomplex naValue = {{ NA_REAL, NA_REAL }};
+            const Rcomplex naValue = complexNA();
             for (size_t j=0; j<count; j++)
             {
                 size_t loc = 0;
