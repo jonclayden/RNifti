@@ -17,3 +17,4 @@
 ^\.nova$
 ^\.cache$
 ^compile_commands\.json$
+^codecov\.yml$
