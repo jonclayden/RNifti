@@ -4,6 +4,9 @@ image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
 expect_message(view(lyr(image,max=NA), interactive=FALSE), "(0, 748)")
 expect_message(view(image[,,34], interactive=FALSE))
 
+# Test fallback to a literal colour if the scale name isn't recognised
+expect_null(view(image, lyr(image, mask=image>500, scale="red"), interactive=FALSE))
+
 rgbImage <- readNifti(system.file("extdata", "example_rgb.nii.gz", package="RNifti"))
 expect_equal(rgbImage$datatype, 128L)
 expect_null(view(rgbImage, interactive=FALSE))

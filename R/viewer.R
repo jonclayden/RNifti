@@ -308,10 +308,13 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL)
     else
     {
         if (is.character(scale) && length(scale) == 1 && !inherits(scale,"AsIs"))
-            colours <- switch(scale, grey=gray(0:99/99), gray=gray(0:99/99), greyscale=gray(0:99/99), grayscale=gray(0:99/99), heat=heat.colors(100), rainbow=rainbow(100,start=0.7,end=0.1), unclass(shades::gradient(scale,100)))
-        else
+            colours <- try(switch(scale, grey=gray(0:99/99), gray=gray(0:99/99), greyscale=gray(0:99/99), grayscale=gray(0:99/99), heat=heat.colors(100), rainbow=rainbow(100,start=0.7,end=0.1), unclass(shades::gradient(scale,100))), silent=TRUE)
+        
+        # If the scale isn't named as per the switch() call above or recognised by shades::gradient(), the latter will have thrown an error, so treat the name as a literal colour instead
+        # Ditto if it was surrounded by I() so as to make it of class "AsIs"
+        if (is.null(colours) || inherits(colours, "try-error"))
             colours <- unclass(scale)
-    
+        
         if (is.null(min))
             min <- image$cal_min
         if (is.null(max))
