@@ -72,6 +72,8 @@
 #' click-to-navigate interactivity.
 #' 
 #' @param ... One or more images, or \code{"viewLayer"} objects, to display.
+#'   These will be plotted in the order specified, so that the first image
+#'   forms the lowest layer.
 #' @param point A numeric vector giving the location to initially centre the
 #'   view on. If crosshairs are in use, they will be placed at this point. For
 #'   3D images, this parameter also determines the planes shown in each

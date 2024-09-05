@@ -12,7 +12,9 @@ view(..., point = NULL, radiological = getOption("radiologicalView",
 lyr(image, scale = "grey", min = NULL, max = NULL, mask = NULL)
 }
 \arguments{
-\item{...}{One or more images, or \code{"viewLayer"} objects, to display.}
+\item{...}{One or more images, or \code{"viewLayer"} objects, to display.
+These will be plotted in the order specified, so that the first image
+forms the lowest layer.}
 
 \item{point}{A numeric vector giving the location to initially centre the
 view on. If crosshairs are in use, they will be placed at this point. For
