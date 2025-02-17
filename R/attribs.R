@@ -1,4 +1,4 @@
-.RNiftiAttribs <- "^\\.|^(image|pix)dim$|^pixunits$|^class$"
+.RNiftiAttribs <- "^\\.|^(image|pix)?dim$|^pixunits$|^class$"
 
 .Bids <- list(
     mappingFromJson=c(MagneticFieldStrength="fieldStrength",
