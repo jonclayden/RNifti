@@ -6,7 +6,7 @@
 \title{Write a NIfTI or ANALYZE format file}
 \usage{
 writeNifti(image, file, template = NULL, datatype = "auto", version = 1,
-  compression = 6)
+  compression = 6, json = FALSE)
 
 writeAnalyze(image, file, template = NULL, datatype = "auto",
   compression = 6)
@@ -39,6 +39,11 @@ storing the pixel data are the same in both cases.}
 \item{compression}{The gzip compression level to use, an integer between 0
 (none) and 9 (maximum). Ignored if an uncompressed format is implied by
 the requested file name.}
+
+\item{json}{Logical value. If \code{TRUE}, a BIDS-style JSON sidecar file is
+created alongside the image file(s), containing all image attributes. The
+\code{jsonlite} package is required in this case. No renaming of
+attributes is performed.}
 }
 \value{
 An invisible, named character vector giving the image and header

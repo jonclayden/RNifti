@@ -14,6 +14,13 @@
 #'   all dimensions beyond the third jointly), or \code{NULL}, the default, in
 #'   which case every volume is read. This cannot currently be set differently
 #'   for each file read.
+#' @param json A string determining whether any BIDS-style JSON sidecar file is
+#'   read in alongside the image(s). If \code{"ignore"}, JSON files are
+#'   ignored; if \code{"read"}, they are read and attributes attached to the
+#'   image using their names in the file; if \code{"convert"}, element names
+#'   are additionally converted to the down-cased naming convention of the
+#'   \code{tractor.base} package. The \code{jsonlite} package is required for
+#'   any reading of JSON.
 #' @return An array or internal image, with class \code{"niftiImage"} (and
 #'   possibly also \code{"internalImage"}), or a list of such objects if
 #'   \code{file} has length greater than one.
@@ -36,16 +43,29 @@
 #' @references The NIfTI-1 standard (\url{https://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @aliases readAnalyze
 #' @export readNifti readAnalyze
-readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL)
+readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL, json = c("ignore","read","convert"))
 {
     if (!is.character(file))
         stop("File name(s) must be specified in a character vector")
     if (length(file) == 0)
         stop("File name vector is empty")
-    else if (length(file) > 1)
-        lapply(file, function(f) .Call("readNifti", f, internal, volumes, PACKAGE="RNifti"))
+    json <- match.arg(json)
+    
+    images <- lapply(file, function(f) {
+        image <- .Call("readNifti", f, internal, volumes, PACKAGE="RNifti")
+        if (json != "ignore")
+        {
+            jsonPath <- paste(sub("\\.(hdr|img|nii)(\\.gz)?$", "", f), "json", sep=".")
+            if (file.exists(jsonPath))
+                imageAttributes(image) <- fromBidsJson(jsonPath, rename=(json=="convert"))
+        }
+        image
+    })
+    
+    if (length(file) == 1L)
+        return (images[[1]])
     else
-        .Call("readNifti", file, internal, volumes, PACKAGE="RNifti")
+        return (images)
 }
 
 #' Write a NIfTI or ANALYZE format file
@@ -75,6 +95,10 @@ readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL)
 #' @param compression The gzip compression level to use, an integer between 0
 #'   (none) and 9 (maximum). Ignored if an uncompressed format is implied by
 #'   the requested file name.
+#' @param json Logical value. If \code{TRUE}, a BIDS-style JSON sidecar file is
+#'   created alongside the image file(s), containing all image attributes. The
+#'   \code{jsonlite} package is required in this case. No renaming of
+#'   attributes is performed.
 #' @return An invisible, named character vector giving the image and header
 #'   file names written to.
 #' 
@@ -89,9 +113,22 @@ readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL)
 #' @seealso \code{\link{readNifti}}, \code{\link{asNifti}}
 #' @references The NIfTI-1 standard (\url{https://www.nitrc.org/docman/view.php/26/64/nifti1.h}).
 #' @export
-writeNifti <- function (image, file, template = NULL, datatype = "auto", version = 1, compression = 6)
+writeNifti <- function (image, file, template = NULL, datatype = "auto", version = 1, compression = 6, json = FALSE)
 {
-    invisible(.Call("writeNifti", asNifti(image,template,internal=TRUE), file, tolower(datatype), switch(version,"nifti1","nifti2"), compression, PACKAGE="RNifti"))
+    paths <- .Call("writeNifti", asNifti(image,template,internal=TRUE), file, tolower(datatype), switch(version,"nifti1","nifti2"), compression, PACKAGE="RNifti")
+    
+    jsonPath <- paste(sub("\\.(img|nii)(\\.gz)?$", "", paths["image"]), "json", sep=".")
+    attribs <- imageAttributes(image)
+    # Remove any existing JSON file to avoid getting out of sync with the image written
+    if (file.exists(jsonPath))
+        unlink(jsonPath, force=TRUE)
+    if (json && length(attribs) > 0L)
+    {
+        toBidsJson(attribs, jsonPath)
+        paths["json"] <- jsonPath
+    }
+    
+    return (invisible(paths))
 }
 
 #' @rdname writeNifti

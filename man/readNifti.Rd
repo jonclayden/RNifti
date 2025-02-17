@@ -5,7 +5,8 @@
 \alias{readAnalyze}
 \title{Read NIfTI or ANALYZE format files}
 \usage{
-readNifti(file, internal = FALSE, volumes = NULL)
+readNifti(file, internal = FALSE, volumes = NULL, json = c("ignore",
+  "read", "convert"))
 }
 \arguments{
 \item{file}{A character vector of file names.}
@@ -21,6 +22,14 @@ C data structure containing the full image.}
 all dimensions beyond the third jointly), or \code{NULL}, the default, in
 which case every volume is read. This cannot currently be set differently
 for each file read.}
+
+\item{json}{A string determining whether any BIDS-style JSON sidecar file is
+read in alongside the image(s). If \code{"ignore"}, JSON files are
+ignored; if \code{"read"}, they are read and attributes attached to the
+image using their names in the file; if \code{"convert"}, element names
+are additionally converted to the down-cased naming convention of the
+\code{tractor.base} package. The \code{jsonlite} package is required for
+any reading of JSON.}
 }
 \value{
 An array or internal image, with class \code{"niftiImage"} (and
