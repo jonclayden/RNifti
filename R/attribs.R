@@ -35,12 +35,12 @@
 #' @param value A list of new image attributes to replace any existing ones.
 #' @return A list of image attributes, or a modified object with these changed.
 #'   These are essentially all attributes except those used for basic
-#'   \code{niftiImage} objects by the package.
+#'   \code{niftiImage} objects.
 #' 
 #' @examples
-#' path <- system.file("extdata", "raw", package="divest")
-#' images <- readDicom(path, interactive=FALSE)
-#' imageAttributes(images[[1]])
+#' path <- system.file("extdata", "example.nii.gz", package="RNifti")
+#' image <- readNifti(path)
+#' imageAttributes(image)
 #' @author Jon Clayden <code@@clayden.org>
 #' @seealso The \code{divest} package can convert DICOM files to NIfTI formats,
 #'   and extract embedded metadata. More information about DICOM is available

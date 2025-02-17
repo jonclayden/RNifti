@@ -17,7 +17,7 @@ imageAttributes(x) <- value
 \value{
 A list of image attributes, or a modified object with these changed.
   These are essentially all attributes except those used for basic
-  \code{niftiImage} objects by the package.
+  \code{niftiImage} objects.
 }
 \description{
 These functions extract and replace medical image attributes that go beyond
@@ -36,9 +36,9 @@ functions currently only act on objects inheriting from the
 \code{niftiImage} class.
 }
 \examples{
-path <- system.file("extdata", "raw", package="divest")
-images <- readDicom(path, interactive=FALSE)
-imageAttributes(images[[1]])
+path <- system.file("extdata", "example.nii.gz", package="RNifti")
+image <- readNifti(path)
+imageAttributes(image)
 }
 \references{
 More information about metadata captured by the BIDS format can
