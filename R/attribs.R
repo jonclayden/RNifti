@@ -109,7 +109,7 @@ renameFromBids <- function (bids)
             name <- bidsName
         
         # BIDS always uses seconds for time fields, but we use milliseconds in some places
-        if (grepl(.Bids$toScale, bidsName, perl=TRUE))
+        if (grepl(.Bids$toScale, bidsName, perl=TRUE) && name != bidsName)
             value <- value * 1e3
         tractor[[name]] <- value
     }
@@ -144,7 +144,7 @@ renameToBids <- function (tractor)
         else
             bidsName <- name
         
-        if (grepl(.Bids$toScale, bidsName, perl=TRUE))
+        if (grepl(.Bids$toScale, bidsName, perl=TRUE) && name != bidsName)
             value <- value / 1e3
         bids[[bidsName]] <- value
     }
