@@ -92,10 +92,10 @@ renameFromBids <- function (bids)
         if (is.character(value) && all(grepl("^\\s*$", value, perl=TRUE)))
             next
         
-        if (bidsName == "PhaseEncodingDirection" && grepl("^([ijk])(-)?$", value, perl=TRUE))
+        if (bidsName == "PhaseEncodingDirection" && all(grepl("^([ijk])([+-])?$", value, perl=TRUE)))
         {
             tractor$phaseEncodingDirection <- substring(value,1,1)
-            tractor$phaseEncodingSign <- ifelse(nchar(value)==1L, 1L, -1L)
+            tractor$phaseEncodingSign <- ifelse(substring(value,2,2)=="-", -1L, 1L)
             next
         }
         
