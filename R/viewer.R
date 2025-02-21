@@ -309,6 +309,7 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL)
         colours <- window <- NULL
     else
     {
+        colours <- NULL
         if (is.character(scale) && length(scale) == 1 && !inherits(scale,"AsIs"))
             colours <- try(switch(scale, grey=gray(0:99/99), gray=gray(0:99/99), greyscale=gray(0:99/99), grayscale=gray(0:99/99), heat=heat.colors(100), rainbow=rainbow(100,start=0.7,end=0.1), unclass(shades::gradient(scale,100))), silent=TRUE)
         
