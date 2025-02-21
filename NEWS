@@ -2,6 +2,23 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.8.0
+
+- It is now possible to read, write and manipulate additional image metadata
+  fields stored in JSON "sidecar" files like those used by the [Brain Imaging
+  Data Structure](https://bids.neuroimaging.io). `readNifti` and `writeNifti`
+  each gain a "json" argument, and the new `imageAttributes` function can be
+  used to get and set attributes for images. Conversion to or from JSON
+  requires the [`jsonlite`](https://github.com/jeroen/jsonlite) package; this
+  is an R-only feature for now.
+- If a plain string is passed to `lyr` as the "scale" argument and doesn't
+  match a known scale name from the `shades` package, it is now assumed to be
+  a single literal colour name. (Prompted by Ellyn Butler, issue #36.)
+- Initialisation of the complex `NA` value in C++ code has been simplified to
+  avoid remaining compilation problems on some platforms. (Issues #35 and #38.)
+
+===============================================================================
+
 VERSION 1.7.0
 
 - Indexing into an `rgbArray` or an RGB-valued `internalImage` now produces a
