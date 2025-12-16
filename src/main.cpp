@@ -839,6 +839,13 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP summariseImage (SEXP _image, SEXP _generic, SEXP _na_rm)
+{
+BEGIN_RCPP
+    return R_NilValue;
+END_RCPP
+}
+
 RcppExport SEXP rescaleImage (SEXP _image, SEXP _scales)
 {
 BEGIN_RCPP
@@ -956,6 +963,7 @@ R_CallMethodDef callMethods[] = {
     { "hasData",        (DL_FUNC) &hasData,         1 },
     { "indexVector",    (DL_FUNC) &indexVector,     2 },
     { "indexList",      (DL_FUNC) &indexList,       2 },
+    { "summariseImage", (DL_FUNC) &summariseImage,  3 },
     { "rescaleImage",   (DL_FUNC) &rescaleImage,    2 },
     { "pointerToArray", (DL_FUNC) &pointerToArray,  1 },
     { "unwrapPointer",  (DL_FUNC) &unwrapPointer,   2 },
