@@ -130,7 +130,7 @@ Ops.internalImage <- function (e1, e2)
 #' @export
 Complex.internalImage <- function (z)
 {
-    do.call(.Generic, alist(z))
+    do.call(.Generic, alist(as.array(z)))
 }
 
 #' @export
