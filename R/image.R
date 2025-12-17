@@ -149,6 +149,18 @@ Summary.internalImage <- function (..., na.rm = FALSE)
 }
 
 #' @export
+is.na.internalImage <- function (x)
+{
+    is.na(as.array(x))
+}
+
+#' @export
+mean.internalImage <- function (x, na.rm = FALSE, ...)
+{
+    mean(as.array(x), na.rm=na.rm)
+}
+
+#' @export
 print.niftiImage <- function (x, ...)
 {
     dim <- dim(x)
