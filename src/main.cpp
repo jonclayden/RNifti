@@ -842,7 +842,28 @@ END_RCPP
 RcppExport SEXP summariseImage (SEXP _image, SEXP _generic, SEXP _na_rm)
 {
 BEGIN_RCPP
-    return R_NilValue;
+    const NiftiImage image(_image, true, true);
+    const NiftiImageData data = image.data();
+    const std::string generic = as<std::string>(_generic);
+    const bool dropNAs = as<bool>(_na_rm);
+    
+    if (generic == "any" || generic == "all")
+        Rf_error("Images do not have logical type, so \"any\" and \"all\" generics are invalid");
+    
+    if (data.isEmpty())
+    {
+        Rf_warning("Taking summary value from an empty image");
+        if (generic == "max")           return Rf_ScalarReal(R_NegInf);
+        else if (generic == "min")      return Rf_ScalarReal(R_PosInf);
+        else if (generic == "range")    return NumericVector::create(R_PosInf, R_NegInf);
+        else if (generic == "sum")      return Rf_ScalarReal(0.0);
+        else if (generic == "prod")     return Rf_ScalarReal(1.0);
+        else                            Rf_error("Unexpected generic name: \"%s\"", generic.c_str());
+    }
+    else if (data.isComplex())
+    {
+        Rcomplex value = complexNA();
+    }
 END_RCPP
 }
 
