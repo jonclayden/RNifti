@@ -887,6 +887,11 @@ BEGIN_RCPP
         }
         return wrap(result);
     }
+    // else if (generic == "sum")
+    // {
+    //     const double result = std::accumulate(data.begin(), data.end(), 0.0, std::plus<double>());
+    //     return Rf_ScalarReal(result);
+    // }
     else if (data.isFloatingPoint() || data.isScaled())
     {
         double result = (generic == "prod" ? 1.0 : 0.0);
