@@ -839,6 +839,26 @@ BEGIN_RCPP
 END_RCPP
 }
 
+inline static double naPropagatingPlus (const double &x, const double &y)
+{
+    return (ISNA(x) || ISNA(y)) ? NA_REAL : x + y;
+}
+
+inline static double naPropagatingTimes (const double &x, const double &y)
+{
+    return (ISNA(x) || ISNA(y)) ? NA_REAL : x * y;
+}
+
+inline static double naDiscardingPlus (const double &x, const double &y)
+{
+    return (ISNA(x) ? 0.0 : x) + (ISNA(y) ? 0.0 : y);
+}
+
+inline static double naDiscardingTimes (const double &x, const double &y)
+{
+    return (ISNA(x) ? 1.0 : x) * (ISNA(y) ? 1.0 : y);
+}
+
 RcppExport SEXP summariseImage (SEXP _image, SEXP _generic, SEXP _na_rm)
 {
 BEGIN_RCPP
@@ -887,124 +907,32 @@ BEGIN_RCPP
         }
         return wrap(result);
     }
-    // else if (generic == "sum")
-    // {
-    //     const double result = std::accumulate(data.begin(), data.end(), 0.0, std::plus<double>());
-    //     return Rf_ScalarReal(result);
-    // }
-    else if (data.isFloatingPoint() || data.isScaled())
+    else if (generic == "sum")
     {
-        double result = (generic == "prod" ? 1.0 : 0.0);
-        std::pair<double,double> range(R_PosInf, R_NegInf);
-        
-        for (NiftiImageData::Iterator it=data.begin(); it!=data.end(); it++)
-        {
-            double value = *it;
-            if (RNifti::internal::isNA(value))
-            {
-                if (!dropNAs)
-                    return (generic == "range" ? SEXP(NumericVector::create(NA_REAL,NA_REAL)) : Rf_ScalarReal(NA_REAL));
-            }
-            else if (generic == "sum")
-                result += value;
-            else if (generic == "prod")
-                result *= value;
-            else if (generic == "min")
-            {
-                if (value < range.first)
-                    range.first = value;
-            }
-            else if (generic == "max")
-            {
-                if (value > range.second)
-                    range.second = value;
-            }
-            else if (generic == "range")
-            {
-                if (value < range.first)
-                    range.first = value;
-                if (value > range.second)
-                    range.second = value;
-            }
-            else
-                Rf_error("Unexpected generic name: \"%s\"", generic.c_str());
-        }
-        
-        if (generic == "range")
-            return NumericVector::create(range.first, range.second);
-        else if (generic == "min")
-            result = range.first;
-        else if (generic == "max")
-            result = range.second;
+        double result;
+        if (dropNAs)
+            result = std::accumulate(data.begin(), data.end(), 0.0, naDiscardingPlus);
+        else
+            result = std::accumulate(data.begin(), data.end(), 0.0, naPropagatingPlus);
+        return Rf_ScalarReal(result);
+    }
+    else if (generic == "prod")
+    {
+        double result;
+        if (dropNAs)
+            result = std::accumulate(data.begin(), data.end(), 1.0, naDiscardingTimes);
+        else
+            result = std::accumulate(data.begin(), data.end(), 1.0, naPropagatingTimes);
         return Rf_ScalarReal(result);
     }
     else
     {
-        int result = (generic == "prod" ? 1 : 0);
-        double doubleResult;
-        bool useDouble = false;
-        std::pair<int,int> range(INT_MAX, INT_MIN+1);
-        
-        for (NiftiImageData::Iterator it=data.begin(); it!=data.end(); it++)
-        {
-            int value = *it;
-            if (RNifti::internal::isNA(value))
-            {
-                if (!dropNAs)
-                    return (generic == "range" ? SEXP(IntegerVector::create(NA_INTEGER,NA_INTEGER)) : Rf_ScalarInteger(NA_INTEGER));
-            }
-            else if (generic == "sum")
-            {
-                if (useDouble)
-                    doubleResult += double(value);
-                else if ((value > std::numeric_limits<int>::max() - result) || (value < std::numeric_limits<int>::min() - result))
-                {
-                    doubleResult = double(result) + double(value);
-                    useDouble = true;
-                }
-                else
-                    result += value;
-            }
-            else if (generic == "prod")
-            {
-                if (useDouble)
-                    doubleResult *= double(value);
-                else if ((value > std::numeric_limits<int>::max() / result) || (value < std::numeric_limits<int>::min() / result))
-                {
-                    doubleResult = double(result) * double(value);
-                    useDouble = true;
-                }
-                else
-                    result *= value;
-            }
-            else if (generic == "min")
-            {
-                if (value < range.first)
-                    range.first = value;
-            }
-            else if (generic == "max")
-            {
-                if (value > range.second)
-                    range.second = value;
-            }
-            else if (generic == "range")
-            {
-                if (value < range.first)
-                    range.first = value;
-                if (value > range.second)
-                    range.second = value;
-            }
-            else
-                Rf_error("Unexpected generic name: \"%s\"", generic.c_str());
-        }
-        
-        if (generic == "range")
-            return IntegerVector::create(range.first, range.second);
-        else if (generic == "min")
-            result = range.first;
-        else if (generic == "max")
-            result = range.second;
-        return wrap(useDouble ? doubleResult : result);
+        double min, max;
+        data.minmax(&min, &max, dropNAs);
+        if (generic == "max")           return Rf_ScalarReal(max);
+        else if (generic == "min")      return Rf_ScalarReal(min);
+        else if (generic == "range")    return NumericVector::create(min, max);
+        else                            Rf_error("Unexpected generic name: \"%s\"", generic.c_str());
     }
 END_RCPP
 }
