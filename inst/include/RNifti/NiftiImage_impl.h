@@ -29,10 +29,7 @@ inline bool isNA<int> (const int x) { return (x == NA_INTEGER); }
 
 template <>
 inline bool isNA<double> (const double x) { return ISNA(x); }
-#endif
-
-template <typename Type>
-inline bool lessThan (Type a, Type b) { return (!isNaN(a) && !isNaN(b) && a < b); }
+#endif  // USING_R
 
 inline double roundEven (const double value)
 {
@@ -398,57 +395,64 @@ inline void addAttributes (const SEXP pointer, const NiftiImage &source, const b
 
 #endif  // USING_R
 
-}       // internal namespace
-
-template <typename Type, bool alpha>
-inline void NiftiImageData::ConcreteTypeHandler<Type,alpha>::minmax (void *ptr, const size_t length, double *min, double *max) const
+// Generic implementation of minmax method
+template <typename Type>
+inline void minmax (void *ptr, const size_t length, double *min, double *max, const bool dropNaN)
 {
-    if (ptr == NULL || length < 1)
+    if (ptr == NULL)
     {
+        // If no data is passed, return the limits of the type
         *min = static_cast<double>(std::numeric_limits<Type>::min());
         *max = static_cast<double>(std::numeric_limits<Type>::max());
     }
     else
     {
         Type *loc = static_cast<Type*>(ptr);
-        Type currentMin = *loc, currentMax = *loc;
-        for (size_t i=1; i<length; i++)
+        Type currentMin, currentMax;
+        for (size_t i=0; i<length; i++, loc++)
         {
-            loc++;
-            if (internal::lessThan(*loc, currentMin))
-                currentMin = *loc;
-            if (internal::lessThan(currentMax, *loc))
-                currentMax = *loc;
+            if (internal::isNaN(*loc))
+            {
+                // If we're not dropping NaNs then encountering one is a stop condition
+                if (!dropNaN)
+                {
+                    // Try and preserve NAs; otherwise use a generic NaN
+#ifdef USING_R
+                    if (internal::isNA(*loc))
+                        *min = *max = NA_REAL;
+                    else
+#endif
+                        *min = *max = std::numeric_limits<double>::quiet_NaN();
+                    return;
+                }
+            }
+            else
+            {
+                if (i==0 || *loc < currentMin)
+                    currentMin = *loc;
+                if (i==0 || *loc > currentMax)
+                    currentMax = *loc;
+            }
         }
         *min = static_cast<double>(currentMin);
         *max = static_cast<double>(currentMax);
     }
 }
 
-template <typename ElementType>
-inline void NiftiImageData::ConcreteTypeHandler<std::complex<ElementType>,false>::minmax (void *ptr, const size_t length, double *min, double *max) const
+}       // internal namespace
+
+template <typename Type, bool alpha>
+inline void NiftiImageData::ConcreteTypeHandler<Type,alpha>::minmax (void *ptr, const size_t length, double *min, double *max, const bool dropNaN) const
 {
-    if (ptr == NULL || length < 1)
-    {
-        *min = static_cast<double>(std::numeric_limits<ElementType>::min());
-        *max = static_cast<double>(std::numeric_limits<ElementType>::max());
-    }
-    else
-    {
-        ElementType *loc = static_cast<ElementType*>(ptr);
-        ElementType currentMin = *loc, currentMax = *loc;
-        for (size_t i=1; i<(2*length); i++)
-        {
-            loc++;
-            if (internal::lessThan(*loc, currentMin))
-                currentMin = *loc;
-            if (internal::lessThan(currentMax, *loc))
-                currentMax = *loc;
-        }
-        *min = static_cast<double>(currentMin);
-        *max = static_cast<double>(currentMax);
-    }
+    internal::minmax<Type>(ptr, length, min, max, dropNaN);
 }
+
+#ifdef USING_R
+inline void NiftiImageData::ConcreteTypeHandler<int,false>::minmax (void *ptr, const size_t length, double *min, double *max, const bool dropNaN) const
+{
+    internal::minmax<int>(ptr, length, min, max, dropNaN);
+}
+#endif
 
 template <typename SourceType>
 inline NiftiImageData::Element & NiftiImageData::Element::operator= (const SourceType &value)
@@ -1788,10 +1792,13 @@ inline NiftiImage & NiftiImage::replaceData (const NiftiImageData &data)
     image->scl_inter = static_cast<scale_t>(copy.intercept);
     nifti_datatype_sizes(image->datatype, &image->nbyper, &image->swapsize);
     
-    double min, max;
-    copy.minmax(&min, &max);
-    image->cal_min = static_cast<scale_t>(min);
-    image->cal_max = static_cast<scale_t>(max);
+    if (!copy.isComplex())
+    {
+        double min, max;
+        copy.minmax(&min, &max);
+        image->cal_min = static_cast<scale_t>(min);
+        image->cal_max = static_cast<scale_t>(max);
+    }
     
     copy.disown();
     
