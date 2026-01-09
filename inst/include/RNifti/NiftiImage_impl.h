@@ -409,6 +409,7 @@ inline void minmax (void *ptr, const size_t length, double *min, double *max, co
     {
         Type *loc = static_cast<Type*>(ptr);
         Type currentMin, currentMax;
+        bool started = false;
         for (size_t i=0; i<length; i++, loc++)
         {
             if (internal::isNaN(*loc))
@@ -428,14 +429,25 @@ inline void minmax (void *ptr, const size_t length, double *min, double *max, co
             }
             else
             {
-                if (i==0 || *loc < currentMin)
+                if (!started || *loc < currentMin)
                     currentMin = *loc;
-                if (i==0 || *loc > currentMax)
+                if (!started || *loc > currentMax)
                     currentMax = *loc;
+                started = true;
             }
         }
-        *min = static_cast<double>(currentMin);
-        *max = static_cast<double>(currentMax);
+        
+        if (started)
+        {
+            *min = static_cast<double>(currentMin);
+            *max = static_cast<double>(currentMax);
+        }
+        else
+        {
+            // We didn't see any non-NaN value
+            *min = R_PosInf;
+            *max = R_NegInf;
+        }
     }
 }
 
