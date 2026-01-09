@@ -106,8 +106,8 @@ protected:
     };
 
 #ifdef USING_R
-    template <>
-    struct ConcreteTypeHandler<int,false> : public TypeHandler
+    template <bool alpha>
+    struct ConcreteTypeHandler<int,alpha> : public TypeHandler
     {
         size_t size () const { return (sizeof(int)); }
         bool hasNaN () const { return true; }

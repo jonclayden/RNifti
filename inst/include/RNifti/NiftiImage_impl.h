@@ -448,7 +448,8 @@ inline void NiftiImageData::ConcreteTypeHandler<Type,alpha>::minmax (void *ptr, 
 }
 
 #ifdef USING_R
-inline void NiftiImageData::ConcreteTypeHandler<int,false>::minmax (void *ptr, const size_t length, double *min, double *max, const bool dropNaN) const
+template <bool alpha>
+inline void NiftiImageData::ConcreteTypeHandler<int,alpha>::minmax (void *ptr, const size_t length, double *min, double *max, const bool dropNaN) const
 {
     internal::minmax<int>(ptr, length, min, max, dropNaN);
 }
