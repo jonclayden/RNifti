@@ -2,6 +2,21 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.9.0
+
+- Methods for the `Math`, `Ops`, `Complex` and `Summary` group generics have
+  been added for the `internalImage` class, as well as `is.na()` and `mean()`.
+  This prevents R from falling back on the `character` methods, which aren't
+  helpful. In most cases these implementations simply call the relevant generic
+  on the array version of the image; the exception is `Summary`, which calls a
+  C++ implementation to avoid allocating memory for an R array when only a
+  summary value is needed. (Reported by Martin Wilson, issue #39 and `divest`
+  issue #6.)
+- Image value range calculation and NA handling in the core C++ code has been
+  improved, particularly for the 32-bit integer datatype.
+
+===============================================================================
+
 VERSION 1.8.0
 
 - It is now possible to read, write and manipulate additional image metadata
