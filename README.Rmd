@@ -147,22 +147,21 @@ RGB images with an alpha (opacity) channel are also supported.
 The `RNifti` package uses the robust and widely used [NIfTI reference implementation](https://www.nitrc.org/projects/nifti/), which is written in C, to read and write NIfTI files. It also uses the standard NIfTI-2 data structure as its canonical representation of an image in memory. Together, these make the package extremely fast, as the following benchmark against packages [`AnalyzeFMRI`](https://cran.r-project.org/package=AnalyzeFMRI), [`ANTsRCore`](https://github.com/ANTsX/ANTsRCore),  [`neuroim`](https://cran.r-project.org/package=neuroim), [`oro.nifti`](https://cran.r-project.org/package=oro.nifti) and [`tractor.base`](https://cran.r-project.org/package=tractor.base) shows.
 
 ```{r}
-installed.packages()[c("AnalyzeFMRI","ANTsRCore","neuroim","oro.nifti","RNifti",
+installed.packages()[c("AnalyzeFMRI","ANTsR","neuroim","oro.nifti","RNifti",
                        "tractor.base"), "Version"]
 
-library(microbenchmark)
-microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
-               ANTsRCore::antsImageRead("example.nii"),
-               neuroim::loadVolume("example.nii"),
-               oro.nifti::readNIfTI("example.nii"),
-               RNifti::readNifti("example.nii"),
-               RNifti::readNifti("example.nii", internal=TRUE),
-               tractor.base::readImageFile("example.nii"), unit="ms")
+bench::mark(AnalyzeFMRI::f.read.volume("example.nii"),
+            ANTsR::antsImageRead("example.nii"),
+            neuroim::loadVolume("example.nii"),
+            oro.nifti::readNIfTI("example.nii"),
+            RNifti::readNifti("example.nii"),
+            RNifti::readNifti("example.nii", internal=TRUE),
+            tractor.base::readImageFile("example.nii"), check=FALSE)
 ```
 
-With a median runtime of less than 2 ms, `RNifti` is typically around ten times as fast as the alternatives to read this image into R. The exception is `ANTsRCore`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsRCore` has substantial dependencies, which may affect its suitability in some applications.
+With a median runtime of less than 1 ms, `RNifti` is typically at least ten times as fast as the alternatives to read this image into R. The exception is `ANTsR`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsR` has substantial dependencies, which may affect its suitability in some applications, and it allocates the most memory of any solution whereas `RNifti` allocates the least.
 
-Moreover, when reading the file into an "internal" image, which does not copy the pixel values into R data structures until they are required, the median runtime drops by a further 80%, to just 300 µs. This saves time and memory, while still allowing data access through standard R indexing operations.
+Moreover, when reading the file into an "internal" image, which does not copy the pixel values into R data structures until they are required, the median runtime drops by a further 75%, to less than 200 µs. This saves more time and memory, while still allowing data access through standard R indexing operations.
 
 ## Implementation details
 

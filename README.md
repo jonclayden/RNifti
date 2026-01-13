@@ -15,7 +15,7 @@ There are several packages available for reading and writing NIfTI-1 files in R,
 The latest development version of the package can always be installed from GitHub using the `remotes` package.
 
 
-```r
+``` r
 ## install.packages("remotes")
 remotes::install_github("jonclayden/RNifti")
 ```
@@ -27,7 +27,7 @@ remotes::install_github("jonclayden/RNifti")
 The primary role of `RNifti` is to read and write NIfTI-1 and (since package version 1.2.0) NIfTI-2 files, either `gzip`-compressed or uncompressed, and provide access to image data and metadata. An image may be read into R using the `readNifti` function.
 
 
-```r
+``` r
 library(RNifti)
 image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
 ```
@@ -35,7 +35,7 @@ image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
 This image is an R array with some additional attributes containing information such as its dimensions and the size of its pixels (or voxels, in this case, since it is a 3D image). There are auxiliary functions for extracting this information: the standard `dim()`, plus `pixdim()` and `pixunits()`.
 
 
-```r
+``` r
 dim(image)
 ## [1] 96 96 60
 pixdim(image)
@@ -49,7 +49,7 @@ So this image is of size 96 x 96 x 60 voxels, with each voxel representing 2.5 x
 The package contains a basic image viewer, which can be used interactively or noninteractively to examine 2D or 3D images.
 
 
-```r
+``` r
 view(image)
 ```
 
@@ -60,7 +60,7 @@ By default, the viewer shows labels indicating [image orientation](#image-orient
 A fuller list of the raw metadata stored in the file can be obtained using the `niftiHeader` function.
 
 
-```r
+``` r
 niftiHeader(image)
 ## NIfTI-1 header
 ##     sizeof_hdr: 348
@@ -104,7 +104,7 @@ niftiHeader(image)
 Advanced users who know the NIfTI format well may want to alter elements of this metadata directly, and this can be performed using the `$` operator shorthand, as in
 
 
-```r
+``` r
 image$intent_code <- 1
 image$intent_code
 ## [1] 1
@@ -115,7 +115,7 @@ If you need to modify multiple metadata elements at once, or replace metadata wh
 An image can be written back to NIfTI-1 format using the `writeNifti` function. `gzip` compression will be used if the specified file name ends with ".gz".
 
 
-```r
+``` r
 writeNifti(image, "file.nii.gz")
 ```
 
@@ -124,7 +124,7 @@ writeNifti(image, "file.nii.gz")
 The NIfTI-1 and NIfTI-2 formats have a mechanism for indicating the physical orientation and location of the image volume in real space. The reference orientation has the left–right direction aligned with the x-axis, the posterior–anterior (back–front) direction aligned with the y-axis, and the inferior–superior (bottom–top) direction aligned with the z-axis; but "xform" information stored with an image can describe a transformation from that coordinate system to the one used by that particular image, in the form of an affine matrix. To obtain the full xform matrix for an image, call the `xform` function:
 
 
-```r
+``` r
 xform(image)
 ##      [,1] [,2] [,3]      [,4]
 ## [1,] -2.5  0.0  0.0 122.03390
@@ -140,7 +140,7 @@ xform(image)
 Just the rotation with respect to the canonical axes can be obtained with the `rotation` function:
 
 
-```r
+``` r
 rotation(image)
 ##      [,1] [,2] [,3]
 ## [1,]   -1    0    0
@@ -151,7 +151,7 @@ rotation(image)
 In this case, the image is flipped along the x-axis relative to the canonical axes, so the positive x-direction points towards the left rather than the right. This is compactly represented by the output of the `orientation` function, which indicates the approximate real-world directions of the positive axes in each dimension.
 
 
-```r
+``` r
 orientation(image)
 ## [1] "LAS"
 ```
@@ -159,7 +159,7 @@ orientation(image)
 So, here, "LAS" means that the positive x-axis points left, the positive y-axis anterior and the positive z-axis superior. This is the so-called "radiological" orientation convention, and can be requested when viewing images for those who are used to it:
 
 
-```r
+``` r
 view(image, radiological=TRUE)
 ```
 
@@ -170,7 +170,7 @@ Notice the left (L) and right (R) labels, relative to the view shown above. Sett
 There is a replacement version of the `orientation` function, which will reorient the image to align with the requested directions. This is a relatively complex operation, affecting the xform and the storage order of the data.
 
 
-```r
+``` r
 image[50,39,23]
 ## [1] 300
 orientation(image) <- "RAS"
@@ -199,7 +199,7 @@ This latter operation can be useful to ensure that indexing into several images 
 The NIfTI standard supports composite types such as complex-valued and RGB images, and support for these was added in version 1.0.0 of this package. Complex data is exposed to R using the standard `complex` vector type:
 
 
-```r
+``` r
 image <- readNifti(system.file("extdata", "example.nii.gz", package="RNifti"))
 complexImage <- asNifti(image + 0i)
 print(complexImage)
@@ -213,7 +213,7 @@ complexImage[50,39,23]
 R's native representation for RGB values is [CSS-style hex strings](https://en.wikipedia.org/wiki/Web_colors) of character mode, which are reasonably space-efficient (8 or 10 bytes per value) but a little clunky to work with. For efficiency of interchange between R and the NIfTI-internal datatypes, `RNifti` uses a byte-packed representation of integer mode instead, which takes up 4 bytes per value. Of course, the viewer understands this format.
 
 
-```r
+``` r
 rgbImage <- readNifti(system.file("extdata", "example_rgb.nii.gz", package="RNifti"))
 print(rgbImage)
 ## Image array of mode "integer" (2.1 Mb)
@@ -229,7 +229,7 @@ view(rgbImage)
 Notice that values are shown in the viewer using R's conventional hex string format, but the data is of class `rgbArray`. The function of the same name can be used to create these arrays from strings or channel values, for the purposes of building RGB images from data, while the `as.character` method and `channels` function perform the opposite conversions.
 
 
-```r
+``` r
 as.character(rgbImage, flatten=FALSE)[50,39,23]
 ## [1] "#1F5B8A"
 channels(rgbImage, "red")[50,39,23,1]
@@ -244,42 +244,34 @@ RGB images with an alpha (opacity) channel are also supported.
 The `RNifti` package uses the robust and widely used [NIfTI reference implementation](https://www.nitrc.org/projects/nifti/), which is written in C, to read and write NIfTI files. It also uses the standard NIfTI-2 data structure as its canonical representation of an image in memory. Together, these make the package extremely fast, as the following benchmark against packages [`AnalyzeFMRI`](https://cran.r-project.org/package=AnalyzeFMRI), [`ANTsRCore`](https://github.com/ANTsX/ANTsRCore),  [`neuroim`](https://cran.r-project.org/package=neuroim), [`oro.nifti`](https://cran.r-project.org/package=oro.nifti) and [`tractor.base`](https://cran.r-project.org/package=tractor.base) shows.
 
 
-```r
-installed.packages()[c("AnalyzeFMRI","ANTsRCore","neuroim","oro.nifti","RNifti",
+``` r
+installed.packages()[c("AnalyzeFMRI","ANTsR","neuroim","oro.nifti","RNifti",
                        "tractor.base"), "Version"]
-##  AnalyzeFMRI    ANTsRCore      neuroim    oro.nifti       RNifti tractor.base 
-##     "1.1-24"      "0.7.5"      "0.0.6"     "0.11.0"      "1.4.0"    "3.3.3.1"
+##  AnalyzeFMRI        ANTsR      neuroim    oro.nifti       RNifti tractor.base 
+##     "1.1-25"      "0.6.6"      "0.0.6"     "0.11.4"      "1.9.0"      "3.5.0"
 
-library(microbenchmark)
-microbenchmark(AnalyzeFMRI::f.read.volume("example.nii"),
-               ANTsRCore::antsImageRead("example.nii"),
-               neuroim::loadVolume("example.nii"),
-               oro.nifti::readNIfTI("example.nii"),
-               RNifti::readNifti("example.nii"),
-               RNifti::readNifti("example.nii", internal=TRUE),
-               tractor.base::readImageFile("example.nii"), unit="ms")
-## Unit: milliseconds
-##                                               expr       min         lq
-##          AnalyzeFMRI::f.read.volume("example.nii") 29.734889 30.8786055
-##            ANTsRCore::antsImageRead("example.nii")  3.336989  4.0922635
-##                 neuroim::loadVolume("example.nii") 37.631847 39.6159530
-##                oro.nifti::readNIfTI("example.nii") 39.190034 42.4400090
-##                   RNifti::readNifti("example.nii")  1.928004  2.2818390
-##  RNifti::readNifti("example.nii", internal = TRUE)  0.392529  0.7233765
-##         tractor.base::readImageFile("example.nii") 13.726200 16.8920740
-##        mean    median        uq         max neval
-##  43.1935622 32.127420 37.147587  873.351879   100
-##  22.1543773  4.538117  5.270167 1727.918618   100
-##  63.6164186 41.908256 51.502174 1583.497529   100
-##  67.8210527 49.280901 57.436492  578.222950   100
-##   5.3772204  2.415228  2.741401  179.865678   100
-##   0.8355802  0.836148  0.951779    1.470726   100
-##  25.9411984 19.371901 26.144958  274.506899   100
+bench::mark(AnalyzeFMRI::f.read.volume("example.nii"),
+            ANTsR::antsImageRead("example.nii"),
+            neuroim::loadVolume("example.nii"),
+            oro.nifti::readNIfTI("example.nii"),
+            RNifti::readNifti("example.nii"),
+            RNifti::readNifti("example.nii", internal=TRUE),
+            tractor.base::readImageFile("example.nii"), check=FALSE)
+## # A tibble: 7 × 6
+##   expression                           min   median `itr/sec` mem_alloc `gc/sec`
+##   <bch:expr>                      <bch:tm> <bch:tm>     <dbl> <bch:byt>    <dbl>
+## 1 "AnalyzeFMRI::f.read.volume(\"…  13.31ms  13.73ms      72.4    9.88MB    16.1 
+## 2 "ANTsR::antsImageRead(\"exampl…  909.5µs   1.01ms     726.   104.47MB     0   
+## 3 "neuroim::loadVolume(\"example…  18.73ms  19.17ms      47.5    38.6MB    25.9 
+## 4 "oro.nifti::readNIfTI(\"exampl…  21.94ms  22.11ms      44.5   35.19MB    25.4 
+## 5 "RNifti::readNifti(\"example.n… 778.88µs 787.86µs    1240.     2.11MB    42.3 
+## 6 "RNifti::readNifti(\"example.n… 145.59µs 195.18µs    3407.         0B     0   
+## 7 "tractor.base::readImageFile(\…   9.72ms  10.45ms      93.1   12.29MB     8.87
 ```
 
-With a median runtime of less than 2.5 ms, `RNifti` is typically around ten times as fast as the alternatives to read this image into R. The exception is `ANTsRCore`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsRCore` has substantial dependencies, which may affect its suitability in some applications.
+With a median runtime of less than 1 ms, `RNifti` is typically at least ten times as fast as the alternatives to read this image into R. The exception is `ANTsR`, which uses a similar low-level pointer-based arrangement as `RNifti`, and is therefore comparable in speed. However, `ANTsR` has substantial dependencies, which may affect its suitability in some applications, and it allocates the most memory of any solution whereas `RNifti` allocates the least.
 
-Moreover, when reading the file into an "internal" image, which does not copy the pixel values into R data structures until they are required, the median runtime drops by a further 65%, to just 840 µs. This saves time and memory, while still allowing data access through standard R indexing operations.
+Moreover, when reading the file into an "internal" image, which does not copy the pixel values into R data structures until they are required, the median runtime drops by a further 75%, to less than 200 µs. This saves more time and memory, while still allowing data access through standard R indexing operations.
 
 ## Implementation details
 
