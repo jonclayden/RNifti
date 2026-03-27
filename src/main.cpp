@@ -49,7 +49,7 @@ BEGIN_RCPP
     const double maxValue = as<double>(_maxValue);
     
     if (pixels * channels != length)
-        Rf_error("Data length (%d) is not a multiple of the number of channels (%d)", (int) length, channels);
+        stop("Data length (%d) is not a multiple of the number of channels (%d)", (int) length, channels);
     
     NumericVector source(_object);
     IntegerVector result(pixels);
@@ -209,7 +209,7 @@ BEGIN_RCPP
             uint16_t magic;
             std::ifstream stream(filename.c_str(), std::ios::binary);
             if (stream.fail())
-                Rf_error("Failed to open file %s", filename.c_str());
+                stop("Failed to open file %s", filename.c_str());
             stream.read(reinterpret_cast<char*>(&magic), 2);
             gzipped = (magic == (swap ? 0x8b1f : 0x1f8b));
             stream.close();
@@ -218,7 +218,7 @@ BEGIN_RCPP
     
     znzFile file = znzopen(filename.c_str(), "rb", gzipped);
     if (znz_isnull(file))
-        Rf_error("Failed to open file %s", filename.c_str());
+        stop("Failed to open file %s", filename.c_str());
     if (offset > 0)
         znzseek(file, offset, SEEK_SET);
     char *buffer = (char *) calloc(length, nbyper);
@@ -397,7 +397,7 @@ BEGIN_RCPP
         else if (version == 2)
             header.n2 = *((nifti_2_header *) ptr);
         else
-            Rf_error("File is not in NIfTI-1 or NIfTI-2 format");
+            stop("File is not in NIfTI-1 or NIfTI-2 format");
         free(ptr);
     }
     else
@@ -448,7 +448,7 @@ BEGIN_RCPP
         if (ptr == NULL)
             return R_NilValue;
         else if (version < 0 || version > 1)
-            Rf_error("File is not in ANALYZE-7.5 or NIfTI-1 format");
+            stop("File is not in ANALYZE-7.5 or NIfTI-1 format");
         header = *((nifti_1_header *) ptr);
         free(ptr);
     }
@@ -721,7 +721,7 @@ RcppExport SEXP indexVector (SEXP _image, SEXP _indices)
 BEGIN_RCPP
     const NiftiImage image(_image, true, true);
     if (image.isNull())
-        Rf_error("Cannot index into a NULL image");
+        stop("Cannot index into a NULL image");
     else if (image->data == NULL)
         return LogicalVector(Rf_length(_indices), NA_LOGICAL);
     else
@@ -767,7 +767,7 @@ RcppExport SEXP indexList (SEXP _image, SEXP _indices)
 BEGIN_RCPP
     const NiftiImage image(_image, true, true);
     if (image.isNull())
-        Rf_error("Cannot index into a NULL image");
+        stop("Cannot index into a NULL image");
     else if (image->data == NULL)
         return LogicalVector(1, NA_LOGICAL);
     else
@@ -868,9 +868,9 @@ BEGIN_RCPP
     const bool dropNAs = as<bool>(_na_rm);
     
     if (generic == "any" || generic == "all")
-        Rf_error("Images do not have logical type, so \"any\" and \"all\" generics are invalid");
+        stop("Images do not have logical type, so \"any\" and \"all\" generics are invalid");
     else if (data.isComplex() && (generic == "min" || generic == "max" || generic == "range"))
-        Rf_error("Complex values don't have a simple ordering, so maxima and minima are ill-defined");
+        stop("Complex values don't have a simple ordering, so maxima and minima are ill-defined");
     
     if (data.isEmpty() || data.length() == 0)
     {
@@ -880,7 +880,7 @@ BEGIN_RCPP
         else if (generic == "range")    return NumericVector::create(R_PosInf, R_NegInf);
         else if (generic == "sum")      return Rf_ScalarReal(0.0);
         else if (generic == "prod")     return Rf_ScalarReal(1.0);
-        else                            Rf_error("Unexpected generic name: \"%s\"", generic.c_str());
+        else                            stop("Unexpected generic name: \"%s\"", generic.c_str());
     }
     else if (data.isComplex())
     {
@@ -903,7 +903,7 @@ BEGIN_RCPP
             else if (generic == "prod")
                 result *= value;
             else
-                Rf_error("Unexpected generic name: \"%s\"", generic.c_str());
+                stop("Unexpected generic name: \"%s\"", generic.c_str());
         }
         return wrap(result);
     }
@@ -932,7 +932,7 @@ BEGIN_RCPP
         if (generic == "max")           return Rf_ScalarReal(max);
         else if (generic == "min")      return Rf_ScalarReal(min);
         else if (generic == "range")    return NumericVector::create(min, max);
-        else                            Rf_error("Unexpected generic name: \"%s\"", generic.c_str());
+        else                            stop("Unexpected generic name: \"%s\"", generic.c_str());
     }
 END_RCPP
 }

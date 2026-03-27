@@ -1042,7 +1042,7 @@ public:
                     copy(string, strlen(string), code);
                     break;
                 }
-                default: Rf_error("Unable to convert SEXP type %d to NIfTI extension", object.sexp_type());
+                default: Rcpp::stop("Unable to convert SEXP type %d to NIfTI extension", object.sexp_type());
             }
         }
 #endif
