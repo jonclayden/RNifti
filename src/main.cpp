@@ -1016,10 +1016,12 @@ BEGIN_RCPP
             extensions.clear();
         else
         {
-            for (extension_list::iterator it=extensions.begin(); it!=extensions.end(); ++it)
+            for (extension_list::iterator it=extensions.begin(); it!=extensions.end(); )
             {
                 if (it->code() == code)
-                    extensions.erase(it);
+                    it = extensions.erase(it);
+                else
+                    ++it;
             }
         }
     }
