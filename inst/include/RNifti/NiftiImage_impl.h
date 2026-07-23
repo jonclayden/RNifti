@@ -752,8 +752,10 @@ inline void NiftiImage::release ()
                 this->refCount = NULL;
             }
         }
+#ifndef NDEBUG
         else
             Rc_printf("Releasing untracked object %p", (void *) this->image);
+#endif
     }
 }
 
