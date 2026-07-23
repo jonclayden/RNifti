@@ -194,6 +194,8 @@ BEGIN_RCPP
     
     int nbyper;
     nifti_datatype_sizes(datatype, &nbyper, NULL);
+    if (nbyper <= 0)
+        stop("Data type %d is not supported", datatype);
     
     // NA means the caller wants us to guess if the file is gzipped
     // NB: as<bool> gives true for NA_LOGICAL, so we need to convert to int to test for this value
@@ -222,8 +224,15 @@ BEGIN_RCPP
     if (offset > 0)
         znzseek(file, offset, SEEK_SET);
     char *buffer = (char *) calloc(length, nbyper);
-    znzread(buffer, nbyper, length, file);
+    if (buffer == NULL)
+    {
+        znzclose(file);
+        stop("Failed to allocate memory for a data blob of %lu elements", (unsigned long) length);
+    }
+    const size_t obtained = znzread(buffer, nbyper, length, file);
     znzclose(file);
+    if (obtained < length)
+        Rf_warning("Read only %lu of %lu expected elements from file %s", (unsigned long) obtained, (unsigned long) length, filename.c_str());
     
     if (swap)
         nifti_swap_Nbytes(length, nbyper, buffer);
@@ -733,21 +742,21 @@ BEGIN_RCPP
             ComplexVector result(indices.length());
             const Rcomplex naValue = complexNA();
             for (int i=0; i<indices.length(); i++)
-                result[i] = (size_t(indices[i]) > data.size() ? naValue : data[indices[i] - 1]);
+                result[i] = ((indices[i] < 1 || size_t(indices[i]) > data.size()) ? naValue : data[indices[i] - 1]);
             return result;
         }
         else if (data.isFloatingPoint() || data.isScaled())
         {
             NumericVector result(indices.length());
             for (int i=0; i<indices.length(); i++)
-                result[i] = (size_t(indices[i]) > data.size() ? NA_REAL : data[indices[i] - 1]);
+                result[i] = ((indices[i] < 1 || size_t(indices[i]) > data.size()) ? NA_REAL : data[indices[i] - 1]);
             return result;
         }
         else
         {
             IntegerVector result(indices.length());
             for (int i=0; i<indices.length(); i++)
-                result[i] = (size_t(indices[i]) > data.size() ? NA_INTEGER : data[indices[i] - 1]);
+                result[i] = ((indices[i] < 1 || size_t(indices[i]) > data.size()) ? NA_INTEGER : data[indices[i] - 1]);
             
             if (data.isRgb())
             {
