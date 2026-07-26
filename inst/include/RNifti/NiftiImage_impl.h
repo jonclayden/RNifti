@@ -125,6 +125,9 @@ inline nifti1_image * convertImageV2to1 (nifti2_image *image)
     
     // We assume that each block of a given type is stored contiguously like an array - this should be the case, but may not be guaranteed
     std::transform(&image->ndim, &image->ndim + 16, &result->ndim, ElementConverter<int>());
+    // The nvox field affects memory allocation, so we don't want it to be out of bounds
+    if (image->nvox > int64_t(std::numeric_limits<int>::max()))
+        throw std::runtime_error("NIfTI-2 image array is too large to fit within a NIfTI-1 image");
     result->nvox = static_cast<int>(image->nvox);
     std::copy(&image->nbyper, &image->nbyper + 2, &result->nbyper);
     std::transform(&image->dx, &image->dx + 19, &result->dx, ElementConverter<float>());
