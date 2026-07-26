@@ -523,6 +523,7 @@ public:
     {
         if (source.dataPtr != NULL)
         {
+            delete handler;
             // Free the old data, if we allocated it
             if (owner)
                 free(dataPtr);
