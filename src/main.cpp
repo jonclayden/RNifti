@@ -222,7 +222,11 @@ BEGIN_RCPP
     if (offset > 0)
         znzseek(file, offset, SEEK_SET);
     char *buffer = (char *) calloc(length, nbyper);
-    znzread(buffer, nbyper, length, file);
+    if (buffer == NULL)
+        stop("Could not allocate memory for image blob in file %s", filename.c_str());
+    const size_t read = znzread(buffer, nbyper, length, file);
+    if (read < length)
+        Rf_warning("Only %zu of %zu values could be read from file %s", read, length, filename.c_str());
     znzclose(file);
     
     if (swap)
