@@ -278,6 +278,8 @@ pixdim.default <- function (object)
             attr(object, "pixdim") <- value
         else if (length(value) == 1)
             attr(object, "pixdim") <- rep(value, ndim(object))
+        else
+            stop("Pixel dimensions don't match the dimensionality of the image")
     }
     return (object)
 }
