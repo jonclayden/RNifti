@@ -194,6 +194,8 @@ BEGIN_RCPP
     
     int nbyper;
     nifti_datatype_sizes(datatype, &nbyper, NULL);
+    if (nbyper <= 0)
+        stop("Data type %d is not supported", datatype);
     
     // NA means the caller wants us to guess if the file is gzipped
     // NB: as<bool> gives true for NA_LOGICAL, so we need to convert to int to test for this value
@@ -223,11 +225,14 @@ BEGIN_RCPP
         znzseek(file, offset, SEEK_SET);
     char *buffer = (char *) calloc(length, nbyper);
     if (buffer == NULL)
-        stop("Could not allocate memory for image blob in file %s", filename.c_str());
-    const size_t read = znzread(buffer, nbyper, length, file);
-    if (read < length)
-        Rf_warning("Only %zu of %zu values could be read from file %s", read, length, filename.c_str());
+    {
+        znzclose(file);
+        stop("Failed to allocate memory for a data blob of %lu elements", (unsigned long) length);
+    }
+    const size_t obtained = znzread(buffer, nbyper, length, file);
     znzclose(file);
+    if (obtained < length)
+        Rf_warning("Read only %lu of %lu expected elements from file %s", (unsigned long) obtained, (unsigned long) length, filename.c_str());
     
     if (swap)
         nifti_swap_Nbytes(length, nbyper, buffer);
@@ -737,21 +742,21 @@ BEGIN_RCPP
             ComplexVector result(indices.length());
             const Rcomplex naValue = complexNA();
             for (int i=0; i<indices.length(); i++)
-                result[i] = (size_t(indices[i]) > data.size() ? naValue : data[indices[i] - 1]);
+                result[i] = ((indices[i] < 1 || size_t(indices[i]) > data.size()) ? naValue : data[indices[i] - 1]);
             return result;
         }
         else if (data.isFloatingPoint() || data.isScaled())
         {
             NumericVector result(indices.length());
             for (int i=0; i<indices.length(); i++)
-                result[i] = (size_t(indices[i]) > data.size() ? NA_REAL : data[indices[i] - 1]);
+                result[i] = ((indices[i] < 1 || size_t(indices[i]) > data.size()) ? NA_REAL : data[indices[i] - 1]);
             return result;
         }
         else
         {
             IntegerVector result(indices.length());
             for (int i=0; i<indices.length(); i++)
-                result[i] = (size_t(indices[i]) > data.size() ? NA_INTEGER : data[indices[i] - 1]);
+                result[i] = ((indices[i] < 1 || size_t(indices[i]) > data.size()) ? NA_INTEGER : data[indices[i] - 1]);
             
             if (data.isRgb())
             {
@@ -870,6 +875,9 @@ BEGIN_RCPP
     const NiftiImageData data = image.data();
     const std::string generic = as<std::string>(_generic);
     const bool dropNAs = as<bool>(_na_rm);
+
+    // Wrap output value in an RObject to ensure it is PROTECTed
+    RObject output;
     
     if (generic == "any" || generic == "all")
         stop("Images do not have logical type, so \"any\" and \"all\" generics are invalid");
@@ -879,16 +887,18 @@ BEGIN_RCPP
     if (data.isEmpty() || data.length() == 0)
     {
         Rf_warning("Taking summary value from an empty image");
-        if (generic == "max")           return Rf_ScalarReal(R_NegInf);
-        else if (generic == "min")      return Rf_ScalarReal(R_PosInf);
-        else if (generic == "range")    return NumericVector::create(R_PosInf, R_NegInf);
-        else if (generic == "sum")      return Rf_ScalarReal(0.0);
-        else if (generic == "prod")     return Rf_ScalarReal(1.0);
+        if (generic == "max")           output = Rf_ScalarReal(R_NegInf);
+        else if (generic == "min")      output = Rf_ScalarReal(R_PosInf);
+        else if (generic == "range")    output = NumericVector::create(R_PosInf, R_NegInf);
+        else if (generic == "sum")      output = Rf_ScalarReal(0.0);
+        else if (generic == "prod")     output = Rf_ScalarReal(1.0);
         else                            stop("Unexpected generic name: \"%s\"", generic.c_str());
     }
     else if (data.isComplex())
     {
+        // Complex min/max/range are rejected above, so only sum and prod reach here
         complex128_t result(generic == "prod" ? 1.0 : 0.0, 0.0);
+        bool foundNA = false;
         for (NiftiImageData::Iterator it=data.begin(); it!=data.end(); it++)
         {
             complex128_t value = *it;
@@ -896,10 +906,8 @@ BEGIN_RCPP
             {
                 if (!dropNAs)
                 {
-                    if (generic == "range")
-                        return ComplexVector::create(complexNA(), complexNA());
-                    else
-                        return Rf_ScalarComplex(complexNA());
+                    foundNA = true;
+                    break;
                 }
             }
             else if (generic == "sum")
@@ -909,7 +917,10 @@ BEGIN_RCPP
             else
                 stop("Unexpected generic name: \"%s\"", generic.c_str());
         }
-        return wrap(result);
+        if (foundNA)
+            output = Rf_ScalarComplex(complexNA());
+        else
+            output = wrap(result);
     }
     else if (generic == "sum")
     {
@@ -918,7 +929,7 @@ BEGIN_RCPP
             result = std::accumulate(data.begin(), data.end(), 0.0, naDiscardingPlus);
         else
             result = std::accumulate(data.begin(), data.end(), 0.0, naPropagatingPlus);
-        return Rf_ScalarReal(result);
+        output = Rf_ScalarReal(result);
     }
     else if (generic == "prod")
     {
@@ -927,17 +938,19 @@ BEGIN_RCPP
             result = std::accumulate(data.begin(), data.end(), 1.0, naDiscardingTimes);
         else
             result = std::accumulate(data.begin(), data.end(), 1.0, naPropagatingTimes);
-        return Rf_ScalarReal(result);
+        output = Rf_ScalarReal(result);
     }
     else
     {
         double min, max;
         data.minmax(&min, &max, dropNAs);
-        if (generic == "max")           return Rf_ScalarReal(max);
-        else if (generic == "min")      return Rf_ScalarReal(min);
-        else if (generic == "range")    return NumericVector::create(min, max);
+        if (generic == "max")           output = Rf_ScalarReal(max);
+        else if (generic == "min")      output = Rf_ScalarReal(min);
+        else if (generic == "range")    output = NumericVector::create(min, max);
         else                            stop("Unexpected generic name: \"%s\"", generic.c_str());
     }
+    
+    return output;
 END_RCPP
 }
 
@@ -1012,10 +1025,12 @@ BEGIN_RCPP
             extensions.clear();
         else
         {
-            for (extension_list::iterator it=extensions.begin(); it!=extensions.end(); ++it)
+            for (extension_list::iterator it=extensions.begin(); it!=extensions.end(); )
             {
                 if (it->code() == code)
-                    extensions.erase(it);
+                    it = extensions.erase(it);
+                else
+                    ++it;
             }
         }
     }
