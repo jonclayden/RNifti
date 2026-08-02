@@ -712,7 +712,7 @@ inline int NiftiImage::fileVersion (const std::string &path)
 #endif
 }
 
-inline void NiftiImage::acquire (nifti_image * const image)
+inline void NiftiImage::acquire (nifti_image * const image, int * const refCount)
 {
     // If we're taking ownership of a new image, release the old one
     if (this->image != NULL && this->image != image)
@@ -722,10 +722,13 @@ inline void NiftiImage::acquire (nifti_image * const image)
     this->image = image;
     if (image != NULL)
     {
-        if (this->refCount == NULL)
-            this->refCount = new int(1);
+        if (refCount != NULL)
+        {
+            this->refCount = refCount;
+            (*refCount)++;
+        }
         else
-            (*this->refCount)++;
+            this->refCount = new int(1);
         
 #ifndef NDEBUG
         Rc_printf("Acquiring pointer %p (v%d; reference count is %d)\n", (void *) this->image, RNIFTI_NIFTILIB_VERSION, *this->refCount);

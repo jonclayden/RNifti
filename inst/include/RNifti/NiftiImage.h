@@ -1289,11 +1289,13 @@ protected:
     
     /**
      * Acquire the specified pointer to a \c nifti_image \c struct, taking (possibly shared)
-     * responsibility for freeing the associated memory. If the object currently wraps another
-     * pointer, it will be released
+     * responsibility for freeing the associated memory. If this object currently wraps another
+     * pointer, it will be released first
      * @param image The pointer to wrap
+     * @param refCount An existing reference counter to carry over, where applicable. This should
+     * be left at the default of \c NULL for most purposes
     **/
-    void acquire (nifti_image * const image);
+    void acquire (nifti_image * const image, int * const refCount = NULL);
     
     /**
      * Acquire the same pointer as another \c NiftiImage, incrementing the shared reference count
@@ -1301,8 +1303,7 @@ protected:
     **/
     void acquire (const NiftiImage &source)
     {
-        refCount = source.refCount;
-        acquire(source.image);
+        acquire(source.image, source.refCount);
     }
     
     /**
