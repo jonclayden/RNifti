@@ -868,11 +868,17 @@ inline static double naDiscardingTimes (const double &x, const double &y)
     return (ISNA(x) ? 1.0 : x) * (ISNA(y) ? 1.0 : y);
 }
 
+inline static double naDiscardingCount (const double &x, const double &y)
+{
+    return (ISNA(y) ? x : x + 1.0);
+}
+
 RcppExport SEXP summariseImage (SEXP _image, SEXP _generic, SEXP _na_rm)
 {
 BEGIN_RCPP
     const NiftiImage image(_image, true, true);
     const NiftiImageData data = image.data();
+    const size_t length = data.size();
     const std::string generic = as<std::string>(_generic);
     const bool dropNAs = as<bool>(_na_rm);
 
@@ -891,6 +897,7 @@ BEGIN_RCPP
         else if (generic == "min")      output = Rf_ScalarReal(R_PosInf);
         else if (generic == "range")    output = NumericVector::create(R_PosInf, R_NegInf);
         else if (generic == "sum")      output = Rf_ScalarReal(0.0);
+        else if (generic == "mean")     output = Rf_ScalarReal(R_NaN);
         else if (generic == "prod")     output = Rf_ScalarReal(1.0);
         else                            stop("Unexpected generic name: \"%s\"", generic.c_str());
     }
@@ -910,7 +917,7 @@ BEGIN_RCPP
                     break;
                 }
             }
-            else if (generic == "sum")
+            else if (generic == "sum" || generic == "mean")
                 result += value;
             else if (generic == "prod")
                 result *= value;
@@ -919,16 +926,32 @@ BEGIN_RCPP
         }
         if (foundNA)
             output = Rf_ScalarComplex(complexNA());
+        else if (generic == "mean")
+        {
+            Rcomplex scalar;
+            scalar.r = result.real() / double(length);
+            scalar.i = result.imag() / double(length);
+            output = Rf_ScalarComplex(scalar);
+        }
         else
             output = wrap(result);
     }
-    else if (generic == "sum")
+    else if (generic == "sum" || generic == "mean")
     {
         double result;
         if (dropNAs)
             result = std::accumulate(data.begin(), data.end(), 0.0, naDiscardingPlus);
         else
             result = std::accumulate(data.begin(), data.end(), 0.0, naPropagatingPlus);
+        
+        if (generic == "mean")
+        {
+            if (dropNAs)
+                result /= std::accumulate(data.begin(), data.end(), 0.0, naDiscardingCount);
+            else
+                result /= double(length);
+        }
+        
         output = Rf_ScalarReal(result);
     }
     else if (generic == "prod")

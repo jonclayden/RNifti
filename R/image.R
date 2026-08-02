@@ -157,7 +157,7 @@ is.na.internalImage <- function (x)
 #' @export
 mean.internalImage <- function (x, na.rm = FALSE, ...)
 {
-    mean(as.array(x), na.rm=na.rm)
+    .Call("summariseImage", x, "mean", na.rm, PACKAGE="RNifti")
 }
 
 #' @export
