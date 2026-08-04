@@ -115,13 +115,13 @@ readNifti <- readAnalyze <- function (file, internal = FALSE, volumes = NULL, js
 #' @export
 writeNifti <- function (image, file, template = NULL, datatype = "auto", version = 1, compression = 6, json = FALSE)
 {
-    version <- switch(as.character(version), "1"="nifti1", "2"="nifti2", NA_character_)
-    if (is.na(version))
+    versionString <- switch(as.character(version), "1"="nifti1", "2"="nifti2", NA_character_)
+    if (is.na(versionString))
     {
         warning("Version argument value \"", version, "\" is invalid - defaulting to 1")
-        version <- "nifti1"
+        versionString <- "nifti1"
     }
-    paths <- .Call("writeNifti", asNifti(image,template,internal=TRUE), file, tolower(datatype), version, compression, PACKAGE="RNifti")
+    paths <- .Call("writeNifti", asNifti(image,template,internal=TRUE), file, tolower(datatype), versionString, compression, PACKAGE="RNifti")
     
     jsonPath <- paste(sub("\\.(img|nii)(\\.gz)?$", "", paths["image"]), "json", sep=".")
     attribs <- imageAttributes(image)
