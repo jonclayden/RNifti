@@ -1359,7 +1359,21 @@ protected:
      * @param copyData If \c true, the data are copied in; otherwise just the metadata is extracted
     **/
     void initFromArray (const Rcpp::RObject &object, const bool copyData = true);
-   
+    
+    /**
+     * Initialise the object from an arbitrary SEXP, as for the corresponding public constructor.
+     * This does the actual work for that constructor, taking an explicit recursion depth so that
+     * a badly-behaved user-defined \c asNifti() method that fails to convert its input into a
+     * recognisable form cannot cause indefinite recursion
+     * @param object The source object
+     * @param readData If \c true, the pixel data will be retrieved; if not, only the metadata
+     * @param readOnly If \c true, the pointer to the source will always be duplicated to obtain
+     * a new copy, if it is currently shared with the R interpreter
+     * @param depth The current recursion depth, from repeated attempts to resolve the object via
+     * a user-defined \c asNifti() method. Capped at a small constant to guarantee termination
+    **/
+    void initFromSexp (const SEXP object, const bool readData, const bool readOnly, const int depth = 0);
+    
 #endif
     
     /**

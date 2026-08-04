@@ -359,6 +359,28 @@ inline void updateHeader (nifti_1_header *header, const Rcpp::List &list, const 
         strcpy(header->magic, Rcpp::as<std::string>(list["magic"]).substr(0,3).c_str());
 }
 
+// Look for a user-supplied asNifti() S3 method for an object of an unrecognised class, calling
+// it directly if one is found - bypassing standard method dispatch, which would otherwise fall
+// back to asNifti.default(), and hence back into this same constructor with the same
+// unconvertible object, looping forever. Returns R_NilValue if no applicable method exists.
+// The method table lookup itself is delegated to utils::getS3method(), rather than reimplemented
+// natively, since S3 dispatch resolution relies on R internals that aren't part of the public API
+inline Rcpp::RObject tryCustomAsNifti (const Rcpp::RObject &object)
+{
+    static Rcpp::Function getS3method = Rcpp::Environment::namespace_env("utils")["getS3method"];
+    const Rcpp::CharacterVector classes = object.attr("class");
+    for (R_xlen_t i=0; i<classes.size(); i++)
+    {
+        const Rcpp::RObject method = getS3method("asNifti", Rcpp::as<std::string>(classes[i]), Rcpp::Named("optional")=true);
+        if (!Rf_isNull(method))
+        {
+            Rcpp::Function methodFunction(method);
+            return methodFunction(object);
+        }
+    }
+    return R_NilValue;
+}
+
 inline void addAttributes (const SEXP pointer, const NiftiImage &source, const bool realDim = true, const bool includeXptr = true, const bool keepData = true)
 {
     const int nDims = source->dim[0];
@@ -1100,8 +1122,7 @@ inline void NiftiImage::initFromArray (const Rcpp::RObject &object, const bool c
     }
 }
 
-inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const bool readOnly)
-    : image(NULL), refCount(NULL)
+inline void NiftiImage::initFromSexp (const SEXP object, const bool readData, const bool readOnly, const int depth)
 {
     Rcpp::RObject imageObject(object);
     bool resolved = false;
@@ -1157,14 +1178,36 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
             throw std::runtime_error("Cannot currently convert objects of class \"anlz\"");
         else if (imageObject.inherits("MriImage"))
             initFromMriImage(imageObject, readData);
-        else if (Rf_isVectorList(object))
-            initFromList(imageObject);
-        else if (imageObject.hasAttribute("dim"))
-            initFromArray(imageObject, readData);
-        else if (imageObject.hasAttribute("class"))
-            throw std::runtime_error("Cannot convert object of class \"" + Rcpp::as<std::string>(imageObject.attr("class")) + "\" to a nifti_image");
         else
-            throw std::runtime_error("Cannot convert unclassed non-array object");
+        {
+            // A user-supplied asNifti() method takes priority over generic list/array duck-
+            // typing, for an object with an unrecognised class. Objects with no class, or with
+            // one of RNifti's own classes, never reach this lookup, so there's no extra cost
+            // for the common case. The depth cap bounds a badly-behaved method that might
+            // otherwise recurse indefinitely
+            bool resolvedByMethod = false;
+            if (depth < 3 && imageObject.hasAttribute("class") && !imageObject.inherits("niftiImage") && !imageObject.inherits("niftiHeader"))
+            {
+                const Rcpp::RObject converted = internal::tryCustomAsNifti(imageObject);
+                if (!Rf_isNull(converted))
+                {
+                    initFromSexp(converted, readData, readOnly, depth + 1);
+                    resolvedByMethod = true;
+                }
+            }
+            
+            if (!resolvedByMethod)
+            {
+                if (Rf_isVectorList(object))
+                    initFromList(imageObject);
+                else if (imageObject.hasAttribute("dim"))
+                    initFromArray(imageObject, readData);
+                else if (imageObject.hasAttribute("class"))
+                    throw std::runtime_error("Cannot convert object of class \"" + Rcpp::as<std::string>(imageObject.attr("class")) + "\" to a nifti_image");
+                else
+                    throw std::runtime_error("Cannot convert unclassed non-array object");
+            }
+        }
     }
     
     if (this->image != NULL)
@@ -1179,6 +1222,12 @@ inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const boo
 #ifndef NDEBUG
     Rc_printf("Creating NiftiImage (v%d) with pointer %p (from SEXP)\n", RNIFTI_NIFTILIB_VERSION, (void *) this->image);
 #endif
+}
+
+inline NiftiImage::NiftiImage (const SEXP object, const bool readData, const bool readOnly)
+    : image(NULL), refCount(NULL)
+{
+    initFromSexp(object, readData, readOnly);
 }
 
 #endif // USING_R
