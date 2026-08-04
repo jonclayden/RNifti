@@ -1,5 +1,3 @@
-.isXformMatrix <- function (x) return (is.numeric(x) && identical(dim(x),c(4L,4L)))
-
 #' Obtain or replace the ``xform'' transforms for an image
 #' 
 #' These functions convert the ``qform'' or ``sform'' information in a NIfTI
@@ -64,19 +62,13 @@
 #' @export
 xform <- function (image, useQuaternionFirst = TRUE)
 {
-    if (.isXformMatrix(image))
-        return (image)
-    else
-        return (.Call("getXform", asNifti(image,internal=TRUE), isTRUE(useQuaternionFirst), PACKAGE="RNifti"))
+    return (.Call("getXform", image, isTRUE(useQuaternionFirst), PACKAGE="RNifti"))
 }
 
 #' @rdname xform
 #' @export
 "qform<-" <- function (x, value)
 {
-    if (!inherits(x, "niftiHeader"))
-        x <- asNifti(x)
-    
     return (.Call("setXform", x, value, TRUE, PACKAGE="RNifti"))
 }
 
@@ -84,9 +76,6 @@ xform <- function (image, useQuaternionFirst = TRUE)
 #' @export
 "sform<-" <- function (x, value)
 {
-    if (!inherits(x, "niftiHeader"))
-        x <- asNifti(x)
-    
     return (.Call("setXform", x, value, FALSE, PACKAGE="RNifti"))
 }
 
@@ -94,9 +83,6 @@ xform <- function (image, useQuaternionFirst = TRUE)
 #' @export
 orientation <- function (x, useQuaternionFirst = TRUE)
 {
-    if (!.isXformMatrix(x))
-        x <- asNifti(x, internal=TRUE)
-    
     return (.Call("getOrientation", x, isTRUE(useQuaternionFirst), PACKAGE="RNifti"))
 }
 
@@ -104,9 +90,6 @@ orientation <- function (x, useQuaternionFirst = TRUE)
 #' @export
 "orientation<-" <- function (x, value)
 {
-    if (!.isXformMatrix(x))
-        x <- asNifti(x)
-    
     return (.Call("setOrientation", x, as.character(value), PACKAGE="RNifti"))
 }
 
@@ -114,9 +97,6 @@ orientation <- function (x, useQuaternionFirst = TRUE)
 #' @export
 rotation <- function (x, useQuaternionFirst = TRUE)
 {
-    if (!.isXformMatrix(x))
-        x <- asNifti(x, internal=TRUE)
-    
     return (.Call("getRotation", x, isTRUE(useQuaternionFirst), PACKAGE="RNifti"))
 }
 
