@@ -114,6 +114,19 @@
 #'   that evaluate \code{FALSE} will be set to \code{NA} for that layer,
 #'   meaning they will not be plotted. This operation is performed last, and so
 #'   will not affect auto-windowing.
+#' @param alpha A single opacity value, between 0 (fully transparent) and 1
+#'   (fully opaque, the default), to apply to the layer's colour scale.
+#'   Setting this requires the \code{shades} package.
+#' @param label An optional character string overriding the default label for
+#'   the layer, which is otherwise obtained by deparsing the \code{image}
+#'   argument.
+#' @param dict An optional named vector or list giving a dictionary of labels
+#'   for particular numerical values in the image, for layers whose values are
+#'   categorical rather than continuous (e.g., an atlas image with regions of
+#'   interest indicated by integer codes). Names should be the numeric codes,
+#'   coerced to strings, and values the corresponding labels. If given, these
+#'   labels will be shown instead of raw numbers in the default information
+#'   panel.
 #' @return \code{lyr} returns a list of class \code{"viewLayer"}, to be used
 #'   in a view. \code{view} is called for its side-effect of showing a view.
 #' 
@@ -227,6 +240,15 @@ view <- function (..., point = NULL, radiological = getOption("radiologicalView"
                 result <- do.call("[", c(list(layer$image), indices[seq_len(ndim(layer$image))]))
                 if (inherits(layer$image, "rgbArray"))
                     return (as.character(structure(result, dim=c(1,length(result)), class="rgbArray")))
+                else if (!is.null(layer$dict))
+                {
+                    # Look up each value in the dictionary, falling back to the raw value if it isn't found
+                    labels <- unname(layer$dict[as.character(result)])
+                    found <- !is.na(labels)
+                    labels[found] <- paste0(labels[found], " (", result[found], ")")
+                    labels[!found] <- as.character(result[!found])
+                    return (labels)
+                }
                 else
                     return (result)
             })
@@ -300,10 +322,14 @@ view <- function (..., point = NULL, radiological = getOption("radiologicalView"
 
 #' @rdname view
 #' @export
-lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL)
+lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL, alpha = 1, label = NULL, dict = NULL)
 {
-    label <- deparse(substitute(image))
+    if (is.null(label))
+        label <- deparse(substitute(image))
     image <- asNifti(image, internal=FALSE)
+    
+    if (!is.null(dict) && is.null(names(dict)))
+        stop("The \"dict\" argument must be a named vector or list, giving labels for particular numeric values")
     
     if (inherits(image, "rgbArray"))
         colours <- window <- NULL
@@ -317,6 +343,9 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL)
         # Ditto if it was surrounded by I() so as to make it of class "AsIs"
         if (is.null(colours) || inherits(colours, "try-error"))
             colours <- unclass(scale)
+        
+        if (is.numeric(alpha) && !is.na(alpha) && alpha != 1)
+            colours <- unclass(shades::opacity(colours, alpha))
         
         if (is.null(min))
             min <- image$cal_min
@@ -354,7 +383,7 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL)
             image[!as.logical(mask)] <- NA
     }
     
-    return (structure(list(image=image, label=label, colours=colours, window=window), class="viewLayer"))
+    return (structure(list(image=image, label=label, colours=colours, window=window, dict=dict), class="viewLayer"))
 }
 
 .quitInstructions <- function ()
