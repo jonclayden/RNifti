@@ -430,7 +430,7 @@ defaultInfoPanel <- function (point, data, labels)
                 data[[i]]
         }, labels[i])
     }
-    text(0.5, yLocs, rev(text), col=c(rep(c("white","red"),nImages),"grey70"), cex=pmin(1,1/strwidth(rev(text))), xpd=TRUE)
+    text(0.5, yLocs, rev(text), col=c(rep(c("white","red"),nImages),"grey70"), cex=pmin(1,1/strwidth(rev(text))), font=c(rep(c(2,1),nImages),3), xpd=TRUE)
 }
 
 #' @rdname defaultInfoPanel
