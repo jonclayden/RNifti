@@ -31,3 +31,12 @@ image <- asNifti(data, internal=TRUE)
 expect_equal(sum(image), NA_integer_)
 expect_equal(sum(image,na.rm=TRUE), sum(data,na.rm=TRUE))
 expect_equal(range(image,na.rm=TRUE), range(data,na.rm=TRUE))
+
+# And with complex-mode data, which has a separate processing path in C++
+data <- matrix(complex(real=rnorm(9), imaginary=rnorm(9)), 3, 3)
+data[sample(1:9,1)] <- NA_complex_
+image <- asNifti(data, internal=TRUE)
+expect_equal(mean(image), NA_complex_)
+expect_equal(sum(image), NA_complex_)
+expect_equal(mean(image,na.rm=TRUE), mean(data,na.rm=TRUE))
+expect_equal(sum(image,na.rm=TRUE), sum(data,na.rm=TRUE))

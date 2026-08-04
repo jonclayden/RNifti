@@ -903,9 +903,10 @@ BEGIN_RCPP
     }
     else if (data.isComplex())
     {
-        // Complex min/max/range are rejected above, so only sum and prod reach here
+        // Complex min/max/range are rejected above, so only sum, mean and prod reach here
         complex128_t result(generic == "prod" ? 1.0 : 0.0, 0.0);
         bool foundNA = false;
+        size_t validCount = 0;
         for (NiftiImageData::Iterator it=data.begin(); it!=data.end(); it++)
         {
             complex128_t value = *it;
@@ -918,7 +919,10 @@ BEGIN_RCPP
                 }
             }
             else if (generic == "sum" || generic == "mean")
+            {
                 result += value;
+                validCount++;
+            }
             else if (generic == "prod")
                 result *= value;
             else
@@ -929,8 +933,9 @@ BEGIN_RCPP
         else if (generic == "mean")
         {
             Rcomplex scalar;
-            scalar.r = result.real() / double(length);
-            scalar.i = result.imag() / double(length);
+            const double divisor = dropNAs ? double(validCount) : double(length);
+            scalar.r = result.real() / divisor;
+            scalar.i = result.imag() / divisor;
             output = Rf_ScalarComplex(scalar);
         }
         else
