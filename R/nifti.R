@@ -185,10 +185,10 @@ writeAnalyze <- function (image, file, template = NULL, datatype = "auto", compr
 #' the same names. They may be removed in future.
 #' 
 #' @param x Any suitable object (see Details).
+#' @param ... Additional parameters to methods.
 #' @param reference An image, or a named list of NIfTI-1 properties like that
 #'   produced by \code{\link{niftiHeader}}. The default of \code{NULL} will
 #'   have no effect.
-#' @param ... Additional parameters to methods.
 #' @param datatype The NIfTI datatype to use within the internal image. The
 #'   default, \code{"auto"} uses the R type. Other possibilities are
 #'   \code{"float"}, \code{"int16"}, etc., which may be preferred to reduce
@@ -217,7 +217,7 @@ writeAnalyze <- function (image, file, template = NULL, datatype = "auto", compr
 #'   \code{\link{dim.internalImage}}, \code{\link{pixdim}}, \code{\link{xform}}
 #' @aliases retrieveNifti updateNifti
 #' @export
-asNifti <- function (x, reference = NULL, ...)
+asNifti <- function (x, ...)
 {
     UseMethod("asNifti")
 }
