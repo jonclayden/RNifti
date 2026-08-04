@@ -55,6 +55,16 @@
         on.exit(par(oldPars))
         image(indices, col=palette, axes=FALSE, asp=asp, add=add, zlim=c(1,length(palette)))
     }
+    else if (!is.null(names(layer$colours)))
+    {
+        # Discrete colouring via a named lookup table: map data values onto specific colour indices
+        # Values with no corresponding name in the table become NA, and so are not shown
+        indices <- match(as.character(data), names(layer$colours))
+        dim(indices) <- dims
+        oldPars <- par(mai=c(0,0,0,0))
+        on.exit(par(oldPars))
+        image(indices, col=unname(layer$colours), axes=FALSE, asp=asp, add=add, zlim=c(1,length(layer$colours)))
+    }
     else
     {
         # Other data is shown using standard image(), but zeroes are set to NA to make them transparent
@@ -99,8 +109,12 @@
 #'   greyscale, \code{"heat"} for a heatmap, \code{"rainbow"} for a rainbow
 #'   scale, or any of the scales defined in the \code{shades} package (see
 #'   \code{?shades::gradient}, if that package is installed). A fixed colour
-#'   can be used by wrapping a string in a call to \code{I}. Ignored for RGB
-#'   images.
+#'   can be used by wrapping a string in a call to \code{I}. If a \emph{named}
+#'   character vector is given instead, it is taken to be a lookup table
+#'   assigning specific colours to specific numerical values (named by the
+#'   value, as for \code{dict}), for categorical images such as atlases or
+#'   parcellations; any value without a matching name will not be shown.
+#'   Ignored for RGB images.
 #' @param min,max The window minimum and maximum for the layer, i.e., the black
 #'   and white points. These are ignored for RGB images. Otherwise, if
 #'   \code{NULL}, the default, they are taken from the \code{cal_min} or
@@ -331,8 +345,22 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL, alp
     if (!is.null(dict) && is.null(names(dict)))
         stop("The \"dict\" argument must be a named vector or list, giving labels for particular numeric values")
     
+    # A named "scale" is a lookup table assigning colours to specific values, for categorical images
+    discrete <- is.character(scale) && !is.null(names(scale))
+    
     if (inherits(image, "rgbArray"))
         colours <- window <- NULL
+    else if (discrete)
+    {
+        colours <- scale
+        if (is.numeric(alpha) && !is.na(alpha) && alpha != 1)
+        {
+            # shades::opacity() does not preserve names, so these must be reattached
+            colours <- unclass(shades::opacity(colours, alpha))
+            names(colours) <- names(scale)
+        }
+        window <- NULL
+    }
     else
     {
         colours <- NULL
@@ -346,6 +374,9 @@ lyr <- function (image, scale = "grey", min = NULL, max = NULL, mask = NULL, alp
         
         if (is.numeric(alpha) && !is.na(alpha) && alpha != 1)
             colours <- unclass(shades::opacity(colours, alpha))
+        
+        # Make sure colours are unnamed in this branch, otherwise they will be treated as a lookup table
+        names(colours) <- NULL
         
         if (is.null(min))
             min <- image$cal_min

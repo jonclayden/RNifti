@@ -63,8 +63,12 @@ string naming a predefined scale: \code{"grey"} or \code{"gray"} for
 greyscale, \code{"heat"} for a heatmap, \code{"rainbow"} for a rainbow
 scale, or any of the scales defined in the \code{shades} package (see
 \code{?shades::gradient}, if that package is installed). A fixed colour
-can be used by wrapping a string in a call to \code{I}. Ignored for RGB
-images.}
+can be used by wrapping a string in a call to \code{I}. If a \emph{named}
+character vector is given instead, it is taken to be a lookup table
+assigning specific colours to specific numerical values (named by the
+value, as for \code{dict}), for categorical images such as atlases or
+parcellations; any value without a matching name will not be shown.
+Ignored for RGB images.}
 
 \item{min, max}{The window minimum and maximum for the layer, i.e., the black
 and white points. These are ignored for RGB images. Otherwise, if
