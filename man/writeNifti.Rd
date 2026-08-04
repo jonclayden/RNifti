@@ -5,11 +5,17 @@
 \alias{writeAnalyze}
 \title{Write a NIfTI or ANALYZE format file}
 \usage{
-writeNifti(image, file, template = NULL, datatype = "auto", version = 1,
-  compression = 6, json = FALSE)
+writeNifti(
+  image,
+  file,
+  template = NULL,
+  datatype = "auto",
+  version = 1,
+  compression = 6,
+  json = FALSE
+)
 
-writeAnalyze(image, file, template = NULL, datatype = "auto",
-  compression = 6)
+writeAnalyze(image, file, template = NULL, datatype = "auto", compression = 6)
 }
 \arguments{
 \item{image}{An image, in any acceptable form (see \code{\link{asNifti}}).}

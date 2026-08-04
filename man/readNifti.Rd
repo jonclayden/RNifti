@@ -5,8 +5,12 @@
 \alias{readAnalyze}
 \title{Read NIfTI or ANALYZE format files}
 \usage{
-readNifti(file, internal = FALSE, volumes = NULL, json = c("ignore",
-  "read", "convert"))
+readNifti(
+  file,
+  internal = FALSE,
+  volumes = NULL,
+  json = c("ignore", "read", "convert")
+)
 }
 \arguments{
 \item{file}{A character vector of file names.}

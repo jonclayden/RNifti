@@ -5,11 +5,26 @@
 \alias{lyr}
 \title{A basic 3D image viewer}
 \usage{
-view(..., point = NULL, radiological = getOption("radiologicalView",
-  FALSE), interactive = base::interactive(), crosshairs = TRUE,
-  labels = TRUE, infoPanel = defaultInfoPanel)
+view(
+  ...,
+  point = NULL,
+  radiological = getOption("radiologicalView", FALSE),
+  interactive = base::interactive(),
+  crosshairs = TRUE,
+  labels = TRUE,
+  infoPanel = defaultInfoPanel
+)
 
-lyr(image, scale = "grey", min = NULL, max = NULL, mask = NULL)
+lyr(
+  image,
+  scale = "grey",
+  min = NULL,
+  max = NULL,
+  mask = NULL,
+  alpha = 1,
+  label = NULL,
+  dict = NULL
+)
 }
 \arguments{
 \item{...}{One or more images, or \code{"viewLayer"} objects, to display.
@@ -65,6 +80,22 @@ the main image. If specified, this is converted to logical mode and pixels
 that evaluate \code{FALSE} will be set to \code{NA} for that layer,
 meaning they will not be plotted. This operation is performed last, and so
 will not affect auto-windowing.}
+
+\item{alpha}{A single opacity value, between 0 (fully transparent) and 1
+(fully opaque, the default), to apply to the layer's colour scale.
+Setting this requires the \code{shades} package.}
+
+\item{label}{An optional character string overriding the default label for
+the layer, which is otherwise obtained by deparsing the \code{image}
+argument.}
+
+\item{dict}{An optional named vector or list giving a dictionary of labels
+for particular numerical values in the image, for layers whose values are
+categorical rather than continuous (e.g., an atlas image with regions of
+interest indicated by integer codes). Names should be the numeric codes,
+coerced to strings, and values the corresponding labels. If given, these
+labels will be shown instead of raw numbers in the default information
+panel.}
 }
 \value{
 \code{lyr} returns a list of class \code{"viewLayer"}, to be used

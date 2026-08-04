@@ -25,5 +25,4 @@ License: GPL-2
 URL: https://github.com/jonclayden/RNifti
 BugReports: https://github.com/jonclayden/RNifti/issues
 Encoding: UTF-8
-RoxygenNote: 7.3.3
-Roxygen: list(old_usage=TRUE)
+Config/roxygen2/version: 8.0.0

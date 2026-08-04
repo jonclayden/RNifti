@@ -9,8 +9,13 @@
 \usage{
 extensions(image)
 
-extension(image, code, mode = c("raw", "character", "numeric", "double",
-  "integer", "logical", "complex"), ..., simplify = TRUE)
+extension(
+  image,
+  code,
+  mode = c("raw", "character", "numeric", "double", "integer", "logical", "complex"),
+  ...,
+  simplify = TRUE
+)
 
 extensions(image) <- value
 
