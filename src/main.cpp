@@ -567,8 +567,8 @@ BEGIN_RCPP
         if (MAYBE_SHARED(_image))
             image = Rf_duplicate(image);
         
-        double qbcd[3], qxyz[3], dxyz[3], qfac;
-        nifti_dmat44_to_quatern(xform, &qbcd[0], &qbcd[1], &qbcd[2], &qxyz[0], &qxyz[1], &qxyz[2], &dxyz[0], &dxyz[1], &dxyz[2], &qfac);
+        double qbcd[3], qxyz[3], qfac;
+        nifti_dmat44_to_quatern(xform, &qbcd[0], &qbcd[1], &qbcd[2], &qxyz[0], &qxyz[1], &qxyz[2], NULL, NULL, NULL, &qfac);
         
         if (as<bool>(_isQform))
         {
@@ -593,10 +593,6 @@ BEGIN_RCPP
             if (code >= 0)
                 *INTEGER(image["sform_code"]) = code;
         }
-        
-        const int dimensionality = INTEGER(image["dim"])[0];
-        for (int i=0; i<std::min(3,dimensionality); i++)
-            REAL(image["pixdim"])[i+1] = dxyz[i];
         
         return image;
     }
