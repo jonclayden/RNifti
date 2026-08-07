@@ -294,22 +294,18 @@ updateNifti <- function (image, template = NULL, datatype = "auto")
 #' @export niftiHeader dumpNifti
 niftiHeader <- dumpNifti <- function (image = list(), unused = FALSE)
 {
-    # Special case to avoid expensively reading image data from file when only metadata is needed
-    if (is.character(image) && length(image) == 1 && !inherits(image,"internalImage"))
-        .Call("niftiHeader", image, unused, PACKAGE="RNifti")
-    else
-        .Call("niftiHeader", asNifti(image,internal=TRUE), unused, PACKAGE="RNifti")
+    # The C++ side already special-cases plain string paths, to avoid expensively
+    # reading image data from file when only metadata is needed
+    .Call("niftiHeader", image, unused, PACKAGE="RNifti")
 }
 
 #' @rdname niftiHeader
 #' @export
 analyzeHeader <- function (image = list())
 {
-    # Special case needed to avoid converting to NIfTI internally first
-    if (is.character(image) && length(image) == 1 && !inherits(image,"internalImage"))
-        .Call("analyzeHeader", image, PACKAGE="RNifti")
-    else
-        .Call("analyzeHeader", asNifti(image,internal=TRUE), PACKAGE="RNifti")
+    # The C++ side already special-cases plain string paths, to avoid converting to
+    # NIfTI internally (and back) first, which is somewhat destructive
+    .Call("analyzeHeader", image, PACKAGE="RNifti")
 }
 
 #' @rdname niftiHeader

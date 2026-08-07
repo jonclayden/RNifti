@@ -58,7 +58,7 @@ ExtensionCodes <- c(ignore=0L, DICOM=2L, AFNI=4L, comment=6L, XCEDE=8L, jimdimin
 #' @export
 extensions <- function (image)
 {
-    .Call("getExtensions", asNifti(image,internal=TRUE), -1L, PACKAGE="RNifti")
+    .Call("getExtensions", image, -1L, PACKAGE="RNifti")
 }
 
 #' @rdname extensions
@@ -66,7 +66,7 @@ extensions <- function (image)
 extension <- function (image, code, mode = c("raw","character","numeric","double","integer","logical","complex"), ..., simplify = TRUE)
 {
     mode <- match.arg(mode)
-    raw <- .Call("getExtensions", asNifti(image,internal=TRUE), .resolveCode(code), PACKAGE="RNifti")
+    raw <- .Call("getExtensions", image, .resolveCode(code), PACKAGE="RNifti")
     
     convert <- function(x) switch(mode, raw=x, character=rawToChar(x), readBin(rawConnection(x), mode, length(x), ...))
     
@@ -84,7 +84,7 @@ extension <- function (image, code, mode = c("raw","character","numeric","double
 {
     if (!is.list(value))
         value <- list(value)
-    .Call("setExtensions", asNifti(image), value, -1L, PACKAGE="RNifti")
+    .Call("setExtensions", image, value, -1L, PACKAGE="RNifti")
 }
 
 #' @rdname extensions
@@ -97,5 +97,5 @@ extension <- function (image, code, mode = c("raw","character","numeric","double
             warning("List elements after the first are ignored when adding an image extension")
         value <- value[[1]]
     }
-    .Call("setExtensions", asNifti(image), value, .resolveCode(code), PACKAGE="RNifti")
+    .Call("setExtensions", image, value, .resolveCode(code), PACKAGE="RNifti")
 }
