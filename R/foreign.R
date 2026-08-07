@@ -58,6 +58,7 @@ asNifti.MriImage <- function (x, datatype = "auto", internal = NA, ...)
     if (inherits(data, "SparseArray"))
         data <- as.array(data)
     
+    # MriImage tags may include other NIfTI fields, but also unrelated metadata that becomes attributes
     header <- niftiHeader(x$tags)
     attribNames <- setdiff(names(x$tags), names(header))
     
@@ -65,17 +66,15 @@ asNifti.MriImage <- function (x, datatype = "auto", internal = NA, ...)
     
     # This method is available since TractoR v3.0.0, and returns an implicit xform if none is stored
     xform <- structure(x$getXform(), code=2L)
+    sform(header) <- xform
+    qform(header) <- xform
     
     if (is.null(data))
     {
-        # dim and pixdim should be set before assigning an xform
         qfac <- determinant(xform)$sign
         header$dim <- as.integer(c(ndim, x$imageDims, rep(1L,7-ndim)))
         header$pixdim <- c(qfac, abs(x$voxelDims), rep(0,7-ndim))
         header$xyzt_units <- sum(c(unknown=0L,m=1L,mm=2L,um=3L,s=8L,ms=16L,us=24L)[x$voxelDimUnits])
-        
-        sform(header) <- xform
-        qform(header) <- xform
         
         # Creating an internal image makes sense when there's no data
         result <- asNifti(header, datatype=datatype, internal=TRUE, ...)
@@ -88,8 +87,10 @@ asNifti.MriImage <- function (x, datatype = "auto", internal = NA, ...)
         attr(data, "pixdim") <- abs(x$voxelDims)
         attr(data, "pixunits") <- x$voxelDimUnits
         
-        sform(header) <- xform
-        qform(header) <- xform
+        # The header is used first below, so its own pixdim (still at niftiHeader()'s arbitrary
+        # default here) needs to already agree with the array's, or asNifti() will interpret the
+        # "change" as a request to rescale the xform we just set, rather than a benign no-op
+        header$pixdim[1 + seq_len(ndim)] <- abs(x$voxelDims)
         
         result <- asNifti(data, header, datatype=datatype, internal=internal, ...)
     }
