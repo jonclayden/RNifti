@@ -128,7 +128,7 @@ BEGIN_RCPP
     const std::string datatype = as<std::string>(_datatype);
     const bool willChangeDatatype = (datatype != "auto");
     const int internal = as<int>(_internal);
-    const bool usePointer = (internal == 1 || (internal == NA_LOGICAL && Rf_inherits(_image,"internalImage")) || willChangeDatatype);
+    bool usePointer = (internal == 1 || (internal == NA_LOGICAL && Rf_inherits(_image,"internalImage")) || willChangeDatatype);
     
     NiftiImage image;
     if (Rf_isNull(_reference))
@@ -144,6 +144,10 @@ BEGIN_RCPP
         image = NiftiImage(_reference);
         image.update(_image);
     }
+    
+    // There's little point materialising an array from a data-free image object, and it will produce a warning
+    if (image.data().isEmpty())
+        usePointer = true;
     
     if (willChangeDatatype)
         image.changeDatatype(datatype);
