@@ -131,13 +131,14 @@ BEGIN_RCPP
     const bool usePointer = (internal == 1 || (internal == NA_LOGICAL && Rf_inherits(_image,"internalImage")) || willChangeDatatype);
     
     NiftiImage image;
-    if (Rf_isVectorList(_reference) && Rf_length(_reference) < 36)
+    if (Rf_isNull(_reference))
+        image = NiftiImage(_image);
+    else if (Rf_isVectorList(_reference) && !Rf_inherits(_reference,"niftiHeader"))
     {
+        // An incomplete list of fields to overlay onto the image, rather than a full reference
         image = NiftiImage(_image);
         image.update(_reference);
     }
-    else if (Rf_isNull(_reference))
-        image = NiftiImage(_image);
     else
     {
         image = NiftiImage(_reference);
