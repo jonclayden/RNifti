@@ -1,5 +1,18 @@
 imagePath <- system.file("extdata", "example.nii.gz", package="RNifti")
 
+# tractor.base and oro.nifti both register RNifti's "internalImage" S3 class as an S4 oldClass,
+# independently and inconsistently (tractor.base's version correctly extends "niftiImage";
+# oro.nifti's does not). Since S4 class registration is global, not namespaced, whichever is
+# registered first wins and the other is shadowed. Loading tractor.base's version first avoids
+# it being shadowed by oro.nifti's, which breaks tractor.base's own internal use of it in some
+# cases (e.g. metadataOnly reads below) - this has nothing to do with RNifti itself
+invisible(requireNamespace("tractor.base", quietly=TRUE))
+
+# The class cache collision described above produces a message() every time R has to resolve
+# "internalImage" against it, regardless of which package's registration wins - harmless, but
+# noisy, so it's suppressed around the calls that actually trigger the lookup
+suppressMessages({
+
 if (requireNamespace("oro.nifti", quietly=TRUE))
 {
     # The oro.nifti package warns about nonzero slope, which is nothing to worry about
@@ -7,7 +20,7 @@ if (requireNamespace("oro.nifti", quietly=TRUE))
     expect_equal(niftiHeader(image)$bitpix, 32L)
     expect_equal(asNifti(image)[40,40,30], 368)
 }
-    
+
 if (requireNamespace("tractor.base", quietly=TRUE))
 {
     reportr::setOutputLevel(reportr::OL$Warning)
@@ -20,7 +33,13 @@ if (requireNamespace("tractor.base", quietly=TRUE))
     image <- tractor.base::readImageFile(imagePath, sparse=TRUE)
     expect_equal(niftiHeader(image)$bitpix, 32L)
     expect_equal(asNifti(image)[40,40,30], 368)
+    
+    metadata <- tractor.base::readImageFile(imagePath, metadataOnly=TRUE)
+    expect_equal(niftiHeader(metadata)$pixdim, niftiHeader(image)$pixdim)
+    expect_false(RNifti:::hasData(metadata))
 }
+
+})
 
 # A package extending RNifti to a class it knows nothing about natively, purely by providing an
 # asNifti() S3 method, should still work correctly through any function that ultimately constructs
