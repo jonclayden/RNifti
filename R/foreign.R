@@ -1,32 +1,5 @@
-#' asNifti() methods for foreign image classes
-#'
-#' These \code{\link{asNifti}} methods extend it to classes from other packages: \code{"nifti"}
-#' objects from \code{oro.nifti}, and \code{"MriImage"} objects from \code{tractor.base}. They
-#' are defined here in exactly the way that any third-party package could extend \code{asNifti}
-#' for its own classes, as a proof of concept for that general mechanism. The conversion work
-#' itself is done in R, where extracting S4 slots and reference-class fields is a more natural
-#' fit than the equivalent C++; only genuinely delicate numerical work (the xform matrix, for
-#' \code{"MriImage"}) is left to the existing, already-exposed C++ machinery, via the ordinary
-#' \code{srow_x}/\code{srow_y}/\code{srow_z} header fields rather than a fresh mutation step.
-#' Historically, this logic was instead hardcoded into the underlying C++ constructor, from
-#' before \code{asNifti} became an S3 generic.
-#'
-#' Unlike \code{\link{asNifti}} itself, these methods do not accept a \code{reference} argument:
-#' the source object is already a complete description of the image, so there is no external
-#' information to merge in, and folding one in would mean a second, redundant pass through
-#' \code{asNifti} to apply it.
-#'
-#' @param x An object of the corresponding class.
-#' @param datatype,internal,... See \code{\link{asNifti}}.
-#' @return An array or internal image, with class \code{"niftiImage"}.
-#'
-#' @author Jon Clayden <code@@clayden.org>
-#' @seealso \code{\link{asNifti}}
-#' @name asNifti-foreign
-#' @rdname asNifti-foreign
-NULL
-
-#' @rdname asNifti-foreign
+#' @rdname asNifti
+#' @order 3
 #' @export
 asNifti.nifti <- function (x, datatype = "auto", internal = NA, ...)
 {
@@ -50,7 +23,8 @@ asNifti.nifti <- function (x, datatype = "auto", internal = NA, ...)
     asNifti(data, header, datatype=datatype, internal=internal, ...)
 }
 
-#' @rdname asNifti-foreign
+#' @rdname asNifti
+#' @order 4
 #' @export
 asNifti.MriImage <- function (x, datatype = "auto", internal = NA, ...)
 {

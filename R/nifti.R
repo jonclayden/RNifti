@@ -149,25 +149,28 @@ writeAnalyze <- function (image, file, template = NULL, datatype = "auto", compr
 #' This function converts a filename, array or other image class into an object
 #' of class \code{"niftiImage"}, and optionally updates its metadata from a
 #' reference image and/or changes its internal datatype. The dimensions and
-#' pixel dimensions from the \code{image} will replace those from the reference
-#' object, if they are available.
+#' pixel dimensions from \code{x} will replace those from the reference object,
+#' if they are available.
 #' 
-#' If the \code{image} has an internal NIfTI pointer, that will be retrieved
-#' directly. Otherwise, if it is a string, it will be taken to be a filename.
-#' If it looks like a \code{"nifti"} object (from package \code{oro.nifti}),
-#' or an \code{"MriImage"} object (from package \code{tractor.base}), a
-#' conversion will be performed. A list will be assumed to be of the form
-#' produced by \code{\link{niftiHeader}}. Finally, a numeric array or matrix,
-#' or RGB array, will be converted using default image parameters.
+#' If \code{x} has an internal NIfTI pointer, that will be retrieved directly.
+#' This will be the case for existing \code{"niftiImage"} objects, including
+#' internal images. Otherwise, if it is a string, it will be taken to be a
+#' filename. A list of the form produced by \code{\link{niftiHeader}} will
+#' convert to an image with no data, while a numeric array or matrix, or RGB
+#' array, will be converted using default image parameters.
 #' 
-#' If \code{reference} is a complete list of NIfTI-1 header fields, like that
-#' produced by \code{\link{niftiHeader}}, or an image, then it will be used to
-#' create the internal object, and then the data and metadata associated with
-#' the \code{image} will overwrite the appropriate parts. If \code{reference}
-#' is an incomplete list, the \code{image} will be used to create the internal
-#' object, and then the specified fields will be overwritten from the list.
-#' This allows users to selectively update certain fields while leaving others
-#' alone (but see the note below).
+#' \code{asNifti} is (S3) generic, so methods can be defined for other object
+#' types. Methods for \code{"nifti"} objects from the \code{oro.nifti} package,
+#' and \code{"MriImage"} objects from \code{tractor.base}, are provided.
+#' 
+#' For the default method, if \code{reference} is a \code{\link{niftiHeader}}
+#' object containing a complete list of NIfTI-1 header fields, or an image,
+#' it will be used to create the internal object, and then the data and
+#' metadata associated with \code{x} will overwrite the appropriate parts. If
+#' \code{reference} is an incomplete list, \code{x} will be used to create the
+#' internal object, and then the specified fields will be overwritten from the
+#' list. This allows users to selectively update certain fields while leaving
+#' others alone (but see the note below).
 #' 
 #' If multiple values are passed for a field that expects a scalar (which is
 #' most of them), the first element of the vector will be used, with a warning.
@@ -199,8 +202,9 @@ writeAnalyze <- function (image, file, template = NULL, datatype = "auto", compr
 #'   with some metadata in attributes. If \code{TRUE}, the result will be an
 #'   object of class \code{"internalImage"}, which exposes some basic metadata
 #'   to R but stores the pixel data internally. If \code{NA}, the default, the
-#'   result will be an internal image only if the input \code{image} is. If a
-#'   new \code{datatype} is set then this value is implicitly \code{TRUE}.
+#'   result will match \code{x}. However, if a new \code{datatype} is set, or
+#'   the final object contains no pixel data, then this value is implicitly
+#'   \code{TRUE}.
 #' @return An array or internal image, with class \code{"niftiImage"} (and
 #'   possibly also \code{"internalImage"}).
 #' 
@@ -216,6 +220,7 @@ writeAnalyze <- function (image, file, template = NULL, datatype = "auto", compr
 #' @seealso \code{\link{readNifti}}, \code{\link{$.niftiImage}},
 #'   \code{\link{dim.internalImage}}, \code{\link{pixdim}}, \code{\link{xform}}
 #' @aliases retrieveNifti updateNifti
+#' @order 1
 #' @export
 asNifti <- function (x, ...)
 {
@@ -223,6 +228,7 @@ asNifti <- function (x, ...)
 }
 
 #' @rdname asNifti
+#' @order 2
 #' @export
 asNifti.default <- function (x, reference = NULL, datatype = "auto", internal = NA, ...)
 {
