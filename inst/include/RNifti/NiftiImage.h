@@ -1334,20 +1334,6 @@ protected:
 #ifdef USING_R
 
     /**
-     * Initialise the object from an S4 object of class \c "nifti"
-     * @param object The source object
-     * @param copyData If \c true, the data are copied in; otherwise just the metadata is extracted
-    **/
-    void initFromNiftiS4 (const Rcpp::RObject &object, const bool copyData = true);
-    
-    /**
-     * Initialise the object from a reference object of class \c "MriImage"
-     * @param object The source object
-     * @param copyData If \c true, the data are copied in; otherwise just the metadata is extracted
-    **/
-    void initFromMriImage (const Rcpp::RObject &object, const bool copyData = true);
-    
-    /**
      * Initialise the object from an R list with named elements, which can only contain metadata
      * @param object The source object
     **/
