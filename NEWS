@@ -2,6 +2,63 @@ Significant changes to the RNifti package are laid out below for each release.
 
 ===============================================================================
 
+VERSION 1.10.0
+
+R interface
+
+- Methods for `asNifti()` are now discoverable by the package's C++ core, which
+  significantly reduces the need to call the function explicitly, which in turn
+  can save some data copying. The `reference` argument is no longer part of the
+  generic's signature. Conversion of `"nifti"` and `"MriImage"` objects, from
+  the `oro.nifti` and `tractor.base` packages, respectively, is now performed
+  by pure-R methods rather than being hardcoded into the C++ layer, a change
+  which ends up being performance-neutral (or even an improvement) due to fewer
+  calls into the R API.
+- `lyr()` gains new `label`, `alpha` and `dict` arguments, for naming a layer
+  explicitly (rather than relying on argument deparsing), setting layer opacity
+  and mapping intensity values to arbitrary text, respectively. Its `scale`
+  argument may now be a named vector, which is used as a discrete colour lookup
+  table keyed by intensity value, rather than a continuous colour scale.
+- Assigning pixel dimensions with `pixdim<-` now produces an error if the
+  replacement value's length doesn't match the image's dimensionality, rather
+  than silently applying it incorrectly.
+- Setting the world-coordinate transformation of a `niftiHeader` object with
+  `qform<-` or `sform<-` no longer has the side effect of overwriting its pixel
+  dimensions, except for the sign of the first element (the "qfac").
+- `writeNifti()`'s `version` argument is now validated, and may be given as a
+  string (`"1"` or `"2"`) as well as numerically.
+- Assigning to `imageAttributes()` now produces a warning, rather than
+  silently doing nothing, if the assignment would overwrite a core NIfTI
+  attribute. It also now works correctly when the target object has no
+  pre-existing attributes.
+- The `mean()` method for internal images now uses the same C++ back-end as the
+  `Summary` group generic, thereby avoiding first converting the image to a
+  full array.
+
+API changes
+
+- A bug in the `acquire()`/`release()` reference-counting cycle in the
+  `NiftiImage` C++ class has been fixed. Previously, changing the pointer
+  wrapped by a `NiftiImage` object by copy-assignment could decrement the wrong
+  reference counter, risking a premature deallocation. `acquire()` now takes an
+  optional existing reference counter to take over, rather than relying on it
+  having already been set as a side effect by the caller.
+- Converting a NIfTI-2 image containing more voxels than a NIfTI-1 image can
+  represent now fails with an informative error, rather than silently
+  overflowing.
+
+Other changes
+
+- Reading corrupt or truncated image data now produces clearer, more
+  informative errors.
+- A memory leak affecting the internal per-datatype handler on copy
+  assignment of a `NiftiImage`, and undefined behaviour arising from use of
+  an iterator after erasing the element it points to, have both been fixed.
+- C++ exceptions are now consistently raised using `Rcpp::stop()` rather than
+  `Rf_error()`, ensuring correct stack unwinding.
+
+===============================================================================
+
 VERSION 1.9.0
 
 - Methods for the `Math`, `Ops`, `Complex` and `Summary` group generics have
